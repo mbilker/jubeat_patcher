@@ -8,8 +8,8 @@ DLLTOOL_64 = x86_64-w64-mingw32-dlltool
 
 STRIP = strip
 
-CFLAGS = -O2 -pipe -fno-ident -fvisibility=hidden -Icapnhook
-LDFLAGS = -static -static-libgcc -static-libgcc
+CFLAGS = -O2 -pipe -fno-ident -ffunction-sections -fdata-sections -fvisibility=hidden -Icapnhook
+LDFLAGS = -static -static-libgcc -static-libgcc -Wl,--gc-sections
 
 OMNIMIX_VERSION = 1.0.0
 
@@ -41,10 +41,10 @@ build:
 
 build/32/omnimix.dll: $(SOURCES_32)
 	$(CC) $(CFLAGS) $(LDFLAGS) -shared -flto -Lbuild/32 -o $@ $^ -lavs -ljubeat -lpsapi
-	$(STRIP) $@
+	$(STRIP) -R .note -R .comment $@
 
 build/64/omnimix.dll: $(SOURCES_64)
-	$(CC_64) $(CFLAGS) -shared -flto -Lbuild/64 -o $@ $^ -ljubeat
+	$(CC_64) $(CFLAGS) $(LDFLAGS) -shared -flto -Lbuild/64 -o $@ $^ -lavs -ljubeat -lpsapi
 	$(STRIP) -R .note -R .comment $@
 
 clean:
