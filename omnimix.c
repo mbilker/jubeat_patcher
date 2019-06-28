@@ -59,18 +59,43 @@ uint8_t *find_pattern(uint8_t *data, size_t data_size, const uint8_t *pattern, s
   return NULL;
 }
 
-void tutorial_skip(uint8_t *target, HANDLE process) {
-  const uint8_t data[] = { 0xE9, 0x90, 0x00, 0x00, 0x00 };
-  //WriteProcessMemory(process, &jubeat[0xD0A67], &data, sizeof(data), NULL);
-  WriteProcessMemory(process, target, &data, sizeof(data), NULL);
-  FlushInstructionCache(process, target, sizeof(data));
-}
+// jubeat 2018081401:
+// 0xD0A67 offset in address space
+const uint8_t tutorial_skip_pattern[] = { 0x3D, 0x21, 0x00, 0x00, 0x80, 0x75, 0x4A, 0x57, 0x68, 0x00, 0x00, 0x60 };
+const uint8_t tutorial_skip[] = { 0xE9, 0x90, 0x00, 0x00, 0x00 };
 
-void select_timer_freeze(uint8_t *target, HANDLE process) {
-  const uint8_t data[] = { 0xEB };
-  //WriteProcessMemory(process, &jubeat[0xA6499], &data, sizeof(data), NULL);
-  WriteProcessMemory(process, target, &data, sizeof(data), NULL);
-  FlushInstructionCache(process, target, sizeof(data));
+// jubeat 2018081401:
+// 0xA6499 offset in address space
+const uint8_t select_timer_freeze_pattern[] = { 0x01, 0x00, 0x84, 0xC0, 0x75, 0x21, 0x38, 0x05 };
+const uint8_t select_timer_freeze[] = { 0xEB };
+
+void do_patch(
+  HANDLE process,
+  const MODULEINFO *module_info,
+  const char *patch_name,
+  const uint8_t *pattern,
+  size_t pattern_size,
+  const uint8_t *data,
+  size_t data_size,
+  size_t patch_offset
+) {
+  uint8_t *addr = find_pattern(module_info->lpBaseOfDll, module_info->SizeOfImage, pattern, pattern_size);
+
+  if (addr != NULL) {
+    char *hex_data = to_hex(addr, pattern_size);
+    log_info("data: %s", hex_data);
+    free(hex_data);
+
+    WriteProcessMemory(process, &addr[patch_offset], data, data_size, NULL);
+    FlushInstructionCache(process, &addr[patch_offset], data_size);
+    log_info("%s applied at %p", patch_name, &addr[patch_offset]);
+
+    hex_data = to_hex(addr, pattern_size);
+    log_info("data: %s", hex_data);
+    free(hex_data);
+  } else {
+    log_warning("could not find %s base address", patch_name);
+  }
 }
 
 bool __declspec(dllexport) dll_entry_init(char *sid_code, void *app_config) {
@@ -103,47 +128,8 @@ bool __declspec(dllexport) dll_entry_init(char *sid_code, void *app_config) {
 
   log_info("jubeat image size: %ld", jubeat_info.SizeOfImage);
 
-  {
-    // Replace the jump at index 5 into the pattern
-    const uint8_t pattern[] = { 0x3D, 0x21, 0x00, 0x00, 0x80, 0x75, 0x4A, 0x57, 0x68, 0x00, 0x00, 0x60 };
-    uint8_t *addr = find_pattern(jubeat_info.lpBaseOfDll, jubeat_info.SizeOfImage, pattern, sizeof(pattern));
-
-    if (addr != NULL) {
-      char *hex_data = to_hex(addr, sizeof(pattern));
-      log_info("data: %s", hex_data);
-      free(hex_data);
-
-      log_info("tutorial skip applied at %p", &addr[5]);
-      tutorial_skip(&addr[5], process);
-
-      hex_data = to_hex(addr, sizeof(pattern));
-      log_info("data: %s", hex_data);
-      free(hex_data);
-    } else {
-      log_warning("could not find tutorial skip base address");
-    }
-  }
-
-  {
-    // Replace the jump type at index 4 into the pattern
-    const uint8_t pattern[] = { 0x01, 0x00, 0x84, 0xC0, 0x75, 0x21, 0x38, 0x05 };
-    uint8_t *addr = find_pattern(jubeat_info.lpBaseOfDll, jubeat_info.SizeOfImage, pattern, sizeof(pattern));
-
-    if (addr != NULL) {
-      char *hex_data = to_hex(addr, sizeof(pattern));
-      log_info("data: %s", hex_data);
-      free(hex_data);
-
-      log_info("song select timer freeze applied at %p", &addr[4]);
-      select_timer_freeze(&addr[4], process);
-
-      hex_data = to_hex(addr, sizeof(pattern));
-      log_info("data: %s", hex_data);
-      free(hex_data);
-    } else {
-      log_warning("could not find song select timer freeze base address");
-    }
-  }
+  do_patch(process, &jubeat_info, "tutorial skip", tutorial_skip_pattern, sizeof(tutorial_skip_pattern), tutorial_skip, sizeof(tutorial_skip), 5);
+  do_patch(process, &jubeat_info, "song select timer freeze", select_timer_freeze_pattern, sizeof(select_timer_freeze_pattern), select_timer_freeze, sizeof(select_timer_freeze), 4);
 
   CloseHandle(process);
 
