@@ -21,18 +21,6 @@ void __declspec(dllimport) log_body_info(const char *module, const char *fmt, ..
 void __declspec(dllimport) log_body_warning(const char *module, const char *fmt, ...) LOG_CHECK_FMT;
 void __declspec(dllimport) log_body_fatal(const char *module, const char *fmt, ...) LOG_CHECK_FMT;
 
-void tutorial_skip(uint8_t *target, HANDLE process) {
-  const uint8_t data[5] = { 0xE9, 0x90, 0x00, 0x00, 0x00 };
-  //WriteProcessMemory(process, &jubeat[0xD0A67], &data, sizeof(data), NULL);
-  WriteProcessMemory(process, target, &data, sizeof(data), NULL);
-  FlushInstructionCache(process, target, sizeof(data));
-}
-
-void select_timer_freeze(uint8_t *jubeat, HANDLE process) {
-  const uint8_t data[5] = { 0xEB };
-  WriteProcessMemory(process, &jubeat[0xA6499], &data, sizeof(data), NULL);
-}
-
 char *to_hex(const uint8_t *data, size_t data_len) {
   char *output = (char *) malloc(data_len * 3);
 
@@ -71,6 +59,20 @@ uint8_t *find_pattern(uint8_t *data, size_t data_size, const uint8_t *pattern, s
   return NULL;
 }
 
+void tutorial_skip(uint8_t *target, HANDLE process) {
+  const uint8_t data[] = { 0xE9, 0x90, 0x00, 0x00, 0x00 };
+  //WriteProcessMemory(process, &jubeat[0xD0A67], &data, sizeof(data), NULL);
+  WriteProcessMemory(process, target, &data, sizeof(data), NULL);
+  FlushInstructionCache(process, target, sizeof(data));
+}
+
+void select_timer_freeze(uint8_t *target, HANDLE process) {
+  const uint8_t data[] = { 0xEB };
+  //WriteProcessMemory(process, &jubeat[0xA6499], &data, sizeof(data), NULL);
+  WriteProcessMemory(process, target, &data, sizeof(data), NULL);
+  FlushInstructionCache(process, target, sizeof(data));
+}
+
 bool __declspec(dllexport) dll_entry_init(char *sid_code, void *app_config) {
   DWORD pid;
   HANDLE process;
@@ -101,25 +103,47 @@ bool __declspec(dllexport) dll_entry_init(char *sid_code, void *app_config) {
 
   log_info("jubeat image size: %ld", jubeat_info.SizeOfImage);
 
-  const uint8_t pattern[] = { 0x3D, 0x21, 0x00, 0x00, 0x80, 0x75, 0x4A, 0x57, 0x68, 0x00, 0x00, 0x60 };
-  uint8_t *addr = find_pattern(jubeat_info.lpBaseOfDll, jubeat_info.SizeOfImage, pattern, sizeof(pattern));
+  {
+    // Replace the jump at index 5 into the pattern
+    const uint8_t pattern[] = { 0x3D, 0x21, 0x00, 0x00, 0x80, 0x75, 0x4A, 0x57, 0x68, 0x00, 0x00, 0x60 };
+    uint8_t *addr = find_pattern(jubeat_info.lpBaseOfDll, jubeat_info.SizeOfImage, pattern, sizeof(pattern));
 
-  if (addr != NULL) {
-    char *hex_data = to_hex(addr, sizeof(pattern));
-    log_info("data: %s", hex_data);
-    free(hex_data);
+    if (addr != NULL) {
+      char *hex_data = to_hex(addr, sizeof(pattern));
+      log_info("data: %s", hex_data);
+      free(hex_data);
 
-    log_info("tutorial skip applied at %p (%02x)", &addr[5], addr[5]);
-    tutorial_skip(&addr[5], process);
+      log_info("tutorial skip applied at %p", &addr[5]);
+      tutorial_skip(&addr[5], process);
 
-    hex_data = to_hex(addr, sizeof(pattern));
-    log_info("data: %s", hex_data);
-    free(hex_data);
-  } else {
-    log_warning("could not find tutorial skip base address");
+      hex_data = to_hex(addr, sizeof(pattern));
+      log_info("data: %s", hex_data);
+      free(hex_data);
+    } else {
+      log_warning("could not find tutorial skip base address");
+    }
   }
 
-  select_timer_freeze(jubeat, process);
+  {
+    // Replace the jump type at index 4 into the pattern
+    const uint8_t pattern[] = { 0x01, 0x00, 0x84, 0xC0, 0x75, 0x21, 0x38, 0x05 };
+    uint8_t *addr = find_pattern(jubeat_info.lpBaseOfDll, jubeat_info.SizeOfImage, pattern, sizeof(pattern));
+
+    if (addr != NULL) {
+      char *hex_data = to_hex(addr, sizeof(pattern));
+      log_info("data: %s", hex_data);
+      free(hex_data);
+
+      log_info("song select timer freeze applied at %p", &addr[4]);
+      select_timer_freeze(&addr[4], process);
+
+      hex_data = to_hex(addr, sizeof(pattern));
+      log_info("data: %s", hex_data);
+      free(hex_data);
+    } else {
+      log_warning("could not find song select timer freeze base address");
+    }
+  }
 
   CloseHandle(process);
 
