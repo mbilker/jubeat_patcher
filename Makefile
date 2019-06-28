@@ -40,7 +40,7 @@ build:
 	mkdir build build/{32,64} build/{32,64}/{capnhook,capnhook/hook,util}
 
 build/32/omnimix.dll: $(SOURCES_32)
-	$(CC) $(CFLAGS) $(LDFLAGS) -shared -flto -Lbuild/32 -o $@ $^ -lavs -ljubeat
+	$(CC) $(CFLAGS) $(LDFLAGS) -shared -flto -Lbuild/32 -o $@ $^ -lavs -ljubeat -lpsapi
 	$(STRIP) $@
 
 build/64/omnimix.dll: $(SOURCES_64)
