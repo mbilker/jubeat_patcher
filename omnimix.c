@@ -115,6 +115,8 @@ bool __declspec(dllexport) dll_entry_init(char *sid_code, void *app_config) {
     hex_data = to_hex(addr, sizeof(pattern));
     log_info("data: %s", hex_data);
     free(hex_data);
+  } else {
+    log_warning("could not find tutorial skip base address");
   }
 
   select_timer_freeze(jubeat, process);
