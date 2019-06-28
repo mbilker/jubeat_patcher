@@ -9,7 +9,7 @@ DLLTOOL_64 = x86_64-w64-mingw32-dlltool
 STRIP = strip
 
 CFLAGS = -O2 -pipe -fno-ident -ffunction-sections -fdata-sections -fvisibility=hidden -Icapnhook
-LDFLAGS = -static -static-libgcc -static-libgcc -Wl,--gc-sections
+LDFLAGS = -static -static-libgcc -Wl,--gc-sections
 
 OMNIMIX_VERSION = 1.0.0
 
@@ -25,7 +25,7 @@ src_hook := \
 include util/Makefile
 
 UTIL_SOURCES := $(src_util:%.c=util/%.o)
-CAPNHOOK_SOURCES += $(src_hook:%.c=capnhook/hook/%.o)
+CAPNHOOK_SOURCES := $(src_hook:%.c=capnhook/hook/%.o)
 
 #MAIN_SOURCES = $(UTIL_SOURCES) $(CAPNHOOK_SOURCES) omnimix.o
 MAIN_SOURCES = $(UTIL_SOURCES) omnimix.o libavs.a libjubeat.a
