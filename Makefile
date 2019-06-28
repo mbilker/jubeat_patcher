@@ -37,7 +37,10 @@ SOURCES_64 = $(foreach source,$(MAIN_SOURCES),build/64/$(source))
 all: build $(EXES) $(DLLS)
 
 build:
-	mkdir build build/{32,64} build/{32,64}/{capnhook,capnhook/hook,util}
+	mkdir build
+	mkdir build/32 build/64
+	mkdir build/32/capnhook build/32/capnhook/hook build/32/util
+	mkdir build/64/capnhook build/64/capnhook/hook build/64/util
 
 build/32/omnimix.dll: $(SOURCES_32)
 	$(CC) $(CFLAGS) $(LDFLAGS) -shared -flto -Lbuild/32 -o $@ $^ -lavs -ljubeat -lpsapi
