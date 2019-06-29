@@ -38,10 +38,6 @@ char *to_hex(const uint8_t *data, size_t data_len) {
 uint8_t *find_pattern(uint8_t *data, size_t data_size, const uint8_t *pattern, size_t pattern_size) {
   size_t i, j;
 
-  char *hex_data = to_hex(pattern, pattern_size);
-  log_info("pattern: %s", hex_data);
-  free(hex_data);
-
   for (i = 0; i < data_size - pattern_size; i++) {
     for (j = 0; j < pattern_size; j++) {
       if (data[i + j] != pattern[j]) {
@@ -59,42 +55,67 @@ uint8_t *find_pattern(uint8_t *data, size_t data_size, const uint8_t *pattern, s
   return NULL;
 }
 
+struct patch_t {
+  const char *name;
+  const uint8_t *pattern;
+  size_t pattern_size;
+  const uint8_t *data;
+  size_t data_size;
+  size_t data_offset;
+};
+
 // jubeat 2018081401:
 // 0xD0A67 offset in address space
 const uint8_t tutorial_skip_pattern[] = { 0x3D, 0x21, 0x00, 0x00, 0x80, 0x75, 0x4A, 0x57, 0x68, 0x00, 0x00, 0x60 };
-const uint8_t tutorial_skip[] = { 0xE9, 0x90, 0x00, 0x00, 0x00 };
+const uint8_t tutorial_skip_data[] = { 0xE9, 0x90, 0x00, 0x00, 0x00 };
 
 // jubeat 2018081401:
 // 0xA6499 offset in address space
 const uint8_t select_timer_freeze_pattern[] = { 0x01, 0x00, 0x84, 0xC0, 0x75, 0x21, 0x38, 0x05 };
-const uint8_t select_timer_freeze[] = { 0xEB };
+const uint8_t select_timer_freeze_data[] = { 0xEB };
 
-void do_patch(
-  HANDLE process,
-  const MODULEINFO *module_info,
-  const char *patch_name,
-  const uint8_t *pattern,
-  size_t pattern_size,
-  const uint8_t *data,
-  size_t data_size,
-  size_t patch_offset
-) {
-  uint8_t *addr = find_pattern(module_info->lpBaseOfDll, module_info->SizeOfImage, pattern, pattern_size);
+const struct patch_t tutorial_skip = {
+  .name = "tutorial_skip",
+  .pattern = tutorial_skip_pattern,
+  .pattern_size = sizeof(tutorial_skip_pattern),
+  .data = tutorial_skip_data,
+  .data_size = sizeof(tutorial_skip_data),
+  .data_offset = 5,
+};
+
+const struct patch_t select_timer_freeze = {
+  .name = "song select timer freeze",
+  .pattern = select_timer_freeze_pattern,
+  .pattern_size = sizeof(select_timer_freeze_pattern),
+  .data = select_timer_freeze_data,
+  .data_size = sizeof(select_timer_freeze_data),
+  .data_offset = 4,
+};
+
+void do_patch(HANDLE process, const MODULEINFO *module_info, const struct patch_t *patch) {
+  char *hex_data;
+  uint8_t *addr;
+
+  hex_data = to_hex(patch->pattern, patch->pattern_size);
+  log_info("pattern: %s", hex_data);
+  free(hex_data);
+
+  addr = find_pattern(module_info->lpBaseOfDll, module_info->SizeOfImage, patch->pattern, patch->pattern_size);
 
   if (addr != NULL) {
-    char *hex_data = to_hex(addr, pattern_size);
+    hex_data = to_hex(addr, patch->pattern_size);
     log_info("data: %s", hex_data);
     free(hex_data);
 
-    WriteProcessMemory(process, &addr[patch_offset], data, data_size, NULL);
-    FlushInstructionCache(process, &addr[patch_offset], data_size);
-    log_info("%s applied at %p", patch_name, &addr[patch_offset]);
+    WriteProcessMemory(process, &addr[patch->data_offset], patch->data, patch->data_size, NULL);
+    FlushInstructionCache(process, &addr[patch->data_offset], patch->data_size);
+    log_info("%s applied at %p", patch->name, &addr[patch->data_offset]);
 
-    hex_data = to_hex(addr, pattern_size);
+    hex_data = to_hex(addr, patch->pattern_size);
     log_info("data: %s", hex_data);
     free(hex_data);
   } else {
-    log_warning("could not find %s base address", patch_name);
+    log_warning("could not find %s base address", patch->name);
   }
 }
 
@@ -128,8 +149,8 @@ bool __declspec(dllexport) dll_entry_init(char *sid_code, void *app_config) {
 
   log_info("jubeat image size: %ld", jubeat_info.SizeOfImage);
 
-  do_patch(process, &jubeat_info, "tutorial skip", tutorial_skip_pattern, sizeof(tutorial_skip_pattern), tutorial_skip, sizeof(tutorial_skip), 5);
-  do_patch(process, &jubeat_info, "song select timer freeze", select_timer_freeze_pattern, sizeof(select_timer_freeze_pattern), select_timer_freeze, sizeof(select_timer_freeze), 4);
+  do_patch(process, &jubeat_info, &tutorial_skip);
+  do_patch(process, &jubeat_info, &select_timer_freeze);
 
   CloseHandle(process);
 
