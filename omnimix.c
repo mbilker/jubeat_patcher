@@ -84,7 +84,7 @@ const uint8_t select_timer_freeze_pattern[] = { 0x01, 0x00, 0x84, 0xC0, 0x75, 0x
 const uint8_t select_timer_freeze_data[] = { 0xEB };
 
 const struct patch_t tutorial_skip = {
-  .name = "tutorial_skip",
+  .name = "tutorial skip",
   .pattern = tutorial_skip_pattern,
   .pattern_size = sizeof(tutorial_skip_pattern),
   .data = tutorial_skip_data,
