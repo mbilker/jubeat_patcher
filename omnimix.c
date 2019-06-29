@@ -35,18 +35,26 @@ char *to_hex(const uint8_t *data, size_t data_len) {
   return output;
 }
 
-uint8_t *find_pattern(uint8_t *data, size_t data_size, const uint8_t *pattern, size_t pattern_size) {
+uint8_t *find_pattern(uint8_t *data, size_t data_size, const uint8_t *pattern, const bool *pattern_mask, size_t pattern_size) {
   size_t i, j;
+  bool pattern_found;
 
   for (i = 0; i < data_size - pattern_size; i++) {
-    for (j = 0; j < pattern_size; j++) {
-      if (data[i + j] != pattern[j]) {
-        break;
+    if (pattern_mask == NULL) {
+      pattern_found = memcmp(&data[i], pattern, pattern_size) == 0;
+    } else {
+      pattern_found = true;
+
+      for (j = 0; j < pattern_size; j++) {
+        if (pattern_mask[j] && data[i + j] != pattern[j]) {
+          pattern_found = false;
+          break;
+        }
       }
     }
 
-    if (j == pattern_size) {
-      log_info("pattern found at index %08x size %d", i, pattern_size);
+    if (pattern_found) {
+      log_info("pattern found at index %x size %d", i, pattern_size);
 
       return &data[i];
     }
@@ -58,6 +66,7 @@ uint8_t *find_pattern(uint8_t *data, size_t data_size, const uint8_t *pattern, s
 struct patch_t {
   const char *name;
   const uint8_t *pattern;
+  const bool *pattern_mask;
   size_t pattern_size;
   const uint8_t *data;
   size_t data_size;
@@ -100,7 +109,13 @@ void do_patch(HANDLE process, const MODULEINFO *module_info, const struct patch_
   log_info("pattern: %s", hex_data);
   free(hex_data);
 
-  addr = find_pattern(module_info->lpBaseOfDll, module_info->SizeOfImage, patch->pattern, patch->pattern_size);
+  if (patch->pattern_mask != NULL) {
+    hex_data = to_hex((const uint8_t *) patch->pattern_mask, patch->pattern_size);
+    log_info("mask   : %s", hex_data);
+    free(hex_data);
+  }
+
+  addr = find_pattern(module_info->lpBaseOfDll, module_info->SizeOfImage, patch->pattern, patch->pattern_mask, patch->pattern_size);
 
   if (addr != NULL) {
     hex_data = to_hex(addr, patch->pattern_size);
