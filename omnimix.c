@@ -140,7 +140,7 @@ bool __declspec(dllexport) dll_entry_init(char *sid_code, void *app_config) {
   HMODULE jubeat_handle, music_db_handle;
   uint8_t *jubeat, *music_db;
 
-  MODULEINFO jubeat_info;
+  MODULEINFO jubeat_info, music_db_info;
 
   log_to_external(log_body_misc, log_body_info, log_body_warning, log_body_fatal);
 
@@ -158,7 +158,9 @@ bool __declspec(dllexport) dll_entry_init(char *sid_code, void *app_config) {
   log_info("jubeat.dll = %p, music_db.dll = %p", jubeat, music_db);
   log_info("sid_code = %s", sid_code);
 
-  if (!GetModuleInformation(process, jubeat_handle, &jubeat_info, sizeof(jubeat_info))) {
+  if (!GetModuleInformation(process, jubeat_handle, &jubeat_info, sizeof(jubeat_info)) ||
+      !GetModuleInformation(process, music_db_handle, &music_db_info, sizeof(music_db_info)))
+  {
     log_fatal("GetModuleInformation failed: %08lx", GetLastError());
   }
 
