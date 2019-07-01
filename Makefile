@@ -17,17 +17,10 @@ DLLS = \
 	build/32/omnimix.dll #\
 #	build/64/omnimix.dll
 
-src_hook := \
-	pe.c \
-	peb.c \
-	table.c \
-
 include util/Makefile
 
 UTIL_SOURCES := $(src_util:%.c=util/%.o)
-CAPNHOOK_SOURCES := $(src_hook:%.c=capnhook/hook/%.o)
 
-#MAIN_SOURCES = $(UTIL_SOURCES) $(CAPNHOOK_SOURCES) omnimix.o
 MAIN_SOURCES = $(UTIL_SOURCES) omnimix.o libavs.a libjubeat.a
 DEF_SOURCES = jubeat.def avs.def
 
@@ -39,8 +32,8 @@ all: build $(EXES) $(DLLS)
 build:
 	mkdir build
 	mkdir build/32 build/64
-	mkdir build/32/capnhook build/32/capnhook/hook build/32/util
-	mkdir build/64/capnhook build/64/capnhook/hook build/64/util
+	mkdir build/32/util
+	mkdir build/64/util
 
 build/32/omnimix.dll: $(SOURCES_32)
 	$(CC) $(CFLAGS) $(LDFLAGS) -shared -flto -Lbuild/32 -o $@ $^ -lavs -ljubeat -lpsapi
@@ -51,8 +44,13 @@ build/64/omnimix.dll: $(SOURCES_64)
 	$(STRIP) -R .note -R .comment $@
 
 clean:
-	rm -f $(EXES) $(DLLS) $(SOURCES_32) $(SOURCES_64) build/{32,64}/libjubeat.a
-	rmdir build/{32,64}/{capnhook/hook,capnhook,util} build/{32,64} build
+	rm -f $(EXES) $(DLLS) $(SOURCES_32) $(SOURCES_64)
+	rm -f build/32/libavs.a build/32/libjubeat.a
+	rm -f build/64/libavs.a build/64/libjubeat.a
+	rmdir build/32/util
+	rmdir build/64/util
+	rmdir build/32 build/64
+	rmdir build
 
 build/32/lib%.a: %.def
 	$(DLLTOOL) -p jb -d $< -l $@

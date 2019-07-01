@@ -5,7 +5,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "capnhook/hook/table.h"
 #include "util/log.h"
 
 #define JB_DLL_ENTRY_INIT jb_dll_entry_init
