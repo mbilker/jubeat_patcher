@@ -98,7 +98,6 @@ void log_set_level(unsigned int new_level)
 {
     log_level = new_level;
 }
-*/
 
 void log_writer_debug(void *ctx, const char *chars, size_t nchars)
 {
@@ -110,7 +109,6 @@ void log_writer_console(void *ctx, const char *chars, size_t nchars)
     printf("%s", chars);
 }
 
-/*
 void log_writer_file(void *ctx, const char *chars, size_t nchars)
 {
     fwrite(chars, 1, nchars, (FILE *) ctx);
@@ -121,16 +119,10 @@ void log_writer_file(void *ctx, const char *chars, size_t nchars)
 void log_writer_null(void *ctx, const char *chars, size_t nchars)
 {}
 
-void log_writer_reboot_connection(void *ctx, const char *chars, size_t nchars)
-{
-    log_writer_console(ctx, chars, nchars);
-    log_writer_debug(ctx, chars, nchars);
-}
-
 log_formatter_t log_impl_misc = log_builtin_misc;
 log_formatter_t log_impl_info = log_builtin_info;
 log_formatter_t log_impl_warning = log_builtin_warning;
 log_formatter_t log_impl_fatal = log_builtin_fatal;
-static log_writer_t log_writer = log_writer_console;
+static log_writer_t log_writer = log_writer_null;
 static unsigned int log_level = 4;
 
