@@ -83,6 +83,9 @@ const uint8_t tutorial_skip_data[] = { 0xE9, 0x90, 0x00, 0x00, 0x00 };
 const uint8_t select_timer_freeze_pattern[] = { 0x01, 0x00, 0x84, 0xC0, 0x75, 0x21, 0x38, 0x05 };
 const uint8_t select_timer_freeze_data[] = { 0xEB };
 
+const uint8_t packlist_omnilist_pattern[] = { 0x70, 0x61, 0x63, 0x6B, 0x6C, 0x69, 0x73, 0x74 };
+const uint8_t packlist_omnilist_data[] = { 0x6F, 0x6D, 0x6E, 0x69, 0x6C, 0x69, 0x73, 0x74 };
+
 const struct patch_t tutorial_skip = {
   .name = "tutorial skip",
   .pattern = tutorial_skip_pattern,
@@ -99,6 +102,15 @@ const struct patch_t select_timer_freeze = {
   .data = select_timer_freeze_data,
   .data_size = sizeof(select_timer_freeze_data),
   .data_offset = 4,
+};
+
+const struct patch_t packlist_omnilist = {
+  .name = "omnilist patch",
+  .pattern = packlist_omnilist_pattern,
+  .pattern_size = sizeof(packlist_omnilist_pattern),
+  .data = packlist_omnilist_data,
+  .data_size = sizeof(packlist_omnilist_data),
+  .data_offset = 0,
 };
 
 void do_patch(HANDLE process, const MODULEINFO *module_info, const struct patch_t *patch) {
@@ -180,6 +192,7 @@ bool __declspec(dllexport) dll_entry_init(char *sid_code, void *app_config) {
 
   do_patch(process, &jubeat_info, &tutorial_skip);
   do_patch(process, &jubeat_info, &select_timer_freeze);
+  do_patch(process, &jubeat_info, &packlist_omnilist);
 
   CloseHandle(process);
 
