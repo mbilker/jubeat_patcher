@@ -187,6 +187,8 @@ void do_patch(HANDLE process, const MODULEINFO *module_info, const struct patch_
   uint8_t *addr, *target;
   DWORD old_protect;
 
+  log_info("===== %s =====", patch->name);
+
   hex_data = to_hex(patch->pattern, patch->pattern_size);
   log_info("pattern: %s", hex_data);
   free(hex_data);
