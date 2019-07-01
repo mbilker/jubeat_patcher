@@ -11,6 +11,8 @@ STRIP = strip
 CFLAGS = -O2 -pipe -fno-ident -ffunction-sections -fdata-sections -fvisibility=hidden -Icapnhook
 LDFLAGS = -static -static-libgcc -Wl,--gc-sections
 
+#CFLAGS += -DVERBOSE
+
 OMNIMIX_VERSION = 1.0.0
 
 DLLS = \

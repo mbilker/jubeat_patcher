@@ -20,6 +20,7 @@ void __declspec(dllimport) log_body_info(const char *module, const char *fmt, ..
 void __declspec(dllimport) log_body_warning(const char *module, const char *fmt, ...) LOG_CHECK_FMT;
 void __declspec(dllimport) log_body_fatal(const char *module, const char *fmt, ...) LOG_CHECK_FMT;
 
+#ifdef VERBOSE
 char *to_hex(const uint8_t *data, size_t data_len) {
   char *output = (char *) malloc(data_len * 3);
 
@@ -33,6 +34,7 @@ char *to_hex(const uint8_t *data, size_t data_len) {
 
   return output;
 }
+#endif
 
 uint8_t *find_pattern(uint8_t *data, size_t data_size, const uint8_t *pattern, const bool *pattern_mask, size_t pattern_size) {
   size_t i, j;
@@ -53,7 +55,9 @@ uint8_t *find_pattern(uint8_t *data, size_t data_size, const uint8_t *pattern, c
     }
 
     if (pattern_found) {
+#ifdef VERBOSE
       log_info("pattern found at index %x size %d", i, pattern_size);
+#endif
 
       return &data[i];
     }
@@ -186,6 +190,7 @@ void do_patch(HANDLE process, const MODULEINFO *module_info, const struct patch_
   uint8_t *addr, *target;
   DWORD old_protect;
 
+#ifdef VERBOSE
   log_info("===== %s =====", patch->name);
 
   hex_data = to_hex(patch->pattern, patch->pattern_size);
@@ -197,13 +202,16 @@ void do_patch(HANDLE process, const MODULEINFO *module_info, const struct patch_
     log_info("mask   : %s", hex_data);
     free(hex_data);
   }
+#endif
 
   addr = find_pattern(module_info->lpBaseOfDll, module_info->SizeOfImage, patch->pattern, patch->pattern_mask, patch->pattern_size);
 
   if (addr != NULL) {
+#ifdef VERBOSE
     hex_data = to_hex(addr, patch->pattern_size);
     log_info("data: %s", hex_data);
     free(hex_data);
+#endif
 
     target = &addr[patch->data_offset];
 
@@ -218,11 +226,13 @@ void do_patch(HANDLE process, const MODULEINFO *module_info, const struct patch_
       log_fatal("VirtualProtectEx (old) failed: %08lx", GetLastError());
     }
 
+#ifdef VERBOSE
     log_info("%s applied at %p", patch->name, target);
 
     hex_data = to_hex(addr, patch->pattern_size);
     log_info("data: %s", hex_data);
     free(hex_data);
+#endif
   } else {
     log_warning("could not find %s base address", patch->name);
   }
@@ -249,16 +259,16 @@ bool __declspec(dllexport) dll_entry_init(char *sid_code, void *app_config) {
   jubeat = (uint8_t *) jubeat_handle;
   music_db = (uint8_t *) music_db_handle;
 
+#ifdef VERBOSE
   log_info("jubeat.dll = %p, music_db.dll = %p", jubeat, music_db);
   log_info("sid_code = %s", sid_code);
+#endif
 
   if (!GetModuleInformation(process, jubeat_handle, &jubeat_info, sizeof(jubeat_info)) ||
       !GetModuleInformation(process, music_db_handle, &music_db_info, sizeof(music_db_info)))
   {
     log_fatal("GetModuleInformation failed: %08lx", GetLastError());
   }
-
-  log_info("jubeat image size: %ld", jubeat_info.SizeOfImage);
 
   do_patch(process, &jubeat_info, &tutorial_skip);
   do_patch(process, &jubeat_info, &select_timer_freeze);
@@ -277,7 +287,6 @@ bool __declspec(dllexport) dll_entry_init(char *sid_code, void *app_config) {
   SetEnvironmentVariableA("MB_MODEL", "----");
 
   return JB_DLL_ENTRY_INIT(sid_code, app_config);
-  //return false;
 }
 
 bool __declspec(dllexport) dll_entry_main(void) {
