@@ -103,7 +103,8 @@ const struct patch_t select_timer_freeze = {
 
 void do_patch(HANDLE process, const MODULEINFO *module_info, const struct patch_t *patch) {
   char *hex_data;
-  uint8_t *addr;
+  uint8_t *addr, *target;
+  DWORD old_protect;
 
   hex_data = to_hex(patch->pattern, patch->pattern_size);
   log_info("pattern: %s", hex_data);
@@ -122,9 +123,20 @@ void do_patch(HANDLE process, const MODULEINFO *module_info, const struct patch_
     log_info("data: %s", hex_data);
     free(hex_data);
 
-    WriteProcessMemory(process, &addr[patch->data_offset], patch->data, patch->data_size, NULL);
-    FlushInstructionCache(process, &addr[patch->data_offset], patch->data_size);
-    log_info("%s applied at %p", patch->name, &addr[patch->data_offset]);
+    target = &addr[patch->data_offset];
+
+    if (!VirtualProtectEx(process, target, patch->data_size, PAGE_EXECUTE_READWRITE, &old_protect)) {
+      log_fatal("VirtualProtectEx (rwx) failed: %08lx", GetLastError());
+    }
+
+    WriteProcessMemory(process, target, patch->data, patch->data_size, NULL);
+    FlushInstructionCache(process, target, patch->data_size);
+
+    if (!VirtualProtectEx(process, target, patch->data_size, old_protect, &old_protect)) {
+      log_fatal("VirtualProtectEx (old) failed: %08lx", GetLastError());
+    }
+
+    log_info("%s applied at %p", patch->name, target);
 
     hex_data = to_hex(addr, patch->pattern_size);
     log_info("data: %s", hex_data);
