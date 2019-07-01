@@ -87,6 +87,11 @@ const uint8_t packlist_omnilist_pattern[] = { 0x70, 0x61, 0x63, 0x6B, 0x6C, 0x69
 const uint8_t packlist_omnilist_data[] = { 0x6F, 0x6D, 0x6E, 0x69, 0x6C, 0x69, 0x73, 0x74 };
 
 // jubeat 2018081401 music_db:
+// 0x5310 in address space
+const uint8_t big_bnr_pattern[] = { 0x74, 0x19, 0x8B, 0x45, 0x10, 0x8B, 0x4D, 0x0C, 0x68, 0xF4 };
+const uint8_t big_bnr_data[] = { 0x75 };
+
+// jubeat 2018081401 music_db:
 // several offsets
 const uint8_t music_db_limit_pattern_1[] = { 0x00, 0x00, 0x20, 0x00, 0x53, 0xFF, 0x15 };
 const uint8_t music_db_limit_pattern_2[] = { 0x00, 0x00, 0x20, 0x00, 0x8B, 0xF8, 0x57 };
@@ -98,11 +103,6 @@ const uint8_t music_db_limit_data[] = { 0x40 };
 // 0x152CC in address space
 const uint8_t music_info_pattern[] = { 0x6D, 0x75, 0x73, 0x69, 0x63, 0x5F, 0x69, 0x6E, 0x66, 0x6F, 0x2E, 0x78, 0x6D, 0x6C };
 const uint8_t music_omni_data[] = { 0x6F, 0x6D, 0x6E, 0x69, 0x2E, 0x78, 0x6D, 0x6C };
-
-// jubeat 2018081401 music_db:
-// 0x5310 in address space
-const uint8_t big_bnr_pattern[] = { 0x74, 0x19, 0x8B, 0x45, 0x10, 0x8B, 0x4D, 0x0C, 0x68, 0xF4, 0x67, 0x01, 0x10, 0x50, 0x51, 0xFF };
-const uint8_t big_bnr_data[] = { 0x75 };
 
 const struct patch_t tutorial_skip = {
   .name = "tutorial skip",
@@ -128,6 +128,15 @@ const struct patch_t packlist_omnilist = {
   .pattern_size = sizeof(packlist_omnilist_pattern),
   .data = packlist_omnilist_data,
   .data_size = sizeof(packlist_omnilist_data),
+  .data_offset = 0,
+};
+
+const struct patch_t big_bnr_patch = {
+  .name = "big_bnr patch",
+  .pattern = big_bnr_pattern,
+  .pattern_size = sizeof(big_bnr_pattern),
+  .data = big_bnr_data,
+  .data_size = sizeof(big_bnr_data),
   .data_offset = 0,
 };
 
@@ -171,15 +180,6 @@ const struct patch_t music_omni_patch = {
   .data = music_omni_data,
   .data_size = sizeof(music_omni_data),
   .data_offset = 6,
-};
-
-const struct patch_t big_bnr_patch = {
-  .name = "big_bnr patch",
-  .pattern = big_bnr_pattern,
-  .pattern_size = sizeof(big_bnr_pattern),
-  .data = big_bnr_data,
-  .data_size = sizeof(big_bnr_data),
-  .data_offset = 0,
 };
 
 void do_patch(HANDLE process, const MODULEINFO *module_info, const struct patch_t *patch) {
@@ -262,13 +262,12 @@ bool __declspec(dllexport) dll_entry_init(char *sid_code, void *app_config) {
   do_patch(process, &jubeat_info, &tutorial_skip);
   do_patch(process, &jubeat_info, &select_timer_freeze);
   do_patch(process, &jubeat_info, &packlist_omnilist);
+  do_patch(process, &music_db_info, &big_bnr_patch);
   do_patch(process, &music_db_info, &music_db_limit_1);
   do_patch(process, &music_db_info, &music_db_limit_2);
   do_patch(process, &music_db_info, &music_db_limit_3);
   do_patch(process, &music_db_info, &music_db_limit_4);
   do_patch(process, &music_db_info, &music_omni_patch);
-  do_patch(process, &music_db_info, &big_bnr_patch);
-
 
   CloseHandle(process);
 
