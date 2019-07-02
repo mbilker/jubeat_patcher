@@ -13,7 +13,7 @@ LDFLAGS = -static -static-libgcc -Wl,--gc-sections
 
 #CFLAGS += -DVERBOSE
 
-OMNIMIX_VERSION = 1.0.0
+OMNIMIX_VERSION = 1.1
 
 DLLS = \
 	build/32/omnimix.dll #\
