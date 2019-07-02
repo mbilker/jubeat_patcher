@@ -41,11 +41,16 @@ uint8_t *find_pattern(uint8_t *data, size_t data_size, const uint8_t *pattern, c
   bool pattern_found;
 
   for (i = 0; i < data_size - pattern_size; i++) {
-    if (pattern_mask == NULL) {
-      pattern_found = memcmp(&data[i], pattern, pattern_size) == 0;
-    } else {
-      pattern_found = true;
+    pattern_found = true;
 
+    if (pattern_mask == NULL) {
+      for (j = 0; j < pattern_size; j++) {
+        if (data[i + j] != pattern[j]) {
+          pattern_found = false;
+          break;
+        }
+      }
+    } else {
       for (j = 0; j < pattern_size; j++) {
         if (pattern_mask[j] && data[i + j] != pattern[j]) {
           pattern_found = false;
@@ -86,6 +91,8 @@ const uint8_t tutorial_skip_data[] = { 0xE9, 0x90, 0x00, 0x00, 0x00 };
 const uint8_t select_timer_freeze_pattern[] = { 0x01, 0x00, 0x84, 0xC0, 0x75, 0x21, 0x38, 0x05 };
 const uint8_t select_timer_freeze_data[] = { 0xEB };
 
+// jubeat 2018081401:
+// 0x1F9F24 in address space
 const uint8_t packlist_omnilist_pattern[] = { 0x70, 0x61, 0x63, 0x6B, 0x6C, 0x69, 0x73, 0x74 };
 const uint8_t packlist_omnilist_data[] = { 0x6F, 0x6D, 0x6E, 0x69 };
 
