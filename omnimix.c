@@ -272,7 +272,7 @@ bool __declspec(dllexport) dll_entry_init(char *sid_code, void *app_config) {
   log_info("jubeat omnimix hook by Felix v" OMNIMIX_VERSION " (Build " __DATE__ " " __TIME__ ")");
 
   pid = GetCurrentProcessId();
-  process = OpenProcess(PROCESS_VM_OPERATION | PROCESS_VM_READ | PROCESS_VM_WRITE, FALSE, pid);
+  process = OpenProcess(PROCESS_QUERY_INFORMATION | PROCESS_VM_OPERATION | PROCESS_VM_READ | PROCESS_VM_WRITE, FALSE, pid);
 
   if ((jubeat_handle = GetModuleHandle("jubeat.dll")) == NULL) {
     log_fatal("GetModuleHandle(\"jubeat.dll\") failed: %08lx", GetLastError());
