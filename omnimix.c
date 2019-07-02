@@ -114,6 +114,11 @@ const uint8_t music_db_limit_data[] = { 0x40 };
 const uint8_t music_info_pattern[] = { 0x6D, 0x75, 0x73, 0x69, 0x63, 0x5F, 0x69, 0x6E, 0x66, 0x6F, 0x2E, 0x78, 0x6D, 0x6C };
 const uint8_t music_omni_data[] = { 0x6F, 0x6D, 0x6E, 0x69 };
 
+// jubeat 2018081401 music_db:
+// 0x278F offset in address space
+const uint8_t song_unlock_pattern[] = { 0xC4, 0x04, 0x84, 0xC0, 0x74, 0x09 };
+const uint8_t song_unlock_data[] = { 0x90, 0x90 };
+
 const struct patch_t tutorial_skip = {
   .name = "tutorial skip",
   .pattern = tutorial_skip_pattern,
@@ -190,6 +195,15 @@ const struct patch_t music_omni_patch = {
   .data = music_omni_data,
   .data_size = sizeof(music_omni_data),
   .data_offset = 6,
+};
+
+const struct patch_t song_unlock_patch = {
+  .name = "song unlock",
+  .pattern = song_unlock_pattern,
+  .pattern_size = sizeof(song_unlock_pattern),
+  .data = song_unlock_data,
+  .data_size = sizeof(song_unlock_data),
+  .data_offset = 4,
 };
 
 void do_patch(HANDLE process, const MODULEINFO *module_info, const struct patch_t *patch) {
@@ -286,6 +300,7 @@ bool __declspec(dllexport) dll_entry_init(char *sid_code, void *app_config) {
   do_patch(process, &music_db_info, &music_db_limit_3);
   do_patch(process, &music_db_info, &music_db_limit_4);
   do_patch(process, &music_db_info, &music_omni_patch);
+  do_patch(process, &music_db_info, &song_unlock_patch);
 
   CloseHandle(process);
 
