@@ -274,8 +274,12 @@ bool __declspec(dllexport) dll_entry_init(char *sid_code, void *app_config) {
   pid = GetCurrentProcessId();
   process = OpenProcess(PROCESS_VM_OPERATION | PROCESS_VM_READ | PROCESS_VM_WRITE, FALSE, pid);
 
-  jubeat_handle = GetModuleHandle("jubeat.dll");
-  music_db_handle = GetModuleHandle("music_db.dll");
+  if ((jubeat_handle = GetModuleHandle("jubeat.dll")) == NULL) {
+    log_fatal("GetModuleHandle(\"jubeat.dll\") failed: %08lx", GetLastError());
+  }
+  if ((music_db_handle = GetModuleHandle("music_db.dll")) == NULL) {
+    log_fatal("GetModuleHandle(\"music_db.dll\") failed: %08lx", GetLastError());
+  }
 
   jubeat = (uint8_t *) jubeat_handle;
   music_db = (uint8_t *) music_db_handle;
@@ -285,10 +289,11 @@ bool __declspec(dllexport) dll_entry_init(char *sid_code, void *app_config) {
   log_info("sid_code = %s", sid_code);
 #endif
 
-  if (!GetModuleInformation(process, jubeat_handle, &jubeat_info, sizeof(jubeat_info)) ||
-      !GetModuleInformation(process, music_db_handle, &music_db_info, sizeof(music_db_info)))
-  {
-    log_fatal("GetModuleInformation failed: %08lx", GetLastError());
+  if (!GetModuleInformation(process, jubeat_handle, &jubeat_info, sizeof(jubeat_info))) {
+    log_fatal("GetModuleInformation(\"jubeat.dll\") failed: %08lx", GetLastError());
+  }
+  if (!GetModuleInformation(process, music_db_handle, &music_db_info, sizeof(music_db_info))) {
+    log_fatal("GetModuleInformation(\"music_db.dll\") failed: %08lx", GetLastError());
   }
 
   do_patch(process, &jubeat_info, &tutorial_skip);
