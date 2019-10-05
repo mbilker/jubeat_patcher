@@ -8,7 +8,7 @@ DLLTOOL_64 = x86_64-w64-mingw32-dlltool
 
 STRIP = strip
 
-CFLAGS = -O2 -pipe -fno-ident -ffunction-sections -fdata-sections -fvisibility=hidden -Icapnhook
+CFLAGS = -O2 -pipe -fno-ident -ffunction-sections -fdata-sections -fvisibility=hidden
 LDFLAGS = -static -static-libgcc -Wl,--gc-sections
 
 #CFLAGS += -DVERBOSE
