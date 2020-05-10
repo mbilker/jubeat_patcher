@@ -206,10 +206,10 @@ bool __declspec(dllexport) dll_entry_init(char *sid_code, void *app_config) {
     pid = GetCurrentProcessId();
     process = OpenProcess(PROCESS_QUERY_INFORMATION | PROCESS_VM_OPERATION | PROCESS_VM_READ | PROCESS_VM_WRITE, FALSE, pid);
 
-    if ((jubeat_handle = GetModuleHandleW(L"jubeat.dll")) == NULL) {
+    if ((jubeat_handle = GetModuleHandleA("jubeat.dll")) == NULL) {
         log_fatal("GetModuleHandle(\"jubeat.dll\") failed: %08lx", GetLastError());
     }
-    if ((music_db_handle = GetModuleHandleW(L"music_db.dll")) == NULL) {
+    if ((music_db_handle = GetModuleHandleA("music_db.dll")) == NULL) {
         log_fatal("GetModuleHandle(\"music_db.dll\") failed: %08lx", GetLastError());
     }
 
