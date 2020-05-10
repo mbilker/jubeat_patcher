@@ -11,20 +11,20 @@ STRIP = strip
 CFLAGS = -O2 -pipe -fno-ident -ffunction-sections -fdata-sections -fvisibility=hidden
 LDFLAGS = -static -static-libgcc -Wl,--gc-sections
 
-#CFLAGS += -DVERBOSE
+CFLAGS += -DVERBOSE
 
-OMNIMIX_VERSION = 1.1
+OMNIMIX_VERSION = 2.0
 
 DLLS = \
 	build/32/omnimix.dll #\
 #	build/64/omnimix.dll
 
-include util/Makefile
+include src/util/Makefile
 
-UTIL_SOURCES := $(src_util:%.c=util/%.o)
+UTIL_SOURCES := $(src_util:%.c=src/util/%.o)
 
-MAIN_SOURCES = $(UTIL_SOURCES) omnimix.o libavs.a libjubeat.a
-DEF_SOURCES = jubeat.def avs.def
+MAIN_SOURCES = $(UTIL_SOURCES) src/festo/omnimix.o libavs.a libjubeat.a
+DEF_SOURCES = imports/jubeat.def imports/avs.def
 
 SOURCES_32 = $(foreach source,$(MAIN_SOURCES),build/32/$(source))
 SOURCES_64 = $(foreach source,$(MAIN_SOURCES),build/64/$(source))
