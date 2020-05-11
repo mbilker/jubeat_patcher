@@ -1,9 +1,11 @@
+#define LOG_MODULE "omnimix"
+
 #include <windows.h>
 #include <psapi.h>
 
 #include <stdint.h>
 
-#include "imports/avs.h"
+#include "imports/avs-core/avs.h"
 #include "imports/jubeat.h"
 
 #include "pattern/pattern.h"
@@ -20,39 +22,27 @@ struct patch_t {
     size_t data_offset;
 };
 
-// jubeat 2018081401:
-// 0xD0A67 offset in address space
 const uint8_t tutorial_skip_pattern[] = {
     0x3D, 0x21, 0x00, 0x00, 0x80, 0x75, 0x75, 0x56, 0x68, 0x00, 0x00, 0x60, 0x23, 0x57, 0xFF, 0x15,
 };
 const uint8_t tutorial_skip_data[] = { 0xE9, 0x01, 0x01, 0x00, 0x00 };
 
-// jubeat 2018081401:
-// 0xA6499 offset in address space
 const uint8_t select_timer_freeze_pattern[] = { 0x74, 0x00, 0xE8, 0x00, 0x00, 0x00, 0x00, 0x84, 0xC0, 0x75, 0x00, 0x38 };
 const bool select_timer_freeze_pattern_mask[] = { 1, 0, 1, 0, 0, 0, 0, 1, 1, 1, 0, 1 };
 const uint8_t select_timer_freeze_data[] = { 0xEB };
 
-// jubeat 2018081401:
-// 0x1F9F24 in address space
-const uint8_t packlist_omnilist_pattern[] = { 0x70, 0x61, 0x63, 0x6B, 0x6C, 0x69, 0x73, 0x74 };
-const uint8_t packlist_omnilist_data[] = { 0x6F, 0x6D, 0x6E, 0x69 };
+const uint8_t packlist_omnilist_pattern[] = { 'p', 'a', 'c', 'k', 'l', 'i', 's', 't' };
+const uint8_t packlist_omnilist_data[] = { 'o', 'm', 'n', 'i' };
 
-// jubeat 2018081401 music_db:
-// several offsets
 const uint8_t music_db_limit_pattern_1[] = { 0x00, 0x00, 0x20, 0x00, 0x57, 0xFF, 0x15 };
 const uint8_t music_db_limit_pattern_2[] = { 0x00, 0x00, 0x20, 0x00, 0x8B, 0xF8, 0x57 };
 const uint8_t music_db_limit_pattern_3[] = { 0x00, 0x00, 0x20, 0x00, 0x6A, 0x00, 0xFF };
 const uint8_t music_db_limit_pattern_4[] = { 0x00, 0x00, 0x20, 0x00, 0x50, 0x6A, 0x17 };
 const uint8_t music_db_limit_data[] = { 0x40 };
 
-// jubeat 2018081401 music_db:
-// 0x152CC in address space
-const uint8_t music_info_pattern[] = { 0x6D, 0x75, 0x73, 0x69, 0x63, 0x5F, 0x69, 0x6E, 0x66, 0x6F, 0x2E, 0x78, 0x6D, 0x6C };
-const uint8_t music_omni_data[] = { 0x6F, 0x6D, 0x6E, 0x69 };
+const uint8_t music_info_pattern[] = { 'm', 'u', 's', 'i', 'c', '_', 'i', 'n', 'f', 'o', '.', 'x', 'm', 'l' };
+const uint8_t music_omni_data[] = { 'o', 'm', 'n', 'i' };
 
-// jubeat 2018081401 music_db:
-// 0x278F offset in address space
 const uint8_t song_unlock_pattern[] = { 0xC4, 0x04, 0x84, 0xC0, 0x74, 0x09 };
 const uint8_t song_unlock_data[] = { 0x90, 0x90 };
 

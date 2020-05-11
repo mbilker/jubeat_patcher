@@ -1,6 +1,8 @@
 LIBRARY avs2-core
 
 EXPORTS
+    avs_strlcpy @224 NONAME
+    avs_snprintf @258 NONAME
     log_body_fatal @379 NONAME
     log_body_warning @380 NONAME
     log_body_info @381 NONAME

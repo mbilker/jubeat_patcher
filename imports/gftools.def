@@ -1,0 +1,4 @@
+LIBRARY gftools
+
+EXPORTS
+    GFSLPrintf
