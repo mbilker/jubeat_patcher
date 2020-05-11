@@ -1,8 +1,14 @@
+#ifdef VERBOSE
+#define LOG_MODULE "pattern"
+#endif
+
+#include <stdio.h>
+
 #include "pattern.h"
 
+#ifdef VERBOSE
 #include "util/log.h"
 
-#ifdef VERBOSE
 char *to_hex(const uint8_t *data, size_t data_len) {
     char *output = (char *) malloc(data_len * 3);
 
