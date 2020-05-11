@@ -1,0 +1,7 @@
+LIBRARY libavs-win32
+
+EXPORTS
+    log_body_fatal @355 NONAME
+    log_body_warning @356 NONAME
+    log_body_info @357 NONAME
+    log_body_misc @358 NONAME

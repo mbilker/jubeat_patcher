@@ -1,4 +1,4 @@
-subdir('avs-core')
+subdir('avs2-core')
 
 gftools_lib = custom_target(
     'gftools',

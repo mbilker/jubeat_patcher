@@ -5,7 +5,7 @@
 
 #include <stdint.h>
 
-#include "imports/avs-core/avs.h"
+#include "imports/avs2-core/avs.h"
 #include "imports/jubeat.h"
 
 #include "pattern/pattern.h"
