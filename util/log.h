@@ -8,11 +8,15 @@
 
 #include "defs.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /* Dynamically retargetable logging system modeled on (and potentially
    integrateable with) the one found in AVS2 */
 
 #ifndef LOG_MODULE
-#define LOG_MODULE "omnimix"
+#error "`LOG_MODULE` not defined"
 #endif
 
 #ifndef LOG_SUPPRESS
@@ -68,5 +72,9 @@ void log_writer_debug(void *ctx, const char *chars, size_t nchars);
 void log_writer_console(void *ctx, const char *chars, size_t nchars);
 void log_writer_file(void *ctx, const char *chars, size_t nchars);
 void log_writer_null(void *ctx, const char *chars, size_t nchars);
+
+#ifdef __cplusplus
+};
+#endif
 
 #endif

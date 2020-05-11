@@ -1,3 +1,5 @@
+#define LOG_MODULE
+
 #include "log.h"
 #include "str.h"
 
