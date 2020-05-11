@@ -1,0 +1,355 @@
+#define LOG_MODULE "extend"
+
+#include <vector>
+
+#include <windows.h>
+#include <dbghelp.h>
+#include <psapi.h>
+
+#include <stdint.h>
+
+#include "imports/avs2-core/avs.h"
+#include "imports/gftools.h"
+#include "imports/jubeat.h"
+
+#include "pattern/pattern.h"
+
+#include "util/log.h"
+
+#include "music_db.h"
+#include "pkfs.h"
+
+struct patch_t {
+    const char *name;
+    const std::vector<uint8_t> pattern;
+    const bool *pattern_mask;
+    const std::vector<uint8_t> data;
+    size_t data_offset;
+};
+
+const struct patch_t tutorial_skip {
+    .name = "tutorial skip",
+    .pattern = { 0x3D, 0x21, 0x00, 0x00, 0x80, 0x75, 0x75, 0x56, 0x68, 0x00, 0x00, 0x60, 0x23, 0x57, 0xFF, 0x15 },
+    .data = { 0xE9, 0x01, 0x01, 0x00, 0x00 },
+    .data_offset = 5,
+};
+
+const struct patch_t select_timer_freeze {
+    .name = "song select timer freeze",
+    .pattern = { 0x74, 0x00, 0xE8, 0x00, 0x00, 0x00, 0x00, 0x84, 0xC0, 0x75, 0x00, 0x38 },
+    .pattern_mask = (const bool[]) { 1, 0, 1, 0, 0, 0, 0, 1, 1, 1, 0, 1 },
+    .data = { 0xEB },
+    .data_offset = 9,
+};
+
+const struct patch_t packlist_pluslist {
+    .name = "pluslist patch",
+    .pattern = { 'p', 'a', 'c', 'k', 'l', 'i', 's', 't' },
+    .data = { 'p', 'l', 'u', 's' },
+    .data_offset = 0,
+};
+
+const struct patch_t music_db_limit_1 {
+    .name = "music_db limit patch 1",
+    .pattern = { 0x00, 0x00, 0x20, 0x00, 0x57, 0xFF, 0x15 },
+    .data = { 0x40 },
+    .data_offset = 2,
+};
+const struct patch_t music_db_limit_2 {
+    .name = "music_db limit patch 2",
+    .pattern = { 0x00, 0x00, 0x20, 0x00, 0x8B, 0xF8, 0x57 },
+    .data = { 0x40 },
+    .data_offset = 2,
+};
+const struct patch_t music_db_limit_3 {
+    .name = "music_db limit patch 3",
+    .pattern = { 0x00, 0x00, 0x20, 0x00, 0x6A, 0x00, 0xFF },
+    .data = { 0x40 },
+    .data_offset = 2,
+};
+const struct patch_t music_db_limit_4 {
+    .name = "music_db limit patch 4",
+    .pattern = { 0x00, 0x00, 0x20, 0x00, 0x50, 0x6A, 0x17 },
+    .data = { 0x40 },
+    .data_offset = 2,
+};
+
+const struct patch_t music_plus_patch {
+    .name = "music_plus patch",
+    .pattern = { 'm', 'u', 's', 'i', 'c', '_', 'i', 'n', 'f', 'o', '.', 'x', 'm', 'l' },
+    .data = { 'p', 'l', 'u', 's' },
+    .data_offset = 6,
+};
+
+const struct patch_t song_unlock_patch {
+    .name = "song unlock",
+    .pattern = { 0xC4, 0x04, 0x84, 0xC0, 0x74, 0x09 },
+    .data = { 0x90, 0x90 },
+    .data_offset = 4,
+};
+
+void do_write(HANDLE process, void *target, const std::vector<uint8_t> &data) {
+    DWORD old_protect;
+
+    if (!VirtualProtectEx(process, target, data.size(), PAGE_EXECUTE_READWRITE, &old_protect)) {
+        log_fatal("VirtualProtectEx (rwx) failed: 0x%08lx", GetLastError());
+    }
+
+    WriteProcessMemory(process, target, data.data(), data.size(), nullptr);
+    FlushInstructionCache(process, target, data.size());
+
+    if (!VirtualProtectEx(process, target, data.size(), old_protect, &old_protect)) {
+        log_fatal("VirtualProtectEx (old) failed: 0x%08lx", GetLastError());
+    }
+}
+
+void do_patch(HANDLE process, const MODULEINFO &module_info, const struct patch_t &patch) {
+#ifdef VERBOSE
+    char *hex_data;
+#endif
+    uint8_t *addr, *target;
+
+#ifdef VERBOSE
+    log_info("===== %s =====", patch.name);
+
+    hex_data = to_hex(patch.pattern.data(), patch.pattern.size());
+    log_info("pattern: %s", hex_data);
+    free(hex_data);
+
+    if (patch.pattern_mask != NULL) {
+        hex_data = to_hex(reinterpret_cast<const uint8_t *>(patch.pattern_mask), patch.pattern.size());
+        log_info("mask   : %s", hex_data);
+        free(hex_data);
+    }
+#endif
+
+    addr = find_pattern(
+            reinterpret_cast<uint8_t *>(module_info.lpBaseOfDll),
+            module_info.SizeOfImage,
+            patch.pattern.data(),
+            patch.pattern_mask,
+            patch.pattern.size());
+
+    if (addr != NULL) {
+#ifdef VERBOSE
+        hex_data = to_hex(addr, patch.pattern.size());
+        log_info("data: %s", hex_data);
+        free(hex_data);
+#endif
+
+        target = &addr[patch.data_offset];
+
+        do_write(process, target, patch.data);
+
+#ifdef VERBOSE
+        log_info("%s applied at %p", patch.name, target);
+
+        hex_data = to_hex(addr, patch.pattern.size());
+        log_info("data: %s", hex_data);
+        free(hex_data);
+#endif
+    } else {
+        log_warning("could not find %s base address", patch.name);
+    }
+}
+
+void hook_iat(
+        HANDLE process,
+        HMODULE module,
+        const char *target_module_name,
+        void *func_ptr,
+        void *target_func_ptr)
+{
+    IMAGE_IMPORT_DESCRIPTOR *import_descriptor;
+    unsigned long size;
+    const char *module_name;
+    IMAGE_THUNK_DATA *thunk_data;
+    void *target;
+    DWORD old_protect;
+
+    import_descriptor = reinterpret_cast<IMAGE_IMPORT_DESCRIPTOR *>(ImageDirectoryEntryToData(
+            module,
+            true,
+            IMAGE_DIRECTORY_ENTRY_IMPORT,
+            &size));
+
+    if (import_descriptor == nullptr) {
+        log_warning("failed to get import descriptor for module: 0x%08lx", GetLastError());
+        return;
+    }
+    if (size == 0) {
+        log_warning("no imports for module %p", module);
+        return;
+    }
+
+    while (import_descriptor->Name != 0) {
+        module_name = reinterpret_cast<const char *>(
+                reinterpret_cast<uintptr_t>(module) + static_cast<uintptr_t>(import_descriptor->Name));
+
+        if (_stricmp(module_name, target_module_name) == 0) {
+            break;
+        }
+
+        import_descriptor++;
+    }
+
+    if (import_descriptor->Name == 0) {
+        log_warning("failed to find import descriptor for '%s'", target_module_name);
+        return;
+    }
+
+    log_misc("found import descriptor for '%s' at %p", target_module_name, import_descriptor);
+
+    thunk_data = reinterpret_cast<IMAGE_THUNK_DATA *>(
+            reinterpret_cast<uintptr_t>(module) + static_cast<uintptr_t>(import_descriptor->FirstThunk));
+
+    while (thunk_data->u1.Function != 0) {
+        if (reinterpret_cast<void *>(thunk_data->u1.Function) == func_ptr) {
+            target = &thunk_data->u1.Function;
+            old_protect = 0;
+
+            if (!VirtualProtectEx(process, target, sizeof(thunk_data->u1.Function), PAGE_EXECUTE_READWRITE, &old_protect)) {
+                log_fatal("VirtualProtectEx (rwx) failed: 0x%08lx", GetLastError());
+            }
+
+            WriteProcessMemory(process, target, &target_func_ptr, sizeof(thunk_data->u1.Function), nullptr);
+            FlushInstructionCache(process, target, sizeof(thunk_data->u1.Function));
+
+            if (!VirtualProtectEx(process, target, sizeof(thunk_data->u1.Function), old_protect, &old_protect)) {
+                log_fatal("VirtualProtectEx (old) failed: 0x%08lx", GetLastError());
+            }
+
+            log_misc("patched %p in '%s' with %p", target, target_module_name, target_func_ptr);
+
+            break;
+        }
+
+        thunk_data++;
+    }
+}
+
+extern "C" bool __declspec(dllexport) dll_entry_init(char *sid_code, void *app_config) {
+    DWORD pid;
+    HANDLE process;
+    HMODULE jubeat_handle, music_db_handle, pkfs_handle;
+    MODULEINFO jubeat_info, music_db_info;
+#ifdef VERBOSE
+    uint8_t *jubeat, *music_db;
+#endif
+    uint8_t *pkfs;
+    FARPROC music_db_get_sequence_filename;
+    FARPROC music_db_get_sound_filename;
+
+    log_to_external(log_body_misc, log_body_info, log_body_warning, log_body_fatal);
+
+    log_info("jubeat extend hook by Felix v" OMNIMIX_VERSION " (Build " __DATE__ " " __TIME__ ")");
+
+    pid = GetCurrentProcessId();
+    process = OpenProcess(PROCESS_QUERY_INFORMATION | PROCESS_VM_OPERATION | PROCESS_VM_READ | PROCESS_VM_WRITE, false, pid);
+
+    if ((jubeat_handle = GetModuleHandleA("jubeat.dll")) == nullptr) {
+        log_fatal("GetModuleHandle(\"jubeat.dll\") failed: 0x%08lx", GetLastError());
+    }
+    if ((music_db_handle = GetModuleHandleA("music_db.dll")) == nullptr) {
+        log_fatal("GetModuleHandle(\"music_db.dll\") failed: 0x%08lx", GetLastError());
+    }
+    if ((pkfs_handle = GetModuleHandleA("pkfs.dll")) == nullptr) {
+        log_fatal("GetModuleHandle(\"pkfs.dll\") failed: 0x%08lx", GetLastError());
+    }
+
+#ifdef VERBOSE
+    jubeat = reinterpret_cast<uint8_t *>(jubeat_handle);
+    music_db = reinterpret_cast<uint8_t *>(music_db_handle);
+#endif
+
+    pkfs = reinterpret_cast<uint8_t *>(pkfs_handle);
+
+#ifdef VERBOSE
+    log_info("jubeat.dll = %p, music_db.dll = %p", jubeat, music_db);
+    log_info("sid_code = %s", sid_code);
+#endif
+
+    if (!GetModuleInformation(process, jubeat_handle, &jubeat_info, sizeof(jubeat_info))) {
+        log_fatal("GetModuleInformation(\"jubeat.dll\") failed: 0x%08lx", GetLastError());
+    }
+    if (!GetModuleInformation(process, music_db_handle, &music_db_info, sizeof(music_db_info))) {
+        log_fatal("GetModuleInformation(\"music_db.dll\") failed: 0x%08lx", GetLastError());
+    }
+
+    do_patch(process, jubeat_info, tutorial_skip);
+    do_patch(process, jubeat_info, select_timer_freeze);
+    //do_patch(process, jubeat_info, packlist_pluslist);
+    do_patch(process, music_db_info, music_db_limit_1);
+    do_patch(process, music_db_info, music_db_limit_2);
+    do_patch(process, music_db_info, music_db_limit_3);
+    do_patch(process, music_db_info, music_db_limit_4);
+    //do_patch(process, music_db_info, music_plus_patch);
+    do_patch(process, music_db_info, song_unlock_patch);
+
+    if ((music_db_get_sequence_filename = GetProcAddress(music_db_handle, "music_db_get_sequence_filename")) == nullptr) {
+        log_fatal("GetProcAddress(\"music_db.dll\", \"music_db_get_sequence_filename\") failed: 0x%08lx", GetLastError());
+    }
+    if ((music_db_get_sound_filename = GetProcAddress(music_db_handle, "music_db_get_sound_filename")) == nullptr) {
+        log_fatal("GetProcAddress(\"music_db.dll\", \"music_db_get_sound_filename\") failed: 0x%08lx", GetLastError());
+    }
+
+    hook_iat(
+            process,
+            jubeat_handle,
+            "music_db.dll",
+            reinterpret_cast<void *>(music_db_get_sequence_filename),
+            reinterpret_cast<void *>(music_db_get_sequence_filename_hook));
+    hook_iat(
+            process,
+            jubeat_handle,
+            "music_db.dll",
+            reinterpret_cast<void *>(music_db_get_sound_filename),
+            reinterpret_cast<void *>(music_db_get_sound_filename_hook));
+
+    {
+        uint32_t call = reinterpret_cast<uintptr_t>(pkfs_avs_strlcpy) -
+                reinterpret_cast<uintptr_t>(pkfs + 0x1935) -
+                5;
+
+        std::vector<uint8_t> strlcpy_patch_data(2 + sizeof(uint32_t));
+        strlcpy_patch_data[0] = 0xE8u;
+        *((uint32_t *) &strlcpy_patch_data[1]) = call;
+        strlcpy_patch_data[5] = 0x90u;
+
+        do_write(process, &pkfs[0x1935], strlcpy_patch_data);
+    }
+    {
+        uint32_t call = reinterpret_cast<uintptr_t>(pkfs_avs_strlen) -
+                reinterpret_cast<uintptr_t>(pkfs + 0x1959) -
+                5;
+
+        std::vector<uint8_t> strlen_patch(2 + sizeof(uint32_t));
+        strlen_patch[0] = 0xE8u;
+        *((uint32_t *) &strlen_patch[1]) = call;
+        strlen_patch[5] = 0x90u;
+
+        do_write(process, &pkfs[0x1959], strlen_patch);
+    }
+    {
+        std::vector<uint8_t> snprintf_patch(2 + sizeof(void *));
+        snprintf_patch[0] = 0xBEu;
+        *((uint32_t *) &snprintf_patch[1]) = reinterpret_cast<uint32_t>(pkfs_avs_snprintf);
+        snprintf_patch[5] = 0x90u;
+
+        do_write(process, &pkfs[0x19F3], snprintf_patch);
+    }
+
+    CloseHandle(process);
+
+    sid_code[5] = 'X';
+
+    return jb_dll_entry_init(sid_code, app_config);
+}
+
+extern "C" bool __declspec(dllexport) dll_entry_main(void) {
+    return jb_dll_entry_main();
+}
+
+BOOL WINAPI DllMain(HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpvReserved) {
+    return TRUE;
+}

@@ -1,1 +1,2 @@
+subdir('extend')
 subdir('omnimix')

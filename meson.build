@@ -1,6 +1,7 @@
 project(
     'autopatch',
     'c',
+    'cpp',
     version: '2.0',
     default_options: [
         'buildtype=release',
@@ -10,7 +11,8 @@ project(
         'b_vscrt=mt',
         'c_std=c11',
         'c_winlibs=[]',
-        'cpp_eh=none',
+        'cpp_eh=s',
+        'cpp_std=c++17',
     ],
 )
 
@@ -19,7 +21,10 @@ cc = meson.get_compiler('c')
 add_project_arguments(
     '-DWIN32_LEAN_AND_MEAN',
     '-DOMNIMIX_VERSION="2.0"',
-    language: 'c',
+    language: [
+        'c',
+        'cpp',
+    ]
 )
 
 if cc.get_argument_syntax() != 'msvc'
@@ -28,7 +33,10 @@ if cc.get_argument_syntax() != 'msvc'
         '-ffunction-sections',
         '-fdata-sections',
         '-fvisibility=hidden',
-        language: 'c',
+        language: [
+            'c',
+            'cpp',
+        ]
     )
 
     add_project_link_arguments(
@@ -37,10 +45,14 @@ if cc.get_argument_syntax() != 'msvc'
         '-Wl,--no-undefined',
         '-static',
         '-static-libgcc',
-        language: 'c',
+        language: [
+            'c',
+            'cpp',
+        ]
     )
 endif
 
+dbghelp_lib = cc.find_library('dbghelp')
 psapi_lib = cc.find_library('psapi')
 
 inc = include_directories('.')
@@ -50,5 +62,6 @@ subdir('imports')
 subdir('util')
 subdir('pattern')
 
+subdir('qubell')
 subdir('clan')
 subdir('festo')
