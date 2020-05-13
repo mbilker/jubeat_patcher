@@ -19,6 +19,15 @@
 #include "music_db.h"
 #include "pkfs.h"
 
+static const char *BNR_TEXTURES[] = {
+    "L44FO_BNR_J_EX_001",
+    "L44FO_BNR_J_EX_002",
+    "L44FO_BNR_J_EX_003",
+    "L44FO_BNR_J_EX_004",
+    "L44FO_BNR_J_EX_005",
+    "L44FO_BNR_J_99_999",
+};
+
 struct patch_t {
     const char *name;
     const std::vector<uint8_t> pattern;
@@ -88,22 +97,26 @@ const struct patch_t song_unlock_patch {
     .data_offset = 4,
 };
 
-void do_write(HANDLE process, void *target, const std::vector<uint8_t> &data) {
+static void do_write(HANDLE process, void *target, const void *data, size_t data_size) {
     DWORD old_protect;
 
-    if (!VirtualProtectEx(process, target, data.size(), PAGE_EXECUTE_READWRITE, &old_protect)) {
+    if (!VirtualProtectEx(process, target, data_size, PAGE_EXECUTE_READWRITE, &old_protect)) {
         log_fatal("VirtualProtectEx (rwx) failed: 0x%08lx", GetLastError());
     }
 
-    WriteProcessMemory(process, target, data.data(), data.size(), nullptr);
-    FlushInstructionCache(process, target, data.size());
+    WriteProcessMemory(process, target, data, data_size, nullptr);
+    FlushInstructionCache(process, target, data_size);
 
-    if (!VirtualProtectEx(process, target, data.size(), old_protect, &old_protect)) {
+    if (!VirtualProtectEx(process, target, data_size, old_protect, &old_protect)) {
         log_fatal("VirtualProtectEx (old) failed: 0x%08lx", GetLastError());
     }
 }
 
-void do_patch(HANDLE process, const MODULEINFO &module_info, const struct patch_t &patch) {
+static void do_write(HANDLE process, void *target, const std::vector<uint8_t> &data) {
+    do_write(process, target, data.data(), data.size());
+}
+
+static void do_patch(HANDLE process, const MODULEINFO &module_info, const struct patch_t &patch) {
 #ifdef VERBOSE
     char *hex_data;
 #endif
@@ -153,7 +166,7 @@ void do_patch(HANDLE process, const MODULEINFO &module_info, const struct patch_
     }
 }
 
-void hook_iat(
+static void hook_iat(
         HANDLE process,
         HMODULE module,
         const char *target_module_name,
@@ -165,7 +178,6 @@ void hook_iat(
     const char *module_name;
     IMAGE_THUNK_DATA *thunk_data;
     void *target;
-    DWORD old_protect;
 
     import_descriptor = reinterpret_cast<IMAGE_IMPORT_DESCRIPTOR *>(ImageDirectoryEntryToData(
             module,
@@ -206,19 +218,8 @@ void hook_iat(
     while (thunk_data->u1.Function != 0) {
         if (reinterpret_cast<void *>(thunk_data->u1.Function) == func_ptr) {
             target = &thunk_data->u1.Function;
-            old_protect = 0;
 
-            if (!VirtualProtectEx(process, target, sizeof(thunk_data->u1.Function), PAGE_EXECUTE_READWRITE, &old_protect)) {
-                log_fatal("VirtualProtectEx (rwx) failed: 0x%08lx", GetLastError());
-            }
-
-            WriteProcessMemory(process, target, &target_func_ptr, sizeof(thunk_data->u1.Function), nullptr);
-            FlushInstructionCache(process, target, sizeof(thunk_data->u1.Function));
-
-            if (!VirtualProtectEx(process, target, sizeof(thunk_data->u1.Function), old_protect, &old_protect)) {
-                log_fatal("VirtualProtectEx (old) failed: 0x%08lx", GetLastError());
-            }
-
+            do_write(process, target, &target_func_ptr, sizeof(thunk_data->u1.Function));
             log_misc("patched %p in '%s' with %p", target, target_module_name, target_func_ptr);
 
             break;
@@ -233,8 +234,9 @@ extern "C" bool __declspec(dllexport) dll_entry_init(char *sid_code, void *app_c
     HANDLE process;
     HMODULE jubeat_handle, music_db_handle, pkfs_handle;
     MODULEINFO jubeat_info, music_db_info;
+    uint8_t *jubeat;
 #ifdef VERBOSE
-    uint8_t *jubeat, *music_db;
+    uint8_t *music_db;
 #endif
     uint8_t *pkfs;
     FARPROC music_db_get_sequence_filename;
@@ -257,11 +259,10 @@ extern "C" bool __declspec(dllexport) dll_entry_init(char *sid_code, void *app_c
         log_fatal("GetModuleHandle(\"pkfs.dll\") failed: 0x%08lx", GetLastError());
     }
 
-#ifdef VERBOSE
     jubeat = reinterpret_cast<uint8_t *>(jubeat_handle);
+#ifdef VERBOSE
     music_db = reinterpret_cast<uint8_t *>(music_db_handle);
 #endif
-
     pkfs = reinterpret_cast<uint8_t *>(pkfs_handle);
 
 #ifdef VERBOSE
@@ -278,12 +279,12 @@ extern "C" bool __declspec(dllexport) dll_entry_init(char *sid_code, void *app_c
 
     do_patch(process, jubeat_info, tutorial_skip);
     do_patch(process, jubeat_info, select_timer_freeze);
-    //do_patch(process, jubeat_info, packlist_pluslist);
+    do_patch(process, jubeat_info, packlist_pluslist);
     do_patch(process, music_db_info, music_db_limit_1);
     do_patch(process, music_db_info, music_db_limit_2);
     do_patch(process, music_db_info, music_db_limit_3);
     do_patch(process, music_db_info, music_db_limit_4);
-    //do_patch(process, music_db_info, music_plus_patch);
+    do_patch(process, music_db_info, music_plus_patch);
     do_patch(process, music_db_info, song_unlock_patch);
 
     if ((music_db_get_sequence_filename = GetProcAddress(music_db_handle, "music_db_get_sequence_filename")) == nullptr) {
@@ -306,42 +307,80 @@ extern "C" bool __declspec(dllexport) dll_entry_init(char *sid_code, void *app_c
             reinterpret_cast<void *>(music_db_get_sound_filename),
             reinterpret_cast<void *>(music_db_get_sound_filename_hook));
 
+    // TODO(felix): make these patches version agnostic by using patterns
+
+    struct addr_relative_replacement {
+        uint8_t opcode;
+        uint32_t addr_offset;
+        uint8_t nop;
+    } __attribute__((packed));
+
     {
         uint32_t call = reinterpret_cast<uintptr_t>(pkfs_avs_strlcpy) -
                 reinterpret_cast<uintptr_t>(pkfs + 0x1935) -
                 5;
 
-        std::vector<uint8_t> strlcpy_patch_data(2 + sizeof(uint32_t));
-        strlcpy_patch_data[0] = 0xE8u;
-        *((uint32_t *) &strlcpy_patch_data[1]) = call;
-        strlcpy_patch_data[5] = 0x90u;
-
-        do_write(process, &pkfs[0x1935], strlcpy_patch_data);
+        struct addr_relative_replacement strlcpy_patch {
+            .opcode = 0xE8u,
+            .addr_offset = call,
+            .nop = 0x90u,
+        };
+        do_write(process, &pkfs[0x1935], &strlcpy_patch, sizeof(strlcpy_patch));
     }
     {
         uint32_t call = reinterpret_cast<uintptr_t>(pkfs_avs_strlen) -
                 reinterpret_cast<uintptr_t>(pkfs + 0x1959) -
                 5;
 
-        std::vector<uint8_t> strlen_patch(2 + sizeof(uint32_t));
-        strlen_patch[0] = 0xE8u;
-        *((uint32_t *) &strlen_patch[1]) = call;
-        strlen_patch[5] = 0x90u;
-
-        do_write(process, &pkfs[0x1959], strlen_patch);
+        struct addr_relative_replacement strlen_patch {
+            .opcode = 0xE8u,
+            .addr_offset = call,
+            .nop = 0x90u,
+        };
+        do_write(process, &pkfs[0x1959], &strlen_patch, sizeof(strlen_patch));
     }
     {
-        std::vector<uint8_t> snprintf_patch(2 + sizeof(void *));
-        snprintf_patch[0] = 0xBEu;
-        *((uint32_t *) &snprintf_patch[1]) = reinterpret_cast<uint32_t>(pkfs_avs_snprintf);
-        snprintf_patch[5] = 0x90u;
-
-        do_write(process, &pkfs[0x19F3], snprintf_patch);
+        struct addr_relative_replacement snprintf_patch {
+            .opcode = 0xBEu,
+            .addr_offset = reinterpret_cast<uint32_t>(pkfs_avs_snprintf),
+            .nop = 0x90u,
+        };
+        do_write(process, &pkfs[0x19F3], &snprintf_patch, sizeof(snprintf_patch));
     }
+
+#ifdef VERBOSE
+    for (size_t i = 0; i < 16; i++) {
+        char *hex_data = to_hex(&jubeat[0xC6DD + i * 8], 8);
+        log_info("data: %s", hex_data);
+        free(hex_data);
+    }
+    for (size_t i = 0; i < 5; i++) {
+        char *hex_data = to_hex(&jubeat[0xC76D + i * 11], 11);
+        log_info("data: %s", hex_data);
+        free(hex_data);
+    }
+    {
+        char *hex_data = to_hex(&jubeat[0xC7ED], 5);
+        log_info("data: %s", hex_data);
+        free(hex_data);
+    }
+#endif
+
+    for (size_t i = 0; i < std::size(BNR_TEXTURES); i++) {
+        do_write(process, &jubeat[0xC6DD + i * 8 + 4], &BNR_TEXTURES[i], 4);
+    }
+    for (size_t i = std::size(BNR_TEXTURES); i < 16; i++) {
+        do_write(process, &jubeat[0xC6DD + i * 8 + 4], (const uint8_t[]) { 0, 0, 0, 0 }, 4);
+    }
+    for (size_t i = 0; i < 5; i++) {
+        do_write(process, &jubeat[0xC76D + i * 11 + 7], (const uint8_t[]) { 0, 0, 0, 0 }, 4);
+    }
+
+    do_write(process, &jubeat[0xC7ED + 1], &BNR_TEXTURES[0], 4);
 
     CloseHandle(process);
 
-    sid_code[5] = 'X';
+    sid_code[5] = 'Y';
 
     return jb_dll_entry_init(sid_code, app_config);
 }

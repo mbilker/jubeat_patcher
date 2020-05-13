@@ -21,6 +21,7 @@ cc = meson.get_compiler('c')
 add_project_arguments(
     '-DWIN32_LEAN_AND_MEAN',
     '-DOMNIMIX_VERSION="2.0"',
+    #'-DVERBOSE',
     language: [
         'c',
         'cpp',
@@ -62,6 +63,6 @@ subdir('imports')
 subdir('util')
 subdir('pattern')
 
-subdir('qubell')
+#subdir('qubell')
 subdir('clan')
 subdir('festo')
