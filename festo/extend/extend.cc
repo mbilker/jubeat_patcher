@@ -380,9 +380,13 @@ extern "C" bool __declspec(dllexport) dll_entry_init(char *sid_code, void *app_c
 
     CloseHandle(process);
 
+    bool ret = jb_dll_entry_init(sid_code, app_config);
+
+    // Set `rev` to indicate extend
     sid_code[5] = 'Y';
 
-    return jb_dll_entry_init(sid_code, app_config);
+    return ret;
+
 }
 
 extern "C" bool __declspec(dllexport) dll_entry_main(void) {
