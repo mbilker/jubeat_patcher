@@ -230,8 +230,13 @@ bool __declspec(dllexport) dll_entry_init(char *sid_code, void *app_config) {
 
     CloseHandle(process);
 
+    // Prevent the game from overriding the `rev` field
+    SetEnvironmentVariableA("MB_MODEL", "----");
+
+    // Set `rev` to indicate omnimix
     sid_code[5] = 'X';
 
+    // Call original
     return jb_dll_entry_init(sid_code, app_config);
 }
 
