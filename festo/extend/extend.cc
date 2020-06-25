@@ -64,9 +64,15 @@ const struct patch_t music_db_limit_1 {
     .data = { 0x40 },
     .data_offset = 2,
 };
-const struct patch_t music_db_limit_2 {
-    .name = "music_db limit patch 2",
+const struct patch_t music_db_limit_2_old {
+    .name = "music_db limit patch 2 (old)",
     .pattern = { 0x00, 0x00, 0x20, 0x00, 0x8B, 0xF8, 0x57 },
+    .data = { 0x40 },
+    .data_offset = 2,
+};
+const struct patch_t music_db_limit_2_new {
+    .name = "music_db limit patch 2 (new)",
+    .pattern = { 0x00, 0x00, 0x20, 0x00, 0x53, 0x6A, 0x01 },
     .data = { 0x40 },
     .data_offset = 2,
 };
@@ -129,7 +135,7 @@ static void do_patch(HANDLE process, const MODULEINFO &module_info, const struct
     log_info("pattern: %s", hex_data);
     free(hex_data);
 
-    if (patch.pattern_mask != NULL) {
+    if (patch.pattern_mask != nullptr) {
         hex_data = to_hex(reinterpret_cast<const uint8_t *>(patch.pattern_mask), patch.pattern.size());
         log_info("mask   : %s", hex_data);
         free(hex_data);
@@ -143,7 +149,7 @@ static void do_patch(HANDLE process, const MODULEINFO &module_info, const struct
             patch.pattern_mask,
             patch.pattern.size());
 
-    if (addr != NULL) {
+    if (addr != nullptr) {
 #ifdef VERBOSE
         hex_data = to_hex(addr, patch.pattern.size());
         log_info("data: %s", hex_data);
@@ -281,7 +287,8 @@ extern "C" bool __declspec(dllexport) dll_entry_init(char *sid_code, void *app_c
     do_patch(process, jubeat_info, select_timer_freeze);
     do_patch(process, jubeat_info, packlist_pluslist);
     do_patch(process, music_db_info, music_db_limit_1);
-    do_patch(process, music_db_info, music_db_limit_2);
+    do_patch(process, music_db_info, music_db_limit_2_old);
+    do_patch(process, music_db_info, music_db_limit_2_new);
     do_patch(process, music_db_info, music_db_limit_3);
     do_patch(process, music_db_info, music_db_limit_4);
     do_patch(process, music_db_info, music_plus_patch);
