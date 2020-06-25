@@ -374,16 +374,14 @@ extern "C" bool __declspec(dllexport) dll_entry_init(char *sid_code, void *app_c
     for (size_t i = std::size(BNR_TEXTURES); i < 18; i++) {
         do_write(process, &jubeat[0xC6DD + i * 8 + 4], (const uint8_t[]) { 0, 0, 0, 0 }, 4);
     }
-    // Add the additional textures
-    for (size_t i = 0; i < 4; i++) {
+    // Overwrite the other part of the list that uses a different store instruction
+    for (size_t i = 0; i < 5; i++) {
         if (i + 18 < std::size(BNR_TEXTURES)) {
             do_write(process, &jubeat[0xC76D + i * 11 + 7], &BNR_TEXTURES[i + 18], 4);
         } else {
             do_write(process, &jubeat[0xC76D + i * 11 + 7], (const uint8_t[]) { 0, 0, 0, 0 }, 4);
         }
     }
-    // Ensure the last entry is a null so the loop terminates
-    do_write(process, &jubeat[0xC76D + 4 * 11 + 7], (const uint8_t[]) { 0, 0, 0, 0 }, 4);
 
     // Write the loop starting value
     do_write(process, &jubeat[0xC7ED + 1], &BNR_TEXTURES[0], 4);
