@@ -349,7 +349,7 @@ extern "C" bool __declspec(dllexport) dll_entry_init(char *sid_code, void *app_c
     }
 
 #ifdef VERBOSE
-    for (size_t i = 0; i < 16; i++) {
+    for (size_t i = 0; i < 18; i++) {
         char *hex_data = to_hex(&jubeat[0xC6DD + i * 8], 8);
         log_info("data: %s", hex_data);
         free(hex_data);
@@ -366,16 +366,26 @@ extern "C" bool __declspec(dllexport) dll_entry_init(char *sid_code, void *app_c
     }
 #endif
 
-    for (size_t i = 0; i < std::size(BNR_TEXTURES); i++) {
+    // Overwrite the pointers to point into our texture list
+    for (size_t i = 0; i < std::min(std::size(BNR_TEXTURES), 18u); i++) {
         do_write(process, &jubeat[0xC6DD + i * 8 + 4], &BNR_TEXTURES[i], 4);
     }
-    for (size_t i = std::size(BNR_TEXTURES); i < 16; i++) {
+    // Overwrite the rest of the list with null pointers
+    for (size_t i = std::size(BNR_TEXTURES); i < 18; i++) {
         do_write(process, &jubeat[0xC6DD + i * 8 + 4], (const uint8_t[]) { 0, 0, 0, 0 }, 4);
     }
-    for (size_t i = 0; i < 5; i++) {
-        do_write(process, &jubeat[0xC76D + i * 11 + 7], (const uint8_t[]) { 0, 0, 0, 0 }, 4);
+    // Add the additional textures
+    for (size_t i = 0; i < 4; i++) {
+        if (i + 18 < std::size(BNR_TEXTURES)) {
+            do_write(process, &jubeat[0xC76D + i * 11 + 7], &BNR_TEXTURES[i + 18], 4);
+        } else {
+            do_write(process, &jubeat[0xC76D + i * 11 + 7], (const uint8_t[]) { 0, 0, 0, 0 }, 4);
+        }
     }
+    // Ensure the last entry is a null so the loop terminates
+    do_write(process, &jubeat[0xC76D + 4 * 11 + 7], (const uint8_t[]) { 0, 0, 0, 0 }, 4);
 
+    // Write the loop starting value
     do_write(process, &jubeat[0xC7ED + 1], &BNR_TEXTURES[0], 4);
 
     CloseHandle(process);
