@@ -34,6 +34,7 @@ if cc.get_argument_syntax() != 'msvc'
         '-ffunction-sections',
         '-fdata-sections',
         '-fvisibility=hidden',
+        '-masm=intel',
         language: [
             'c',
             'cpp',

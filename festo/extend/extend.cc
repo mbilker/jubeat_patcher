@@ -19,6 +19,7 @@
 #include "music_db.h"
 #include "pkfs.h"
 
+static void *D3_PACKAGE_LOAD = nullptr;
 static const char *BNR_TEXTURES[] = {
     "L44FO_BNR_J_EX_001",
     "L44FO_BNR_J_EX_002",
@@ -103,23 +104,52 @@ const struct patch_t song_unlock_patch {
     .data_offset = 4,
 };
 
-static void do_write(HANDLE process, void *target, const void *data, size_t data_size) {
+static DWORD memory_make_rw(HANDLE process, void *target, size_t data_size) {
     DWORD old_protect;
 
     if (!VirtualProtectEx(process, target, data_size, PAGE_EXECUTE_READWRITE, &old_protect)) {
         log_fatal("VirtualProtectEx (rwx) failed: 0x%08lx", GetLastError());
     }
 
-    WriteProcessMemory(process, target, data, data_size, nullptr);
-    FlushInstructionCache(process, target, data_size);
+    return old_protect;
+}
 
+static void memory_restore_old(HANDLE process, void *target, size_t data_size, DWORD old_protect) {
     if (!VirtualProtectEx(process, target, data_size, old_protect, &old_protect)) {
         log_fatal("VirtualProtectEx (old) failed: 0x%08lx", GetLastError());
     }
 }
 
+static void do_write(HANDLE process, void *target, const void *data, size_t data_size) {
+    DWORD old_protect;
+
+    old_protect = memory_make_rw(process, target, data_size);
+
+    WriteProcessMemory(process, target, data, data_size, nullptr);
+    FlushInstructionCache(process, target, data_size);
+
+    memory_restore_old(process, target, data_size, old_protect);
+}
+
 static void do_write(HANDLE process, void *target, const std::vector<uint8_t> &data) {
     do_write(process, target, data.data(), data.size());
+}
+
+static void do_set(HANDLE process, void *target, uint8_t data_value, size_t data_size) {
+    void *buf;
+
+    buf = HeapAlloc(GetProcessHeap(), 0, data_size);
+
+    if (buf == nullptr) {
+        log_fatal("HeapAlloc(%u) failed: 0x%08lx", data_size, GetLastError());
+    }
+
+    // Fill the allocated buffer with the value desired
+    memset(buf, data_value, data_size);
+
+    do_write(process, target, buf, data_size);
+
+    HeapFree(GetProcessHeap(), 0, buf);
 }
 
 static void do_patch(HANDLE process, const MODULEINFO &module_info, const struct patch_t &patch) {
@@ -233,6 +263,114 @@ static void hook_iat(
 
         thunk_data++;
     }
+}
+
+static void __cdecl banner_load_hook() {
+    for (const char *bnr_package : BNR_TEXTURES) {
+        __asm__(
+            "push esp\n"
+            "mov ecx, %0\n"
+            "call %1\n"
+            "pop esp"
+            :
+            : "r" (bnr_package), "r" (D3_PACKAGE_LOAD)
+            // 2020021900 saves `ebx`, `ebp`, `edi`, and `esi` in `D3_PACKAGE_LOAD`
+            : "eax", "ecx", "edx"
+        );
+    }
+}
+
+static void hook_banner_textures(HANDLE process, const MODULEINFO &module_info) {
+    // Unique pattern for prologue for banner texture loading
+    // add esp, 12
+    // mov ecx, 12
+    const uint8_t prologue_pattern[] = { 0x83, 0xC4, 0x0C, 0xB9, 0x0C, 0x00, 0x00, 0x00 };
+
+    // Pattern to get the `jz` for the loop
+    const uint8_t loop_jz_pattern[] = { 0x85, 0xC0, 0x74 };
+
+    // Pattern to get the `inc`, `test`, `jnz` portion of the loop
+    const uint8_t loop_jnz_pattern[] = { 0x46, 0x85, 0xC0, 0x75 };
+
+    // Pattern to get the D3 texture load function address
+    const uint8_t d3_package_load_pattern[] = { 0x8B, 0xC8, 0xE8, 0x00, 0x00, 0x00, 0x00 };
+    const bool d3_package_load_pattern_mask[] = { 1, 1, 1, 0, 0, 0, 0 };
+
+    void *base_addr = find_pattern(
+            reinterpret_cast<uint8_t *>(module_info.lpBaseOfDll),
+            module_info.SizeOfImage,
+            prologue_pattern,
+            nullptr,
+            std::size(prologue_pattern));
+
+    log_assert(base_addr != nullptr);
+
+    void *loop_jz_addr = find_pattern(
+            reinterpret_cast<uint8_t *>(base_addr),
+            module_info.SizeOfImage - reinterpret_cast<uintptr_t>(base_addr),
+            loop_jz_pattern,
+            nullptr,
+            std::size(loop_jz_pattern));
+
+    log_assert(loop_jz_addr != nullptr);
+
+    // Offset to actual `jz` instruction from base of pattern
+    loop_jz_addr = reinterpret_cast<uint8_t *>(loop_jz_addr) + 2;
+
+    void *loop_jnz_addr = find_pattern(
+            reinterpret_cast<uint8_t *>(loop_jz_addr),
+            module_info.SizeOfImage - reinterpret_cast<uintptr_t>(loop_jz_addr),
+            loop_jnz_pattern,
+            nullptr,
+            std::size(loop_jnz_pattern));
+
+    log_assert(loop_jnz_addr != nullptr);
+
+    void *d3_package_load_call_addr = find_pattern(
+            reinterpret_cast<uint8_t *>(loop_jz_addr),
+            reinterpret_cast<uintptr_t>(loop_jnz_addr) - reinterpret_cast<uintptr_t>(loop_jz_addr),
+            d3_package_load_pattern,
+            d3_package_load_pattern_mask,
+            std::size(d3_package_load_pattern));
+
+    log_assert(d3_package_load_call_addr != nullptr);
+
+    {
+        // Compute address to the `E8 xx xx xx xx` (relative jump) instruction
+        uintptr_t jump_addr = reinterpret_cast<uintptr_t>(d3_package_load_call_addr) + 2;
+
+        // Load the offset from the relative jump instruction
+        uint32_t offset = *reinterpret_cast<uint32_t *>(jump_addr + 1);
+
+        // Compute and save the absolute address of the function for later
+        D3_PACKAGE_LOAD = reinterpret_cast<void *>(jump_addr + 5 + offset);
+    }
+
+    struct call_replacement {
+        uint8_t load_opcode;
+        uint32_t addr;
+        uint8_t call_opcode;
+        uint8_t reg_index;
+    } __attribute__((packed));
+
+    {
+        struct call_replacement d3_package_load_call_replacement {
+            .load_opcode = 0xB8,
+            .addr = reinterpret_cast<uint32_t>(banner_load_hook),
+            .call_opcode = 0xFF,
+            .reg_index = 0xD0,
+        };
+        static_assert(sizeof(d3_package_load_call_replacement) == sizeof(d3_package_load_pattern));
+
+        do_write(
+                process,
+                d3_package_load_call_addr,
+                &d3_package_load_call_replacement,
+                sizeof(d3_package_load_call_replacement));
+    }
+
+    // `nop` out the loop increment and jump part (adding one to include the jump target)
+    do_set(process, loop_jnz_addr, 0x90, sizeof(loop_jnz_pattern) + 1);
 }
 
 extern "C" bool __declspec(dllexport) dll_entry_init(char *sid_code, void *app_config) {
@@ -355,6 +493,9 @@ extern "C" bool __declspec(dllexport) dll_entry_init(char *sid_code, void *app_c
         do_write(process, &pkfs[0x19F3], &snprintf_patch, sizeof(snprintf_patch));
     }
 
+    hook_banner_textures(process, jubeat_info);
+
+    /*
 #ifdef VERBOSE
     for (size_t i = 0; i < 18; i++) {
         char *hex_data = to_hex(&jubeat[0xC6DD + i * 8], 8);
@@ -392,6 +533,7 @@ extern "C" bool __declspec(dllexport) dll_entry_init(char *sid_code, void *app_c
 
     // Write the loop starting value
     do_write(process, &jubeat[0xC7ED + 1], &BNR_TEXTURES[0], 4);
+    */
 
     CloseHandle(process);
 
