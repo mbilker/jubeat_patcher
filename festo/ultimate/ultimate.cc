@@ -41,7 +41,7 @@ static const char *BNR_TEXTURES[] = {
 	"L44FO_BNR_J_09_011",
 	"L44FO_BNR_J_09_012",
 	"L44FO_BNR_J_09_014",
-	"L44FO_BNR_J_09_MISSING",
+	"L44FO_BNR_J_09_MIS",
     "L44FO_BNR_J_EX_001",
     "L44FO_BNR_J_EX_002",
     "L44FO_BNR_J_EX_003",
@@ -388,16 +388,24 @@ extern "C" bool __declspec(dllexport) dll_entry_init(char *sid_code, void *app_c
     }
 #endif
 
-    for (size_t i = 0; i < std::size(BNR_TEXTURES); i++) {
+    // Overwrite the pointers to point into our texture list
+    for (size_t i = 0; i < std::min(std::size(BNR_TEXTURES), 18u); i++) {
         do_write(process, &jubeat[0xC6DD + i * 8 + 4], &BNR_TEXTURES[i], 4);
     }
-    for (size_t i = std::size(BNR_TEXTURES); i < 16; i++) {
+    // Overwrite the rest of the list with null pointers
+    for (size_t i = std::size(BNR_TEXTURES); i < 18; i++) {
         do_write(process, &jubeat[0xC6DD + i * 8 + 4], (const uint8_t[]) { 0, 0, 0, 0 }, 4);
     }
+    // Overwrite the other part of the list that uses a different store instruction
     for (size_t i = 0; i < 5; i++) {
-        do_write(process, &jubeat[0xC76D + i * 11 + 7], (const uint8_t[]) { 0, 0, 0, 0 }, 4);
+        if (i + 18 < std::size(BNR_TEXTURES)) {
+            do_write(process, &jubeat[0xC76D + i * 11 + 7], &BNR_TEXTURES[i + 18], 4);
+        } else {
+            do_write(process, &jubeat[0xC76D + i * 11 + 7], (const uint8_t[]) { 0, 0, 0, 0 }, 4);
+        }
     }
 
+    // Write the loop starting value
     do_write(process, &jubeat[0xC7ED + 1], &BNR_TEXTURES[0], 4);
 
     CloseHandle(process);
