@@ -4,7 +4,6 @@ shared_library(
     include_directories: inc,
     implicit_include_directories: false,
     dependencies: [
-        dbghelp_lib,
         psapi_lib,
     ],
     link_with: [
@@ -12,6 +11,7 @@ shared_library(
         gftools_lib,
         jubeat_lib,
         pattern_lib,
+        pe_lib,
         util_lib,
     ],
     sources: [

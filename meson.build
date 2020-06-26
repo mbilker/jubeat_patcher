@@ -63,6 +63,7 @@ subdir('imports')
 
 subdir('util')
 subdir('pattern')
+subdir('pe')
 
 #subdir('qubell')
 subdir('clan')

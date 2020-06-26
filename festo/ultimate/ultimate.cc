@@ -3,7 +3,6 @@
 #include <vector>
 
 #include <windows.h>
-#include <dbghelp.h>
 #include <psapi.h>
 
 #include <stdint.h>
@@ -13,6 +12,8 @@
 #include "imports/jubeat.h"
 
 #include "pattern/pattern.h"
+
+#include "pe/iat.h"
 
 #include "util/log.h"
 #include "util/mem.h"
@@ -170,69 +171,6 @@ static void do_patch(HANDLE process, const MODULEINFO &module_info, const struct
     }
 }
 
-static void hook_iat(
-        HANDLE process,
-        HMODULE module,
-        const char *target_module_name,
-        void *func_ptr,
-        void *target_func_ptr)
-{
-    IMAGE_IMPORT_DESCRIPTOR *import_descriptor;
-    unsigned long size;
-    const char *module_name;
-    IMAGE_THUNK_DATA *thunk_data;
-    void *target;
-
-    import_descriptor = reinterpret_cast<IMAGE_IMPORT_DESCRIPTOR *>(ImageDirectoryEntryToData(
-            module,
-            true,
-            IMAGE_DIRECTORY_ENTRY_IMPORT,
-            &size));
-
-    if (import_descriptor == nullptr) {
-        log_warning("failed to get import descriptor for module: 0x%08lx", GetLastError());
-        return;
-    }
-    if (size == 0) {
-        log_warning("no imports for module %p", module);
-        return;
-    }
-
-    while (import_descriptor->Name != 0) {
-        module_name = reinterpret_cast<const char *>(
-                reinterpret_cast<uintptr_t>(module) + static_cast<uintptr_t>(import_descriptor->Name));
-
-        if (_stricmp(module_name, target_module_name) == 0) {
-            break;
-        }
-
-        import_descriptor++;
-    }
-
-    if (import_descriptor->Name == 0) {
-        log_warning("failed to find import descriptor for '%s'", target_module_name);
-        return;
-    }
-
-    log_misc("found import descriptor for '%s' at %p", target_module_name, import_descriptor);
-
-    thunk_data = reinterpret_cast<IMAGE_THUNK_DATA *>(
-            reinterpret_cast<uintptr_t>(module) + static_cast<uintptr_t>(import_descriptor->FirstThunk));
-
-    while (thunk_data->u1.Function != 0) {
-        if (reinterpret_cast<void *>(thunk_data->u1.Function) == func_ptr) {
-            target = &thunk_data->u1.Function;
-
-            do_write(process, target, &target_func_ptr, sizeof(thunk_data->u1.Function));
-            log_misc("patched %p in '%s' with %p", target, target_module_name, target_func_ptr);
-
-            break;
-        }
-
-        thunk_data++;
-    }
-}
-
 extern "C" bool __declspec(dllexport) dll_entry_init(char *sid_code, void *app_config) {
     DWORD pid;
     HANDLE process;
@@ -243,8 +181,6 @@ extern "C" bool __declspec(dllexport) dll_entry_init(char *sid_code, void *app_c
     uint8_t *music_db;
 #endif
     uint8_t *pkfs;
-    FARPROC music_db_get_sequence_filename;
-    FARPROC music_db_get_sound_filename;
 
     log_to_external(log_body_misc, log_body_info, log_body_warning, log_body_fatal);
 
@@ -291,24 +227,17 @@ extern "C" bool __declspec(dllexport) dll_entry_init(char *sid_code, void *app_c
     do_patch(process, music_db_info, music_plus_patch);
     do_patch(process, music_db_info, song_unlock_patch);
 
-    if ((music_db_get_sequence_filename = GetProcAddress(music_db_handle, "music_db_get_sequence_filename")) == nullptr) {
-        log_fatal("GetProcAddress(\"music_db.dll\", \"music_db_get_sequence_filename\") failed: 0x%08lx", GetLastError());
-    }
-    if ((music_db_get_sound_filename = GetProcAddress(music_db_handle, "music_db_get_sound_filename")) == nullptr) {
-        log_fatal("GetProcAddress(\"music_db.dll\", \"music_db_get_sound_filename\") failed: 0x%08lx", GetLastError());
-    }
-
     hook_iat(
             process,
             jubeat_handle,
             "music_db.dll",
-            reinterpret_cast<void *>(music_db_get_sequence_filename),
+            "music_db_get_sequence_filename",
             reinterpret_cast<void *>(music_db_get_sequence_filename_hook));
     hook_iat(
             process,
             jubeat_handle,
             "music_db.dll",
-            reinterpret_cast<void *>(music_db_get_sound_filename),
+            "music_db_get_sound_filename",
             reinterpret_cast<void *>(music_db_get_sound_filename_hook));
 
     // TODO(felix): make these patches version agnostic by using patterns
