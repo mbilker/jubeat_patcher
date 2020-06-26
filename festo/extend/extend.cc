@@ -15,6 +15,8 @@
 #include "pattern/pattern.h"
 
 #include "util/log.h"
+#include "util/mem.h"
+#include "util/x86.h"
 
 #include "music_db.h"
 #include "pkfs.h"
@@ -109,90 +111,6 @@ static const char *BNR_TEXTURES[] = {
     "L44FO_BNR_J_99_999",
 };
 
-static DWORD memory_make_rw(HANDLE process, void *target, size_t data_size) {
-    DWORD old_protect;
-
-    if (!VirtualProtectEx(process, target, data_size, PAGE_EXECUTE_READWRITE, &old_protect)) {
-        log_fatal("VirtualProtectEx (rwx) failed: 0x%08lx", GetLastError());
-    }
-
-    return old_protect;
-}
-
-static void memory_restore_old(HANDLE process, void *target, size_t data_size, DWORD old_protect) {
-    if (!VirtualProtectEx(process, target, data_size, old_protect, &old_protect)) {
-        log_fatal("VirtualProtectEx (old) failed: 0x%08lx", GetLastError());
-    }
-}
-
-static void do_write(HANDLE process, void *target, const void *data, size_t data_size) {
-    DWORD old_protect;
-
-    old_protect = memory_make_rw(process, target, data_size);
-
-    WriteProcessMemory(process, target, data, data_size, nullptr);
-    FlushInstructionCache(process, target, data_size);
-
-    memory_restore_old(process, target, data_size, old_protect);
-}
-
-static void do_write(HANDLE process, void *target, const std::vector<uint8_t> &data) {
-    do_write(process, target, data.data(), data.size());
-}
-
-static void do_set(HANDLE process, void *target, uint8_t data_value, size_t data_size) {
-    void *buf;
-
-    buf = HeapAlloc(GetProcessHeap(), 0, data_size);
-
-    if (buf == nullptr) {
-        log_fatal("HeapAlloc(%u) failed: 0x%08lx", data_size, GetLastError());
-    }
-
-    // Fill the allocated buffer with the value desired
-    memset(buf, data_value, data_size);
-
-    do_write(process, target, buf, data_size);
-
-    HeapFree(GetProcessHeap(), 0, buf);
-}
-
-// For changing data segment calls (`FF yy xx xx xx xx`) to relative jumps (`E8 xx xx xx xx 90`)
-static void do_relative_jmp(HANDLE process, void *target, const void *new_addr) {
-    struct addr_relative_replacement {
-        uint8_t opcode;
-        uint32_t addr_offset;
-        uint8_t nop;
-    } __attribute__((packed));
-
-    uint32_t offset = reinterpret_cast<uintptr_t>(new_addr) -
-            reinterpret_cast<uintptr_t>(target) -
-            sizeof(addr_relative_replacement) + 1;
-
-    const struct addr_relative_replacement data {
-        .opcode = 0xE8u,
-        .addr_offset = offset,
-        .nop = 0x90u,
-    };
-    do_write(process, target, &data, sizeof(data));
-}
-
-// For changing data segment loads (`8B yy xx xx xx xx`) to absolute pointers (`BE xx xx xx xx 90`)
-static void do_absolute_jmp(HANDLE process, void *target, const void *new_addr) {
-    struct addr_relative_replacement {
-        uint8_t opcode;
-        uint32_t addr_offset;
-        uint8_t nop;
-    } __attribute__((packed));
-
-    const struct addr_relative_replacement data {
-        .opcode = 0xBEu,
-        .addr_offset = reinterpret_cast<uint32_t>(new_addr),
-        .nop = 0x90u,
-    };
-    do_write(process, target, &data, sizeof(data));
-}
-
 static void do_patch(HANDLE process, const MODULEINFO &module_info, const struct patch_t &patch) {
 #ifdef VERBOSE
     char *hex_data;
@@ -229,7 +147,7 @@ static void do_patch(HANDLE process, const MODULEINFO &module_info, const struct
 
         target = &addr[patch.data_offset];
 
-        do_write(process, target, patch.data);
+        memory_write(process, target, patch.data);
 
 #ifdef VERBOSE
         log_info("%s applied at %p", patch.name, target);
@@ -451,7 +369,7 @@ static void hook_pkfs_fs_open(
         if (current != nullptr) {
             remaining = end - reinterpret_cast<uintptr_t>(current);
 
-            do_absolute_jmp(process, current, reinterpret_cast<const void *>(pkfs_avs_snprintf));
+            do_absolute_jmp(process, current, reinterpret_cast<uint32_t>(pkfs_avs_snprintf));
         }
     }
 }
@@ -555,7 +473,7 @@ static void hook_banner_textures(HANDLE process, const MODULEINFO &module_info) 
         };
         static_assert(sizeof(d3_package_load_call_replacement) == sizeof(d3_package_load_pattern));
 
-        do_write(
+        memory_write(
                 process,
                 d3_package_load_call_addr,
                 &d3_package_load_call_replacement,
@@ -563,7 +481,7 @@ static void hook_banner_textures(HANDLE process, const MODULEINFO &module_info) 
     }
 
     // `nop` out the loop increment and jump part (adding one to include the jump target)
-    do_set(process, loop_jnz_addr, 0x90, sizeof(loop_jnz_pattern) + 1);
+    memory_set(process, loop_jnz_addr, 0x90, sizeof(loop_jnz_pattern) + 1);
 }
 
 extern "C" bool __declspec(dllexport) dll_entry_init(char *sid_code, void *app_config) {

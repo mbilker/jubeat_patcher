@@ -156,7 +156,7 @@ char *str_dup(const char *str)
     size_t nbytes;
 
     nbytes = strlen(str) + 1;
-    dest = xmalloc(nbytes);
+    dest = memory_alloc(nbytes);
     memcpy(dest, str, nbytes);
 
     return dest;
@@ -186,7 +186,7 @@ wchar_t *str_widen(const char *src)
         abort();
     }
 
-    result = xmalloc(nchars * sizeof(wchar_t));
+    result = memory_alloc(nchars * sizeof(wchar_t));
 
     if (!MultiByteToWideChar(CP_ACP, 0, src, -1, result, nchars)) {
         abort();
@@ -201,7 +201,7 @@ wchar_t *wstr_dup(const wchar_t *wstr)
     size_t nchars;
 
     nchars = wcslen(wstr) + 1;
-    dest = xmalloc(nchars * sizeof(wchar_t));
+    dest = memory_alloc(nchars * sizeof(wchar_t));
     memcpy(dest, wstr, nchars * sizeof(wchar_t));
 
     return dest;
@@ -217,7 +217,7 @@ bool wstr_narrow(const wchar_t *src, char **dest)
         goto size_fail;
     }
 
-    *dest = xmalloc(nbytes);
+    *dest = memory_alloc(nbytes);
 
     if (WideCharToMultiByte(CP_ACP, 0, src, -1, *dest, nbytes, NULL, NULL)
             != nbytes) {
@@ -227,7 +227,7 @@ bool wstr_narrow(const wchar_t *src, char **dest)
     return true;
 
 conv_fail:
-    free(*dest);
+    memory_free(*dest);
     *dest = NULL;
 
 size_fail:

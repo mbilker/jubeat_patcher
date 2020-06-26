@@ -15,40 +15,10 @@
 #include "pattern/pattern.h"
 
 #include "util/log.h"
+#include "util/mem.h"
 
 #include "music_db.h"
 #include "pkfs.h"
-
-static const char *BNR_TEXTURES[] = {
-	"L44FO_BNR_J_01_001",
-	"L44FO_BNR_J_02_001",
-	"L44FO_BNR_J_03_001",
-	"L44FO_BNR_J_04_001",
-	"L44FO_BNR_J_05_001",
-	"L44FO_BNR_J_06_001",
-	"L44FO_BNR_J_07_001",
-	"L44FO_BNR_J_08_001",
-	"L44FO_BNR_J_09_001",
-	"L44FO_BNR_J_09_002",
-	"L44FO_BNR_J_09_003",
-	"L44FO_BNR_J_09_004",
-	"L44FO_BNR_J_09_005",
-	"L44FO_BNR_J_09_006",
-	"L44FO_BNR_J_09_007",
-	"L44FO_BNR_J_09_008",
-	"L44FO_BNR_J_09_009",
-	"L44FO_BNR_J_09_010",
-	"L44FO_BNR_J_09_011",
-	"L44FO_BNR_J_09_012",
-	"L44FO_BNR_J_09_014",
-	"L44FO_BNR_J_09_MIS",
-    "L44FO_BNR_J_EX_001",
-    "L44FO_BNR_J_EX_002",
-    "L44FO_BNR_J_EX_003",
-    "L44FO_BNR_J_EX_004",
-    "L44FO_BNR_J_99_999",
-	"L44_BNR_BIG_ID99999999"
-};
 
 struct patch_t {
     const char *name;
@@ -119,24 +89,36 @@ const struct patch_t song_unlock_patch {
     .data_offset = 4,
 };
 
-static void do_write(HANDLE process, void *target, const void *data, size_t data_size) {
-    DWORD old_protect;
-
-    if (!VirtualProtectEx(process, target, data_size, PAGE_EXECUTE_READWRITE, &old_protect)) {
-        log_fatal("VirtualProtectEx (rwx) failed: 0x%08lx", GetLastError());
-    }
-
-    WriteProcessMemory(process, target, data, data_size, nullptr);
-    FlushInstructionCache(process, target, data_size);
-
-    if (!VirtualProtectEx(process, target, data_size, old_protect, &old_protect)) {
-        log_fatal("VirtualProtectEx (old) failed: 0x%08lx", GetLastError());
-    }
-}
-
-static void do_write(HANDLE process, void *target, const std::vector<uint8_t> &data) {
-    do_write(process, target, data.data(), data.size());
-}
+static const char *BNR_TEXTURES[] = {
+    "L44FO_BNR_J_01_001",
+    "L44FO_BNR_J_02_001",
+    "L44FO_BNR_J_03_001",
+    "L44FO_BNR_J_04_001",
+    "L44FO_BNR_J_05_001",
+    "L44FO_BNR_J_06_001",
+    "L44FO_BNR_J_07_001",
+    "L44FO_BNR_J_08_001",
+    "L44FO_BNR_J_09_001",
+    "L44FO_BNR_J_09_002",
+    "L44FO_BNR_J_09_003",
+    "L44FO_BNR_J_09_004",
+    "L44FO_BNR_J_09_005",
+    "L44FO_BNR_J_09_006",
+    "L44FO_BNR_J_09_007",
+    "L44FO_BNR_J_09_008",
+    "L44FO_BNR_J_09_009",
+    "L44FO_BNR_J_09_010",
+    "L44FO_BNR_J_09_011",
+    "L44FO_BNR_J_09_012",
+    "L44FO_BNR_J_09_014",
+    "L44FO_BNR_J_09_MIS",
+    "L44FO_BNR_J_EX_001",
+    "L44FO_BNR_J_EX_002",
+    "L44FO_BNR_J_EX_003",
+    "L44FO_BNR_J_EX_004",
+    "L44FO_BNR_J_99_999",
+    "L44_BNR_BIG_ID99999999"
+};
 
 static void do_patch(HANDLE process, const MODULEINFO &module_info, const struct patch_t &patch) {
 #ifdef VERBOSE
@@ -174,7 +156,7 @@ static void do_patch(HANDLE process, const MODULEINFO &module_info, const struct
 
         target = &addr[patch.data_offset];
 
-        do_write(process, target, patch.data);
+        memory_write(process, target, patch.data);
 
 #ifdef VERBOSE
         log_info("%s applied at %p", patch.name, target);
@@ -347,7 +329,7 @@ extern "C" bool __declspec(dllexport) dll_entry_init(char *sid_code, void *app_c
             .addr_offset = call,
             .nop = 0x90u,
         };
-        do_write(process, &pkfs[0x1935], &strlcpy_patch, sizeof(strlcpy_patch));
+        memory_write(process, &pkfs[0x1935], &strlcpy_patch, sizeof(strlcpy_patch));
     }
     {
         uint32_t call = reinterpret_cast<uintptr_t>(pkfs_avs_strlen) -
@@ -359,7 +341,7 @@ extern "C" bool __declspec(dllexport) dll_entry_init(char *sid_code, void *app_c
             .addr_offset = call,
             .nop = 0x90u,
         };
-        do_write(process, &pkfs[0x1959], &strlen_patch, sizeof(strlen_patch));
+        memory_write(process, &pkfs[0x1959], &strlen_patch, sizeof(strlen_patch));
     }
     {
         struct addr_relative_replacement snprintf_patch {
@@ -367,7 +349,7 @@ extern "C" bool __declspec(dllexport) dll_entry_init(char *sid_code, void *app_c
             .addr_offset = reinterpret_cast<uint32_t>(pkfs_avs_snprintf),
             .nop = 0x90u,
         };
-        do_write(process, &pkfs[0x19F3], &snprintf_patch, sizeof(snprintf_patch));
+        memory_write(process, &pkfs[0x19F3], &snprintf_patch, sizeof(snprintf_patch));
     }
 
 #ifdef VERBOSE
@@ -390,23 +372,23 @@ extern "C" bool __declspec(dllexport) dll_entry_init(char *sid_code, void *app_c
 
     // Overwrite the pointers to point into our texture list
     for (size_t i = 0; i < std::min(std::size(BNR_TEXTURES), 18u); i++) {
-        do_write(process, &jubeat[0xC6DD + i * 8 + 4], &BNR_TEXTURES[i], 4);
+        memory_write(process, &jubeat[0xC6DD + i * 8 + 4], &BNR_TEXTURES[i], 4);
     }
     // Overwrite the rest of the list with null pointers
     for (size_t i = std::size(BNR_TEXTURES); i < 18; i++) {
-        do_write(process, &jubeat[0xC6DD + i * 8 + 4], (const uint8_t[]) { 0, 0, 0, 0 }, 4);
+        memory_write(process, &jubeat[0xC6DD + i * 8 + 4], (const uint8_t[]) { 0, 0, 0, 0 }, 4);
     }
     // Overwrite the other part of the list that uses a different store instruction
     for (size_t i = 0; i < 5; i++) {
         if (i + 18 < std::size(BNR_TEXTURES)) {
-            do_write(process, &jubeat[0xC76D + i * 11 + 7], &BNR_TEXTURES[i + 18], 4);
+            memory_write(process, &jubeat[0xC76D + i * 11 + 7], &BNR_TEXTURES[i + 18], 4);
         } else {
-            do_write(process, &jubeat[0xC76D + i * 11 + 7], (const uint8_t[]) { 0, 0, 0, 0 }, 4);
+            memory_write(process, &jubeat[0xC76D + i * 11 + 7], (const uint8_t[]) { 0, 0, 0, 0 }, 4);
         }
     }
 
     // Write the loop starting value
-    do_write(process, &jubeat[0xC7ED + 1], &BNR_TEXTURES[0], 4);
+    memory_write(process, &jubeat[0xC7ED + 1], &BNR_TEXTURES[0], 4);
 
     CloseHandle(process);
 

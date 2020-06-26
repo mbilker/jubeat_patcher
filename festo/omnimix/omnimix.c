@@ -11,6 +11,7 @@
 #include "pattern/pattern.h"
 
 #include "util/log.h"
+#include "util/mem.h"
 
 struct patch_t {
     const char *name;
@@ -130,7 +131,6 @@ void do_patch(HANDLE process, const MODULEINFO *module_info, const struct patch_
     char *hex_data;
 #endif
     uint8_t *addr, *target;
-    DWORD old_protect;
 
 #ifdef VERBOSE
     log_info("===== %s =====", patch->name);
@@ -157,16 +157,7 @@ void do_patch(HANDLE process, const MODULEINFO *module_info, const struct patch_
 
         target = &addr[patch->data_offset];
 
-        if (!VirtualProtectEx(process, target, patch->data_size, PAGE_EXECUTE_READWRITE, &old_protect)) {
-            log_fatal("VirtualProtectEx (rwx) failed: %08lx", GetLastError());
-        }
-
-        WriteProcessMemory(process, target, patch->data, patch->data_size, NULL);
-        FlushInstructionCache(process, target, patch->data_size);
-
-        if (!VirtualProtectEx(process, target, patch->data_size, old_protect, &old_protect)) {
-            log_fatal("VirtualProtectEx (old) failed: %08lx", GetLastError());
-        }
+        memory_write(process, target, patch->data, patch->data_size);
 
 #ifdef VERBOSE
         log_info("%s applied at %p", patch->name, target);

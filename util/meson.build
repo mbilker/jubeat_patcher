@@ -7,7 +7,11 @@ util_lib = static_library(
         'glue.h',
         'log.c',
         'log.h',
+        'mem.c',
+        'mem.h',
         'str.c',
         'str.h',
+        'x86.c',
+        'x86.h',
     ],
 )
