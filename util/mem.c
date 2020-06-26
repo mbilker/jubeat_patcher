@@ -77,11 +77,9 @@ void memory_write(HANDLE process, void *target, const void *data, size_t data_si
     memory_restore_old(process, target, data_size, old_protect);
 }
 
-/*
 void memory_write_ptr(HANDLE process, void *target, const uintptr_t data) {
     memory_write(process, target, &data, sizeof(data));
 }
-*/
 
 void memory_set(HANDLE process, void *target, uint8_t data_value, size_t data_size) {
     void *buf;
