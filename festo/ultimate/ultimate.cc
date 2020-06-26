@@ -17,6 +17,7 @@
 
 #include "util/log.h"
 #include "util/mem.h"
+#include "util/x86.h"
 
 #include "music_db.h"
 #include "pkfs.h"
@@ -57,9 +58,15 @@ const struct patch_t music_db_limit_1 {
     .data = { 0x40 },
     .data_offset = 2,
 };
-const struct patch_t music_db_limit_2 {
-    .name = "music_db limit patch 2",
+const struct patch_t music_db_limit_2_old {
+    .name = "music_db limit patch 2 (old)",
     .pattern = { 0x00, 0x00, 0x20, 0x00, 0x8B, 0xF8, 0x57 },
+    .data = { 0x40 },
+    .data_offset = 2,
+};
+const struct patch_t music_db_limit_2_new {
+    .name = "music_db limit patch 2 (new)",
+    .pattern = { 0x00, 0x00, 0x20, 0x00, 0x53, 0x6A, 0x01 },
     .data = { 0x40 },
     .data_offset = 2,
 };
@@ -90,6 +97,7 @@ const struct patch_t song_unlock_patch {
     .data_offset = 4,
 };
 
+static void *D3_PACKAGE_LOAD = nullptr;
 static const char *BNR_TEXTURES[] = {
     "L44FO_BNR_J_01_001",
     "L44FO_BNR_J_02_001",
@@ -171,16 +179,221 @@ static void do_patch(HANDLE process, const MODULEINFO &module_info, const struct
     }
 }
 
+static void hook_pkfs_fs_open(
+        HANDLE process,
+        HMODULE pkfs_module,
+        const MODULEINFO &module_info)
+{
+    const IMAGE_IMPORT_DESCRIPTOR *avs2_import_descriptor;
+    void *avs_strlcpy_entry_ptr, *avs_strlen_entry_ptr, *avs_snprintf_entry_ptr;
+    uint8_t *current;
+    size_t remaining;
+
+    avs2_import_descriptor = module_get_iid_for_name(process, pkfs_module, "avs2-core.dll");
+
+    log_assert(avs2_import_descriptor != nullptr);
+
+    avs_strlcpy_entry_ptr = iid_get_addr_for_name(pkfs_module, avs2_import_descriptor, 224, nullptr);
+    avs_strlen_entry_ptr = iid_get_addr_for_name(pkfs_module, avs2_import_descriptor, 222, nullptr);
+    avs_snprintf_entry_ptr = iid_get_addr_for_name(pkfs_module, avs2_import_descriptor, 258, nullptr);
+
+    log_assert(avs_strlcpy_entry_ptr != nullptr);
+    log_assert(avs_strlen_entry_ptr != nullptr);
+    log_assert(avs_snprintf_entry_ptr != nullptr);
+
+    log_info("avs_strlcpy entry = %p", avs_strlcpy_entry_ptr);
+    log_info("avs_strlen entry = %p", avs_strlen_entry_ptr);
+    log_info("avs_snprintf entry = %p", avs_snprintf_entry_ptr);
+
+    // Initialize base patterns
+    uint8_t avs_strlcpy_pattern[] = { 0xFF, 0x15, 0x00, 0x00, 0x00, 0x00 };
+    uint8_t avs_strlen_pattern[] = { 0xFF, 0x15, 0x00, 0x00, 0x00, 0x00 };
+    uint8_t avs_snprintf_pattern[] = { 0x8B, 0x35, 0x00, 0x00, 0x00, 0x00 };
+
+    // Copy in function pointers
+    memcpy(&avs_strlcpy_pattern[2], &avs_strlcpy_entry_ptr, 4);
+    memcpy(&avs_strlen_pattern[2], &avs_strlen_entry_ptr, 4);
+    memcpy(&avs_snprintf_pattern[2], &avs_snprintf_entry_ptr, 4);
+
+    // `pkfs_fs_open` and `pkfs_fs_open_w` are right next to each other, we abuse that fact
+    uintptr_t start = reinterpret_cast<uintptr_t>(GetProcAddress(pkfs_module, "pkfs_fs_open"));
+    uintptr_t end = reinterpret_cast<uintptr_t>(GetProcAddress(pkfs_module, "pkfs_fs_open_w"));
+    size_t total_size = start - end;
+
+    log_assert(start != 0);
+    log_assert(end != 0);
+
+    current = reinterpret_cast<uint8_t *>(start);
+    remaining = total_size;
+    while (current != nullptr) {
+        current = find_pattern(
+                current,
+                remaining,
+                avs_strlcpy_pattern,
+                nullptr,
+                std::size(avs_strlcpy_pattern));
+
+        if (current != nullptr) {
+            remaining = end - reinterpret_cast<uintptr_t>(current);
+
+            do_relative_jmp(process, current, reinterpret_cast<const void *>(pkfs_avs_strlcpy));
+        }
+    }
+
+    current = reinterpret_cast<uint8_t *>(start);
+    remaining = total_size;
+    while (current != nullptr) {
+        current = find_pattern(
+                current,
+                remaining,
+                avs_strlen_pattern,
+                nullptr,
+                std::size(avs_strlen_pattern));
+
+        if (current != nullptr) {
+            remaining = end - reinterpret_cast<uintptr_t>(current);
+
+            do_relative_jmp(process, current, reinterpret_cast<const void *>(pkfs_avs_strlen));
+        }
+    }
+
+    current = reinterpret_cast<uint8_t *>(start);
+    remaining = total_size;
+    while (current != nullptr) {
+        current = find_pattern(
+                current,
+                remaining,
+                avs_snprintf_pattern,
+                nullptr,
+                std::size(avs_snprintf_pattern));
+
+        if (current != nullptr) {
+            remaining = end - reinterpret_cast<uintptr_t>(current);
+
+            do_absolute_jmp(process, current, reinterpret_cast<uint32_t>(pkfs_avs_snprintf));
+        }
+    }
+}
+
+static void __cdecl banner_load_hook() {
+    for (const char *bnr_package : BNR_TEXTURES) {
+        __asm__(
+            "push esp\n"
+            "mov ecx, %0\n"
+            "call %1\n"
+            "pop esp"
+            :
+            : "r" (bnr_package), "r" (D3_PACKAGE_LOAD)
+            // 2020021900 saves `ebx`, `ebp`, `edi`, and `esi` in `D3_PACKAGE_LOAD`
+            : "eax", "ecx", "edx"
+        );
+    }
+}
+
+static void hook_banner_textures(HANDLE process, const MODULEINFO &module_info) {
+    // Unique pattern for prologue for banner texture loading
+    // add esp, 12
+    // mov ecx, 12
+    const uint8_t prologue_pattern[] = { 0x83, 0xC4, 0x0C, 0xB9, 0x0C, 0x00, 0x00, 0x00 };
+
+    // Pattern to get the `jz` for the loop
+    const uint8_t loop_jz_pattern[] = { 0x85, 0xC0, 0x74 };
+
+    // Pattern to get the `inc`, `test`, `jnz` portion of the loop
+    const uint8_t loop_jnz_pattern[] = { 0x46, 0x85, 0xC0, 0x75 };
+
+    // Pattern to get the D3 texture load function address
+    const uint8_t d3_package_load_pattern[] = { 0x8B, 0xC8, 0xE8, 0x00, 0x00, 0x00, 0x00 };
+    const bool d3_package_load_pattern_mask[] = { 1, 1, 1, 0, 0, 0, 0 };
+
+    void *base_addr = find_pattern(
+            reinterpret_cast<uint8_t *>(module_info.lpBaseOfDll),
+            module_info.SizeOfImage,
+            prologue_pattern,
+            nullptr,
+            std::size(prologue_pattern));
+
+    log_assert(base_addr != nullptr);
+
+    void *loop_jz_addr = find_pattern(
+            reinterpret_cast<uint8_t *>(base_addr),
+            module_info.SizeOfImage - reinterpret_cast<uintptr_t>(base_addr),
+            loop_jz_pattern,
+            nullptr,
+            std::size(loop_jz_pattern));
+
+    log_assert(loop_jz_addr != nullptr);
+
+    // Offset to actual `jz` instruction from base of pattern
+    loop_jz_addr = reinterpret_cast<uint8_t *>(loop_jz_addr) + 2;
+
+    void *loop_jnz_addr = find_pattern(
+            reinterpret_cast<uint8_t *>(loop_jz_addr),
+            module_info.SizeOfImage - reinterpret_cast<uintptr_t>(loop_jz_addr),
+            loop_jnz_pattern,
+            nullptr,
+            std::size(loop_jnz_pattern));
+
+    log_assert(loop_jnz_addr != nullptr);
+
+    void *d3_package_load_call_addr = find_pattern(
+            reinterpret_cast<uint8_t *>(loop_jz_addr),
+            reinterpret_cast<uintptr_t>(loop_jnz_addr) - reinterpret_cast<uintptr_t>(loop_jz_addr),
+            d3_package_load_pattern,
+            d3_package_load_pattern_mask,
+            std::size(d3_package_load_pattern));
+
+    log_assert(d3_package_load_call_addr != nullptr);
+
+    // Save the address of the original function
+    {
+        // Compute address to the `E8 xx xx xx xx` (relative jump) instruction
+        uintptr_t jump_addr = reinterpret_cast<uintptr_t>(d3_package_load_call_addr) + 2;
+
+        // Load the offset from the relative jump instruction
+        uint32_t offset = *reinterpret_cast<uint32_t *>(jump_addr + 1);
+
+        // Compute and save the absolute address of the function for later
+        D3_PACKAGE_LOAD = reinterpret_cast<void *>(jump_addr + 5 + offset);
+    }
+
+    // Patch function call location
+    {
+        struct call_replacement {
+            uint8_t load_opcode;
+            uint32_t addr;
+            uint8_t call_opcode;
+            uint8_t reg_index;
+        } __attribute__((packed));
+
+        struct call_replacement d3_package_load_call_replacement {
+            .load_opcode = 0xB8,
+            .addr = reinterpret_cast<uint32_t>(banner_load_hook),
+            .call_opcode = 0xFF,
+            .reg_index = 0xD0,
+        };
+        static_assert(sizeof(d3_package_load_call_replacement) == sizeof(d3_package_load_pattern));
+
+        memory_write(
+                process,
+                d3_package_load_call_addr,
+                &d3_package_load_call_replacement,
+                sizeof(d3_package_load_call_replacement));
+    }
+
+    // `nop` out the loop increment and jump part (adding one to include the jump target)
+    memory_set(process, loop_jnz_addr, 0x90, sizeof(loop_jnz_pattern) + 1);
+}
+
 extern "C" bool __declspec(dllexport) dll_entry_init(char *sid_code, void *app_config) {
     DWORD pid;
     HANDLE process;
-    HMODULE jubeat_handle, music_db_handle, pkfs_handle;
-    MODULEINFO jubeat_info, music_db_info;
+    HMODULE avs2_core_handle, jubeat_handle, music_db_handle, pkfs_handle;
+    MODULEINFO jubeat_info, music_db_info, pkfs_info;
     uint8_t *jubeat;
 #ifdef VERBOSE
     uint8_t *music_db;
 #endif
-    uint8_t *pkfs;
 
     log_to_external(log_body_misc, log_body_info, log_body_warning, log_body_fatal);
 
@@ -189,6 +402,9 @@ extern "C" bool __declspec(dllexport) dll_entry_init(char *sid_code, void *app_c
     pid = GetCurrentProcessId();
     process = OpenProcess(PROCESS_QUERY_INFORMATION | PROCESS_VM_OPERATION | PROCESS_VM_READ | PROCESS_VM_WRITE, false, pid);
 
+    if ((avs2_core_handle = GetModuleHandleA("avs2-core.dll")) == nullptr) {
+        log_fatal("GetModuleHandle(\"avs2-core.dll\") failed: 0x%08lx", GetLastError());
+    }
     if ((jubeat_handle = GetModuleHandleA("jubeat.dll")) == nullptr) {
         log_fatal("GetModuleHandle(\"jubeat.dll\") failed: 0x%08lx", GetLastError());
     }
@@ -203,7 +419,6 @@ extern "C" bool __declspec(dllexport) dll_entry_init(char *sid_code, void *app_c
 #ifdef VERBOSE
     music_db = reinterpret_cast<uint8_t *>(music_db_handle);
 #endif
-    pkfs = reinterpret_cast<uint8_t *>(pkfs_handle);
 
 #ifdef VERBOSE
     log_info("jubeat.dll = %p, music_db.dll = %p", jubeat, music_db);
@@ -216,12 +431,16 @@ extern "C" bool __declspec(dllexport) dll_entry_init(char *sid_code, void *app_c
     if (!GetModuleInformation(process, music_db_handle, &music_db_info, sizeof(music_db_info))) {
         log_fatal("GetModuleInformation(\"music_db.dll\") failed: 0x%08lx", GetLastError());
     }
+    if (!GetModuleInformation(process, pkfs_handle, &pkfs_info, sizeof(pkfs_info))) {
+        log_fatal("GetModuleInformation(\"pkfs.dll\") failed: 0x%08lx", GetLastError());
+    }
 
     do_patch(process, jubeat_info, tutorial_skip);
     do_patch(process, jubeat_info, select_timer_freeze);
     do_patch(process, jubeat_info, packlist_pluslist);
     do_patch(process, music_db_info, music_db_limit_1);
-    do_patch(process, music_db_info, music_db_limit_2);
+    do_patch(process, music_db_info, music_db_limit_2_old);
+    do_patch(process, music_db_info, music_db_limit_2_new);
     do_patch(process, music_db_info, music_db_limit_3);
     do_patch(process, music_db_info, music_db_limit_4);
     do_patch(process, music_db_info, music_plus_patch);
@@ -240,84 +459,8 @@ extern "C" bool __declspec(dllexport) dll_entry_init(char *sid_code, void *app_c
             "music_db_get_sound_filename",
             reinterpret_cast<void *>(music_db_get_sound_filename_hook));
 
-    // TODO(felix): make these patches version agnostic by using patterns
-
-    struct addr_relative_replacement {
-        uint8_t opcode;
-        uint32_t addr_offset;
-        uint8_t nop;
-    } __attribute__((packed));
-
-    {
-        uint32_t call = reinterpret_cast<uintptr_t>(pkfs_avs_strlcpy) -
-                reinterpret_cast<uintptr_t>(pkfs + 0x1935) -
-                5;
-
-        struct addr_relative_replacement strlcpy_patch {
-            .opcode = 0xE8u,
-            .addr_offset = call,
-            .nop = 0x90u,
-        };
-        memory_write(process, &pkfs[0x1935], &strlcpy_patch, sizeof(strlcpy_patch));
-    }
-    {
-        uint32_t call = reinterpret_cast<uintptr_t>(pkfs_avs_strlen) -
-                reinterpret_cast<uintptr_t>(pkfs + 0x1959) -
-                5;
-
-        struct addr_relative_replacement strlen_patch {
-            .opcode = 0xE8u,
-            .addr_offset = call,
-            .nop = 0x90u,
-        };
-        memory_write(process, &pkfs[0x1959], &strlen_patch, sizeof(strlen_patch));
-    }
-    {
-        struct addr_relative_replacement snprintf_patch {
-            .opcode = 0xBEu,
-            .addr_offset = reinterpret_cast<uint32_t>(pkfs_avs_snprintf),
-            .nop = 0x90u,
-        };
-        memory_write(process, &pkfs[0x19F3], &snprintf_patch, sizeof(snprintf_patch));
-    }
-
-#ifdef VERBOSE
-    for (size_t i = 0; i < 16; i++) {
-        char *hex_data = to_hex(&jubeat[0xC6DD + i * 8], 8);
-        log_info("data: %s", hex_data);
-        free(hex_data);
-    }
-    for (size_t i = 0; i < 5; i++) {
-        char *hex_data = to_hex(&jubeat[0xC76D + i * 11], 11);
-        log_info("data: %s", hex_data);
-        free(hex_data);
-    }
-    {
-        char *hex_data = to_hex(&jubeat[0xC7ED], 5);
-        log_info("data: %s", hex_data);
-        free(hex_data);
-    }
-#endif
-
-    // Overwrite the pointers to point into our texture list
-    for (size_t i = 0; i < std::min(std::size(BNR_TEXTURES), 18u); i++) {
-        memory_write(process, &jubeat[0xC6DD + i * 8 + 4], &BNR_TEXTURES[i], 4);
-    }
-    // Overwrite the rest of the list with null pointers
-    for (size_t i = std::size(BNR_TEXTURES); i < 18; i++) {
-        memory_write(process, &jubeat[0xC6DD + i * 8 + 4], (const uint8_t[]) { 0, 0, 0, 0 }, 4);
-    }
-    // Overwrite the other part of the list that uses a different store instruction
-    for (size_t i = 0; i < 5; i++) {
-        if (i + 18 < std::size(BNR_TEXTURES)) {
-            memory_write(process, &jubeat[0xC76D + i * 11 + 7], &BNR_TEXTURES[i + 18], 4);
-        } else {
-            memory_write(process, &jubeat[0xC76D + i * 11 + 7], (const uint8_t[]) { 0, 0, 0, 0 }, 4);
-        }
-    }
-
-    // Write the loop starting value
-    memory_write(process, &jubeat[0xC7ED + 1], &BNR_TEXTURES[0], 4);
+    hook_pkfs_fs_open(process, pkfs_handle, pkfs_info);
+    hook_banner_textures(process, jubeat_info);
 
     CloseHandle(process);
 

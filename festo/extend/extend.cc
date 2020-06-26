@@ -438,13 +438,6 @@ extern "C" bool __declspec(dllexport) dll_entry_init(char *sid_code, void *app_c
             reinterpret_cast<void *>(music_db_get_sound_filename_hook));
 
     hook_pkfs_fs_open(process, pkfs_handle, pkfs_info);
-
-    /*
-    do_relative_jmp(process, &pkfs[0x1935], reinterpret_cast<const void *>(pkfs_avs_strlcpy));
-    do_relative_jmp(process, &pkfs[0x1959], reinterpret_cast<const void *>(pkfs_avs_strlen));
-    do_absolute_jmp(process, &pkfs[0x19F3], reinterpret_cast<const void *>(pkfs_avs_snprintf));
-    */
-
     hook_banner_textures(process, jubeat_info);
 
     CloseHandle(process);
