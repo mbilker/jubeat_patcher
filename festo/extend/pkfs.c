@@ -12,9 +12,11 @@
 size_t __cdecl pkfs_avs_strlcpy(char *dst, const char *src, size_t dst_size) {
     //log_misc("avs_strlcpy(%p, \"%s\", %u)", dst, src, dst_size);
 
+    // Bail early if the length is not expected
     if (dst_size != 9) {
         return avs_strlcpy(dst, src, dst_size);
     }
+
     if (src[8] < '0' || src[8] > '9') {
         return avs_strlcpy(dst, src, 9);
     }

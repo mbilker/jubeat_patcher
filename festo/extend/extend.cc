@@ -19,14 +19,9 @@
 #include "music_db.h"
 #include "pkfs.h"
 
-static void *D3_PACKAGE_LOAD = nullptr;
-static const char *BNR_TEXTURES[] = {
-    "L44FO_BNR_J_EX_001",
-    "L44FO_BNR_J_EX_002",
-    "L44FO_BNR_J_EX_003",
-    "L44FO_BNR_J_EX_004",
-    "L44FO_BNR_J_EX_005",
-    "L44FO_BNR_J_99_999",
+struct import_selector {
+    uint16_t ordinal = 0;
+    const char *name = nullptr;
 };
 
 struct patch_t {
@@ -104,6 +99,16 @@ const struct patch_t song_unlock_patch {
     .data_offset = 4,
 };
 
+static void *D3_PACKAGE_LOAD = nullptr;
+static const char *BNR_TEXTURES[] = {
+    "L44FO_BNR_J_EX_001",
+    "L44FO_BNR_J_EX_002",
+    "L44FO_BNR_J_EX_003",
+    "L44FO_BNR_J_EX_004",
+    "L44FO_BNR_J_EX_005",
+    "L44FO_BNR_J_99_999",
+};
+
 static DWORD memory_make_rw(HANDLE process, void *target, size_t data_size) {
     DWORD old_protect;
 
@@ -150,6 +155,42 @@ static void do_set(HANDLE process, void *target, uint8_t data_value, size_t data
     do_write(process, target, buf, data_size);
 
     HeapFree(GetProcessHeap(), 0, buf);
+}
+
+// For changing data segment calls (`FF yy xx xx xx xx`) to relative jumps (`E8 xx xx xx xx 90`)
+static void do_relative_jmp(HANDLE process, void *target, const void *new_addr) {
+    struct addr_relative_replacement {
+        uint8_t opcode;
+        uint32_t addr_offset;
+        uint8_t nop;
+    } __attribute__((packed));
+
+    uint32_t offset = reinterpret_cast<uintptr_t>(new_addr) -
+            reinterpret_cast<uintptr_t>(target) -
+            sizeof(addr_relative_replacement) + 1;
+
+    const struct addr_relative_replacement data {
+        .opcode = 0xE8u,
+        .addr_offset = offset,
+        .nop = 0x90u,
+    };
+    do_write(process, target, &data, sizeof(data));
+}
+
+// For changing data segment loads (`8B yy xx xx xx xx`) to absolute pointers (`BE xx xx xx xx 90`)
+static void do_absolute_jmp(HANDLE process, void *target, const void *new_addr) {
+    struct addr_relative_replacement {
+        uint8_t opcode;
+        uint32_t addr_offset;
+        uint8_t nop;
+    } __attribute__((packed));
+
+    const struct addr_relative_replacement data {
+        .opcode = 0xBEu,
+        .addr_offset = reinterpret_cast<uint32_t>(new_addr),
+        .nop = 0x90u,
+    };
+    do_write(process, target, &data, sizeof(data));
 }
 
 static void do_patch(HANDLE process, const MODULEINFO &module_info, const struct patch_t &patch) {
@@ -202,18 +243,14 @@ static void do_patch(HANDLE process, const MODULEINFO &module_info, const struct
     }
 }
 
-static void hook_iat(
+static const IMAGE_IMPORT_DESCRIPTOR *module_get_iid_for_name(
         HANDLE process,
         HMODULE module,
-        const char *target_module_name,
-        void *func_ptr,
-        void *target_func_ptr)
+        const char *target_module_name)
 {
     IMAGE_IMPORT_DESCRIPTOR *import_descriptor;
     unsigned long size;
     const char *module_name;
-    IMAGE_THUNK_DATA *thunk_data;
-    void *target;
 
     import_descriptor = reinterpret_cast<IMAGE_IMPORT_DESCRIPTOR *>(ImageDirectoryEntryToData(
             module,
@@ -223,11 +260,11 @@ static void hook_iat(
 
     if (import_descriptor == nullptr) {
         log_warning("failed to get import descriptor for module: 0x%08lx", GetLastError());
-        return;
+        return nullptr;
     }
     if (size == 0) {
         log_warning("no imports for module %p", module);
-        return;
+        return nullptr;
     }
 
     while (import_descriptor->Name != 0) {
@@ -243,25 +280,179 @@ static void hook_iat(
 
     if (import_descriptor->Name == 0) {
         log_warning("failed to find import descriptor for '%s'", target_module_name);
-        return;
+        return nullptr;
     }
 
     log_misc("found import descriptor for '%s' at %p", target_module_name, import_descriptor);
 
-    thunk_data = reinterpret_cast<IMAGE_THUNK_DATA *>(
-            reinterpret_cast<uintptr_t>(module) + static_cast<uintptr_t>(import_descriptor->FirstThunk));
+    return import_descriptor;
+}
 
-    while (thunk_data->u1.Function != 0) {
-        if (reinterpret_cast<void *>(thunk_data->u1.Function) == func_ptr) {
-            target = &thunk_data->u1.Function;
+static void *iid_get_addr_for_name(
+        HMODULE module,
+        const IMAGE_IMPORT_DESCRIPTOR *import_descriptor,
+        struct import_selector selector)
+{
+    uintptr_t module_base;
+    intptr_t *import_rvas;
+    const IMAGE_IMPORT_BY_NAME *import;
+    IMAGE_THUNK_DATA *thunk_data;
+    size_t i;
 
-            do_write(process, target, &target_func_ptr, sizeof(thunk_data->u1.Function));
-            log_misc("patched %p in '%s' with %p", target, target_module_name, target_func_ptr);
+    module_base = reinterpret_cast<uintptr_t>(module);
+    import_rvas = reinterpret_cast<intptr_t *>(
+            module_base + static_cast<uintptr_t>(import_descriptor->OriginalFirstThunk));
 
-            break;
+    i = 0;
+
+    while (true) {
+        // Check if the end of the import list was reached
+        if (import_rvas[i] == 0) {
+            return nullptr;
         }
 
-        thunk_data++;
+        // Check if this import entry is an ordinal import
+        if (import_rvas[i] & INTPTR_MIN) {
+            if (selector.ordinal != 0 && selector.ordinal == static_cast<uint16_t>(import_rvas[i])) {
+                break;
+            }
+        } else {
+            import = reinterpret_cast<IMAGE_IMPORT_BY_NAME *>(module_base + static_cast<uintptr_t>(import_rvas[i]));
+
+            // Check if this import entry matches the desired import name
+            if (selector.name != nullptr && _stricmp(import->Name, selector.name) == 0) {
+                break;
+            }
+        }
+
+        i++;
+    }
+
+    thunk_data = reinterpret_cast<IMAGE_THUNK_DATA *>(
+            module_base + static_cast<uintptr_t>(import_descriptor->FirstThunk));
+
+    return reinterpret_cast<void *>(&thunk_data[i].u1.Function);
+}
+
+static void hook_iat(
+        HANDLE process,
+        HMODULE module,
+        const char *target_module_name,
+        const char *import_name,
+        void *target_func_ptr)
+{
+    const IMAGE_IMPORT_DESCRIPTOR *import_descriptor;
+    void *target;
+
+    import_descriptor = module_get_iid_for_name(process, module, target_module_name);
+
+    if (!import_descriptor) {
+        return;
+    }
+
+    target = iid_get_addr_for_name(module, import_descriptor, { 0, import_name });
+
+    if (!target) {
+        return;
+    }
+
+    do_write(process, target, &target_func_ptr, sizeof(target));
+    log_misc("patched '%s'(%p) in '%s' with %p", import_name, target, target_module_name, target_func_ptr);
+}
+
+static void hook_pkfs_fs_open(
+        HANDLE process,
+        HMODULE pkfs_module,
+        const MODULEINFO &module_info)
+{
+    const IMAGE_IMPORT_DESCRIPTOR *avs2_import_descriptor;
+    void *avs_strlcpy_entry_ptr, *avs_strlen_entry_ptr, *avs_snprintf_entry_ptr;
+    uint8_t *current;
+    size_t remaining;
+
+    avs2_import_descriptor = module_get_iid_for_name(process, pkfs_module, "avs2-core.dll");
+
+    log_assert(avs2_import_descriptor != nullptr);
+
+    avs_strlcpy_entry_ptr = iid_get_addr_for_name(pkfs_module, avs2_import_descriptor, { 224, nullptr });
+    avs_strlen_entry_ptr = iid_get_addr_for_name(pkfs_module, avs2_import_descriptor, { 222, nullptr });
+    avs_snprintf_entry_ptr = iid_get_addr_for_name(pkfs_module, avs2_import_descriptor, { 258, nullptr });
+
+    log_assert(avs_strlcpy_entry_ptr != nullptr);
+    log_assert(avs_strlen_entry_ptr != nullptr);
+    log_assert(avs_snprintf_entry_ptr != nullptr);
+
+    log_info("avs_strlcpy entry = %p", avs_strlcpy_entry_ptr);
+    log_info("avs_strlen entry = %p", avs_strlen_entry_ptr);
+    log_info("avs_snprintf entry = %p", avs_snprintf_entry_ptr);
+
+    // Initialize base patterns
+    uint8_t avs_strlcpy_pattern[] = { 0xFF, 0x15, 0x00, 0x00, 0x00, 0x00 };
+    uint8_t avs_strlen_pattern[] = { 0xFF, 0x15, 0x00, 0x00, 0x00, 0x00 };
+    uint8_t avs_snprintf_pattern[] = { 0x8B, 0x35, 0x00, 0x00, 0x00, 0x00 };
+
+    // Copy in function pointers
+    memcpy(&avs_strlcpy_pattern[2], &avs_strlcpy_entry_ptr, 4);
+    memcpy(&avs_strlen_pattern[2], &avs_strlen_entry_ptr, 4);
+    memcpy(&avs_snprintf_pattern[2], &avs_snprintf_entry_ptr, 4);
+
+    // `pkfs_fs_open` and `pkfs_fs_open_w` are right next to each other, we abuse that fact
+    uintptr_t start = reinterpret_cast<uintptr_t>(GetProcAddress(pkfs_module, "pkfs_fs_open"));
+    uintptr_t end = reinterpret_cast<uintptr_t>(GetProcAddress(pkfs_module, "pkfs_fs_open_w"));
+    size_t total_size = start - end;
+
+    log_assert(start != 0);
+    log_assert(end != 0);
+
+    current = reinterpret_cast<uint8_t *>(start);
+    remaining = total_size;
+    while (current != nullptr) {
+        current = find_pattern(
+                current,
+                remaining,
+                avs_strlcpy_pattern,
+                nullptr,
+                std::size(avs_strlcpy_pattern));
+
+        if (current != nullptr) {
+            remaining = end - reinterpret_cast<uintptr_t>(current);
+
+            do_relative_jmp(process, current, reinterpret_cast<const void *>(pkfs_avs_strlcpy));
+        }
+    }
+
+    current = reinterpret_cast<uint8_t *>(start);
+    remaining = total_size;
+    while (current != nullptr) {
+        current = find_pattern(
+                current,
+                remaining,
+                avs_strlen_pattern,
+                nullptr,
+                std::size(avs_strlen_pattern));
+
+        if (current != nullptr) {
+            remaining = end - reinterpret_cast<uintptr_t>(current);
+
+            do_relative_jmp(process, current, reinterpret_cast<const void *>(pkfs_avs_strlen));
+        }
+    }
+
+    current = reinterpret_cast<uint8_t *>(start);
+    remaining = total_size;
+    while (current != nullptr) {
+        current = find_pattern(
+                current,
+                remaining,
+                avs_snprintf_pattern,
+                nullptr,
+                std::size(avs_snprintf_pattern));
+
+        if (current != nullptr) {
+            remaining = end - reinterpret_cast<uintptr_t>(current);
+
+            do_absolute_jmp(process, current, reinterpret_cast<const void *>(pkfs_avs_snprintf));
+        }
     }
 }
 
@@ -335,6 +526,7 @@ static void hook_banner_textures(HANDLE process, const MODULEINFO &module_info) 
 
     log_assert(d3_package_load_call_addr != nullptr);
 
+    // Save the address of the original function
     {
         // Compute address to the `E8 xx xx xx xx` (relative jump) instruction
         uintptr_t jump_addr = reinterpret_cast<uintptr_t>(d3_package_load_call_addr) + 2;
@@ -346,14 +538,15 @@ static void hook_banner_textures(HANDLE process, const MODULEINFO &module_info) 
         D3_PACKAGE_LOAD = reinterpret_cast<void *>(jump_addr + 5 + offset);
     }
 
-    struct call_replacement {
-        uint8_t load_opcode;
-        uint32_t addr;
-        uint8_t call_opcode;
-        uint8_t reg_index;
-    } __attribute__((packed));
-
+    // Patch function call location
     {
+        struct call_replacement {
+            uint8_t load_opcode;
+            uint32_t addr;
+            uint8_t call_opcode;
+            uint8_t reg_index;
+        } __attribute__((packed));
+
         struct call_replacement d3_package_load_call_replacement {
             .load_opcode = 0xB8,
             .addr = reinterpret_cast<uint32_t>(banner_load_hook),
@@ -376,15 +569,12 @@ static void hook_banner_textures(HANDLE process, const MODULEINFO &module_info) 
 extern "C" bool __declspec(dllexport) dll_entry_init(char *sid_code, void *app_config) {
     DWORD pid;
     HANDLE process;
-    HMODULE jubeat_handle, music_db_handle, pkfs_handle;
-    MODULEINFO jubeat_info, music_db_info;
+    HMODULE avs2_core_handle, jubeat_handle, music_db_handle, pkfs_handle;
+    MODULEINFO jubeat_info, music_db_info, pkfs_info;
     uint8_t *jubeat;
 #ifdef VERBOSE
     uint8_t *music_db;
 #endif
-    uint8_t *pkfs;
-    FARPROC music_db_get_sequence_filename;
-    FARPROC music_db_get_sound_filename;
 
     log_to_external(log_body_misc, log_body_info, log_body_warning, log_body_fatal);
 
@@ -393,6 +583,9 @@ extern "C" bool __declspec(dllexport) dll_entry_init(char *sid_code, void *app_c
     pid = GetCurrentProcessId();
     process = OpenProcess(PROCESS_QUERY_INFORMATION | PROCESS_VM_OPERATION | PROCESS_VM_READ | PROCESS_VM_WRITE, false, pid);
 
+    if ((avs2_core_handle = GetModuleHandleA("avs2-core.dll")) == nullptr) {
+        log_fatal("GetModuleHandle(\"avs2-core.dll\") failed: 0x%08lx", GetLastError());
+    }
     if ((jubeat_handle = GetModuleHandleA("jubeat.dll")) == nullptr) {
         log_fatal("GetModuleHandle(\"jubeat.dll\") failed: 0x%08lx", GetLastError());
     }
@@ -407,7 +600,6 @@ extern "C" bool __declspec(dllexport) dll_entry_init(char *sid_code, void *app_c
 #ifdef VERBOSE
     music_db = reinterpret_cast<uint8_t *>(music_db_handle);
 #endif
-    pkfs = reinterpret_cast<uint8_t *>(pkfs_handle);
 
 #ifdef VERBOSE
     log_info("jubeat.dll = %p, music_db.dll = %p", jubeat, music_db);
@@ -419,6 +611,9 @@ extern "C" bool __declspec(dllexport) dll_entry_init(char *sid_code, void *app_c
     }
     if (!GetModuleInformation(process, music_db_handle, &music_db_info, sizeof(music_db_info))) {
         log_fatal("GetModuleInformation(\"music_db.dll\") failed: 0x%08lx", GetLastError());
+    }
+    if (!GetModuleInformation(process, pkfs_handle, &pkfs_info, sizeof(pkfs_info))) {
+        log_fatal("GetModuleInformation(\"pkfs.dll\") failed: 0x%08lx", GetLastError());
     }
 
     do_patch(process, jubeat_info, tutorial_skip);
@@ -432,108 +627,28 @@ extern "C" bool __declspec(dllexport) dll_entry_init(char *sid_code, void *app_c
     do_patch(process, music_db_info, music_plus_patch);
     do_patch(process, music_db_info, song_unlock_patch);
 
-    if ((music_db_get_sequence_filename = GetProcAddress(music_db_handle, "music_db_get_sequence_filename")) == nullptr) {
-        log_fatal("GetProcAddress(\"music_db.dll\", \"music_db_get_sequence_filename\") failed: 0x%08lx", GetLastError());
-    }
-    if ((music_db_get_sound_filename = GetProcAddress(music_db_handle, "music_db_get_sound_filename")) == nullptr) {
-        log_fatal("GetProcAddress(\"music_db.dll\", \"music_db_get_sound_filename\") failed: 0x%08lx", GetLastError());
-    }
-
     hook_iat(
             process,
             jubeat_handle,
             "music_db.dll",
-            reinterpret_cast<void *>(music_db_get_sequence_filename),
+            "music_db_get_sequence_filename",
             reinterpret_cast<void *>(music_db_get_sequence_filename_hook));
     hook_iat(
             process,
             jubeat_handle,
             "music_db.dll",
-            reinterpret_cast<void *>(music_db_get_sound_filename),
+            "music_db_get_sound_filename",
             reinterpret_cast<void *>(music_db_get_sound_filename_hook));
 
-    // TODO(felix): make these patches version agnostic by using patterns
-
-    struct addr_relative_replacement {
-        uint8_t opcode;
-        uint32_t addr_offset;
-        uint8_t nop;
-    } __attribute__((packed));
-
-    {
-        uint32_t call = reinterpret_cast<uintptr_t>(pkfs_avs_strlcpy) -
-                reinterpret_cast<uintptr_t>(pkfs + 0x1935) -
-                5;
-
-        struct addr_relative_replacement strlcpy_patch {
-            .opcode = 0xE8u,
-            .addr_offset = call,
-            .nop = 0x90u,
-        };
-        do_write(process, &pkfs[0x1935], &strlcpy_patch, sizeof(strlcpy_patch));
-    }
-    {
-        uint32_t call = reinterpret_cast<uintptr_t>(pkfs_avs_strlen) -
-                reinterpret_cast<uintptr_t>(pkfs + 0x1959) -
-                5;
-
-        struct addr_relative_replacement strlen_patch {
-            .opcode = 0xE8u,
-            .addr_offset = call,
-            .nop = 0x90u,
-        };
-        do_write(process, &pkfs[0x1959], &strlen_patch, sizeof(strlen_patch));
-    }
-    {
-        struct addr_relative_replacement snprintf_patch {
-            .opcode = 0xBEu,
-            .addr_offset = reinterpret_cast<uint32_t>(pkfs_avs_snprintf),
-            .nop = 0x90u,
-        };
-        do_write(process, &pkfs[0x19F3], &snprintf_patch, sizeof(snprintf_patch));
-    }
-
-    hook_banner_textures(process, jubeat_info);
+    hook_pkfs_fs_open(process, pkfs_handle, pkfs_info);
 
     /*
-#ifdef VERBOSE
-    for (size_t i = 0; i < 18; i++) {
-        char *hex_data = to_hex(&jubeat[0xC6DD + i * 8], 8);
-        log_info("data: %s", hex_data);
-        free(hex_data);
-    }
-    for (size_t i = 0; i < 5; i++) {
-        char *hex_data = to_hex(&jubeat[0xC76D + i * 11], 11);
-        log_info("data: %s", hex_data);
-        free(hex_data);
-    }
-    {
-        char *hex_data = to_hex(&jubeat[0xC7ED], 5);
-        log_info("data: %s", hex_data);
-        free(hex_data);
-    }
-#endif
-
-    // Overwrite the pointers to point into our texture list
-    for (size_t i = 0; i < std::min(std::size(BNR_TEXTURES), 18u); i++) {
-        do_write(process, &jubeat[0xC6DD + i * 8 + 4], &BNR_TEXTURES[i], 4);
-    }
-    // Overwrite the rest of the list with null pointers
-    for (size_t i = std::size(BNR_TEXTURES); i < 18; i++) {
-        do_write(process, &jubeat[0xC6DD + i * 8 + 4], (const uint8_t[]) { 0, 0, 0, 0 }, 4);
-    }
-    // Overwrite the other part of the list that uses a different store instruction
-    for (size_t i = 0; i < 5; i++) {
-        if (i + 18 < std::size(BNR_TEXTURES)) {
-            do_write(process, &jubeat[0xC76D + i * 11 + 7], &BNR_TEXTURES[i + 18], 4);
-        } else {
-            do_write(process, &jubeat[0xC76D + i * 11 + 7], (const uint8_t[]) { 0, 0, 0, 0 }, 4);
-        }
-    }
-
-    // Write the loop starting value
-    do_write(process, &jubeat[0xC7ED + 1], &BNR_TEXTURES[0], 4);
+    do_relative_jmp(process, &pkfs[0x1935], reinterpret_cast<const void *>(pkfs_avs_strlcpy));
+    do_relative_jmp(process, &pkfs[0x1959], reinterpret_cast<const void *>(pkfs_avs_strlen));
+    do_absolute_jmp(process, &pkfs[0x19F3], reinterpret_cast<const void *>(pkfs_avs_snprintf));
     */
+
+    hook_banner_textures(process, jubeat_info);
 
     CloseHandle(process);
 
