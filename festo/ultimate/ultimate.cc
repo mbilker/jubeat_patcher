@@ -55,31 +55,31 @@ const struct patch_t packlist_pluslist {
 const struct patch_t music_db_limit_1 {
     .name = "music_db limit patch 1",
     .pattern = { 0x00, 0x00, 0x20, 0x00, 0x57, 0xFF, 0x15 },
-    .data = { 0x40 },
+    .data = { 0x60 },
     .data_offset = 2,
 };
 const struct patch_t music_db_limit_2_old {
     .name = "music_db limit patch 2 (old)",
     .pattern = { 0x00, 0x00, 0x20, 0x00, 0x8B, 0xF8, 0x57 },
-    .data = { 0x40 },
+    .data = { 0x60 },
     .data_offset = 2,
 };
 const struct patch_t music_db_limit_2_new {
     .name = "music_db limit patch 2 (new)",
     .pattern = { 0x00, 0x00, 0x20, 0x00, 0x53, 0x6A, 0x01 },
-    .data = { 0x40 },
+    .data = { 0x60 },
     .data_offset = 2,
 };
 const struct patch_t music_db_limit_3 {
     .name = "music_db limit patch 3",
     .pattern = { 0x00, 0x00, 0x20, 0x00, 0x6A, 0x00, 0xFF },
-    .data = { 0x40 },
+    .data = { 0x60 },
     .data_offset = 2,
 };
 const struct patch_t music_db_limit_4 {
     .name = "music_db limit patch 4",
     .pattern = { 0x00, 0x00, 0x20, 0x00, 0x50, 0x6A, 0x17 },
-    .data = { 0x40 },
+    .data = { 0x60 },
     .data_offset = 2,
 };
 
@@ -179,6 +179,29 @@ static void do_patch(HANDLE process, const MODULEINFO &module_info, const struct
     }
 }
 
+static void hook_music_db_read(
+        HANDLE process,
+        HMODULE music_db_module,
+        const MODULEINFO &module_info)
+{
+    const IMAGE_IMPORT_DESCRIPTOR *avs2_import_descriptor;
+    void *property_mem_read_entry_ptr;
+
+    avs2_import_descriptor = module_get_iid_for_name(process, music_db_module, "avs2-core.dll");
+
+    log_assert(avs2_import_descriptor != nullptr);
+
+    property_mem_read_entry_ptr = iid_get_addr_for_name(music_db_module, avs2_import_descriptor, 184, nullptr);
+
+    log_assert(property_mem_read_entry_ptr != nullptr);
+
+#ifdef VERBOSE
+    log_info("property_mem_read entry = %p", property_mem_read_entry_ptr);
+#endif
+
+    memory_write_ptr(process, property_mem_read_entry_ptr, reinterpret_cast<const uintptr_t>(music_db_avs_property_mem_read));
+}
+
 static void hook_pkfs_fs_open(
         HANDLE process,
         HMODULE pkfs_module,
@@ -201,9 +224,11 @@ static void hook_pkfs_fs_open(
     log_assert(avs_strlen_entry_ptr != nullptr);
     log_assert(avs_snprintf_entry_ptr != nullptr);
 
+#ifdef VERBOSE
     log_info("avs_strlcpy entry = %p", avs_strlcpy_entry_ptr);
     log_info("avs_strlen entry = %p", avs_strlen_entry_ptr);
     log_info("avs_snprintf entry = %p", avs_snprintf_entry_ptr);
+#endif
 
     // Initialize base patterns
     uint8_t avs_strlcpy_pattern[] = { 0xFF, 0x15, 0x00, 0x00, 0x00, 0x00 };
@@ -390,10 +415,6 @@ extern "C" bool __declspec(dllexport) dll_entry_init(char *sid_code, void *app_c
     HANDLE process;
     HMODULE avs2_core_handle, jubeat_handle, music_db_handle, pkfs_handle;
     MODULEINFO jubeat_info, music_db_info, pkfs_info;
-    uint8_t *jubeat;
-#ifdef VERBOSE
-    uint8_t *music_db;
-#endif
 
     log_to_external(log_body_misc, log_body_info, log_body_warning, log_body_fatal);
 
@@ -415,13 +436,11 @@ extern "C" bool __declspec(dllexport) dll_entry_init(char *sid_code, void *app_c
         log_fatal("GetModuleHandle(\"pkfs.dll\") failed: 0x%08lx", GetLastError());
     }
 
-    jubeat = reinterpret_cast<uint8_t *>(jubeat_handle);
 #ifdef VERBOSE
-    music_db = reinterpret_cast<uint8_t *>(music_db_handle);
-#endif
-
-#ifdef VERBOSE
-    log_info("jubeat.dll = %p, music_db.dll = %p", jubeat, music_db);
+    log_info("avs2-core.dll = %p", reinterpret_cast<void *>(avs2_core_handle));
+    log_info("jubeat.dll = %p", reinterpret_cast<void *>(jubeat_handle));
+    log_info("music_db.dll = %p", reinterpret_cast<void *>(music_db_handle));
+    log_info("pkfs.dll = %p", reinterpret_cast<void *>(pkfs_handle));
     log_info("sid_code = %s", sid_code);
 #endif
 
@@ -459,6 +478,7 @@ extern "C" bool __declspec(dllexport) dll_entry_init(char *sid_code, void *app_c
             "music_db_get_sound_filename",
             reinterpret_cast<void *>(music_db_get_sound_filename_hook));
 
+    hook_music_db_read(process, music_db_handle, music_db_info);
     hook_pkfs_fs_open(process, pkfs_handle, pkfs_info);
     hook_banner_textures(process, jubeat_info);
 
