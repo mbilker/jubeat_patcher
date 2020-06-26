@@ -1,6 +1,7 @@
 LIBRARY avs2-core
 
 EXPORTS
+    property_mem_read @184 NONAME
     avs_strlcpy @224 NONAME
     avs_snprintf @258 NONAME
     log_body_fatal @379 NONAME
