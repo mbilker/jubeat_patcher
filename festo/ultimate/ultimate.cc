@@ -104,6 +104,7 @@ static const char *BNR_TEXTURES[] = {
     "L44FO_BNR_J_03_001",
     "L44FO_BNR_J_04_001",
     "L44FO_BNR_J_05_001",
+	"L44FO_BNR_J_05_002",
     "L44FO_BNR_J_06_001",
     "L44FO_BNR_J_07_001",
     "L44FO_BNR_J_08_001",
