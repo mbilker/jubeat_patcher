@@ -2,3 +2,9 @@ LIBRARY gftools
 
 EXPORTS
     GFSLPrintf
+    GFDbgIsEnableExitFunc
+    GFInfiniteLoop
+    GFReportPrefixedPrintf
+    XFileLoadCall
+    XFileIsBusy
+    XFileLoadFinish

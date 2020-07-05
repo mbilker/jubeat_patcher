@@ -124,3 +124,30 @@ void hook_iat(
 
     log_misc("patched '%s'(%p) in '%s' with %p", import_name, target, target_module_name, target_func_ptr);
 }
+
+void hook_iat_ordinal(
+        HANDLE process,
+        HMODULE module,
+        const char *target_module_name,
+        uint16_t target_func_ordinal,
+        void *target_func_ptr)
+{
+    const IMAGE_IMPORT_DESCRIPTOR *import_descriptor;
+    void *target;
+
+    import_descriptor = module_get_iid_for_name(process, module, target_module_name);
+
+    if (!import_descriptor) {
+        return;
+    }
+
+    target = iid_get_addr_for_name(module, import_descriptor, target_func_ordinal, NULL);
+
+    if (!target) {
+        return;
+    }
+
+    memory_write(process, target, &target_func_ptr, sizeof(target));
+
+    log_misc("patched '%d'(%p) in '%s' with %p", target_func_ordinal, target, target_module_name, target_func_ptr);
+}

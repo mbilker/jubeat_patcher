@@ -54,8 +54,8 @@ if cc.get_argument_syntax() != 'msvc'
     )
 endif
 
-dbghelp_lib = cc.find_library('dbghelp')
-psapi_lib = cc.find_library('psapi')
+dbghelp_lib = cc.find_library('dbghelp', static:true)
+psapi_lib = cc.find_library('psapi', static:true)
 
 inc = include_directories('.')
 

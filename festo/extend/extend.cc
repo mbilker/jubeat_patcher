@@ -368,7 +368,6 @@ extern "C" bool __declspec(dllexport) dll_entry_init(char *sid_code, void *app_c
     HANDLE process;
     HMODULE avs2_core_handle, jubeat_handle, music_db_handle, pkfs_handle;
     MODULEINFO jubeat_info, music_db_info, pkfs_info;
-    uint8_t *jubeat;
 #ifdef VERBOSE
     uint8_t *music_db;
 #endif
@@ -393,12 +392,12 @@ extern "C" bool __declspec(dllexport) dll_entry_init(char *sid_code, void *app_c
         log_fatal("GetModuleHandle(\"pkfs.dll\") failed: 0x%08lx", GetLastError());
     }
 
-    jubeat = reinterpret_cast<uint8_t *>(jubeat_handle);
 #ifdef VERBOSE
     music_db = reinterpret_cast<uint8_t *>(music_db_handle);
 #endif
 
 #ifdef VERBOSE
+    uint8_t *jubeat = reinterpret_cast<uint8_t *>(jubeat_handle);
     log_info("jubeat.dll = %p, music_db.dll = %p", jubeat, music_db);
     log_info("sid_code = %s", sid_code);
 #endif

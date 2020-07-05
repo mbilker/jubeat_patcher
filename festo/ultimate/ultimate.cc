@@ -97,6 +97,76 @@ const struct patch_t song_unlock_patch {
     .data_offset = 4,
 };
 
+static int stack_replacer[MAX_SONGS];
+const size_t mdb_arr_patch = (int)stack_replacer;
+
+#define U32_TO_CONST_BYTES_LE(x) \
+        (uint8_t)((x) & 0xff), \
+        (uint8_t)((x >> 8) & 0xff), \
+        (uint8_t)((x >> 16) & 0xff), \
+        (uint8_t)((x >> 24) & 0xff)
+
+struct patch_t mdb_array_1_0 {
+    .name = "mdb 1.0",
+    .pattern = { 0x00, 0x68, 0x00, 0x08, 0x00, 0x00, 0x50 },
+    .data =    { U32_TO_CONST_BYTES_LE(MAX_SONGS) },
+    .data_offset = 2,
+};
+
+struct patch_t mdb_array_1_1 {
+    .name = "mdb 1.1",
+    .pattern = { 0x8D, 0x84, 0x24, 0x38, 0x02, 0x00, 0x00 },
+    .data =    {
+        0xB8,
+        U32_TO_CONST_BYTES_LE(mdb_arr_patch),
+        0x90,
+        0x90 },
+    .data_offset = 0,
+};
+
+struct patch_t mdb_array_1_2 {
+    .name = "mdb 1.2",
+    .pattern = { 0x8B, 0x8C, 0x84, 0x38, 0x02, 0x00, 0x00 },
+    .data =    {
+        0x8B,
+        0x0C,
+        0x85,
+        U32_TO_CONST_BYTES_LE(mdb_arr_patch),
+    },
+    .data_offset = 0,
+};
+
+struct patch_t mdb_array_2_0 {
+    .name = "mdb 2.0",
+    .pattern = { 0x68, 0x00, 0x08, 0x00, 0x00, 0x8D, 0x8C, 0x24, 0x3C },
+    .data =    { U32_TO_CONST_BYTES_LE(MAX_SONGS) },
+    .data_offset = 1,
+};
+
+struct patch_t mdb_array_2_1 {
+    .name = "mdb 2.1",
+    .pattern = { 0x8D, 0x8C, 0x24, 0x3C, 0x02, 0x00, 0x00 },
+    .data =    {
+        0xB9,
+        U32_TO_CONST_BYTES_LE(mdb_arr_patch),
+        0x90,
+        0x90
+    },
+    .data_offset = 0,
+};
+
+struct patch_t mdb_array_2_2 {
+    .name = "mdb 2.2",
+    .pattern = { 0x8B, 0x94, 0x9C, 0x38, 0x02, 0x00, 0x00 },
+    .data =    {
+        0x8B,
+        0x14,
+        0x9D,
+        U32_TO_CONST_BYTES_LE(mdb_arr_patch),
+    },
+    .data_offset = 0,
+};
+
 static void *D3_PACKAGE_LOAD = nullptr;
 static const char *BNR_TEXTURES[] = {
     "L44FO_BNR_J_01_001",
@@ -178,29 +248,6 @@ static void do_patch(HANDLE process, const MODULEINFO &module_info, const struct
     } else {
         log_warning("could not find %s base address", patch.name);
     }
-}
-
-static void hook_music_db_read(
-        HANDLE process,
-        HMODULE music_db_module,
-        const MODULEINFO &module_info)
-{
-    const IMAGE_IMPORT_DESCRIPTOR *avs2_import_descriptor;
-    void *property_mem_read_entry_ptr;
-
-    avs2_import_descriptor = module_get_iid_for_name(process, music_db_module, "avs2-core.dll");
-
-    log_assert(avs2_import_descriptor != nullptr);
-
-    property_mem_read_entry_ptr = iid_get_addr_for_name(music_db_module, avs2_import_descriptor, 184, nullptr);
-
-    log_assert(property_mem_read_entry_ptr != nullptr);
-
-#ifdef VERBOSE
-    log_info("property_mem_read entry = %p", property_mem_read_entry_ptr);
-#endif
-
-    memory_write_ptr(process, property_mem_read_entry_ptr, reinterpret_cast<const uintptr_t>(music_db_avs_property_mem_read));
 }
 
 static void hook_pkfs_fs_open(
@@ -419,7 +466,7 @@ extern "C" bool __declspec(dllexport) dll_entry_init(char *sid_code, void *app_c
 
     log_to_external(log_body_misc, log_body_info, log_body_warning, log_body_fatal);
 
-    log_info("jubeat ultimate hook by Felix v" OMNIMIX_VERSION " (Build " __DATE__ " " __TIME__ ")");
+    log_info("jubeat ultimate hook by Felix & mon v" OMNIMIX_VERSION " (Build " __DATE__ " " __TIME__ ")");
 
     pid = GetCurrentProcessId();
     process = OpenProcess(PROCESS_QUERY_INFORMATION | PROCESS_VM_OPERATION | PROCESS_VM_READ | PROCESS_VM_WRITE, false, pid);
@@ -455,15 +502,22 @@ extern "C" bool __declspec(dllexport) dll_entry_init(char *sid_code, void *app_c
         log_fatal("GetModuleInformation(\"pkfs.dll\") failed: 0x%08lx", GetLastError());
     }
 
+    log_body_info("ultimate", "patch array lives at %X", mdb_arr_patch);
     do_patch(process, jubeat_info, tutorial_skip);
     do_patch(process, jubeat_info, select_timer_freeze);
     do_patch(process, jubeat_info, packlist_pluslist);
-    do_patch(process, music_db_info, music_db_limit_1);
-    do_patch(process, music_db_info, music_db_limit_2_old);
-    do_patch(process, music_db_info, music_db_limit_2_new);
-    do_patch(process, music_db_info, music_db_limit_3);
-    do_patch(process, music_db_info, music_db_limit_4);
-    do_patch(process, music_db_info, music_plus_patch);
+    do_patch(process, jubeat_info, mdb_array_1_0);
+    do_patch(process, jubeat_info, mdb_array_1_1);
+    do_patch(process, jubeat_info, mdb_array_1_2);
+    do_patch(process, jubeat_info, mdb_array_2_0);
+    do_patch(process, jubeat_info, mdb_array_2_1);
+    do_patch(process, jubeat_info, mdb_array_2_2);
+    // do_patch(process, music_db_info, music_db_limit_1);
+    // do_patch(process, music_db_info, music_db_limit_2_old);
+    // do_patch(process, music_db_info, music_db_limit_2_new);
+    // do_patch(process, music_db_info, music_db_limit_3);
+    // do_patch(process, music_db_info, music_db_limit_4);
+    // do_patch(process, music_db_info, music_plus_patch);
     do_patch(process, music_db_info, song_unlock_patch);
 
     hook_iat(
@@ -471,15 +525,136 @@ extern "C" bool __declspec(dllexport) dll_entry_init(char *sid_code, void *app_c
             jubeat_handle,
             "music_db.dll",
             "music_db_get_sequence_filename",
-            reinterpret_cast<void *>(music_db_get_sequence_filename_hook));
+            reinterpret_cast<void *>(music_db_get_sequence_filename));
     hook_iat(
             process,
             jubeat_handle,
             "music_db.dll",
             "music_db_get_sound_filename",
-            reinterpret_cast<void *>(music_db_get_sound_filename_hook));
+            reinterpret_cast<void *>(music_db_get_sound_filename));
 
-    hook_music_db_read(process, music_db_handle, music_db_info);
+    music_db_initialize_orig = (bool (*)())GetProcAddress(music_db_handle, "music_db_initialize");
+
+    // mem_set
+    hook_iat_ordinal(process, jubeat_handle, "avs2-core.dll", 0xF4, reinterpret_cast<void *>(mem_set));
+
+    //hook_iat(process, jubeat_handle, "music_db.dll", "music_db_dbg_get_all_list", reinterpret_cast<void *>(music_db_dbg_get_all_list));
+    //hook_iat(process, jubeat_handle, "music_db.dll", "music_db_dot_array_to_music_bar", reinterpret_cast<void *>(music_db_dot_array_to_music_bar));
+    //hook_iat(process, jubeat_handle, "music_db.dll", "music_db_finalize", reinterpret_cast<void *>(music_db_finalize));
+    //hook_iat(process, jubeat_handle, "music_db.dll", "music_db_get_all_permitted_list", reinterpret_cast<void *>(music_db_get_all_permitted_list));
+    hook_iat(process, jubeat_handle, "music_db.dll", "music_db_get_bpm", reinterpret_cast<void *>(music_db_get_bpm));
+    hook_iat(process, jubeat_handle, "music_db.dll", "music_db_get_bpm_min", reinterpret_cast<void *>(music_db_get_bpm_min));
+    hook_iat(process, jubeat_handle, "music_db.dll", "music_db_get_card_default_list", reinterpret_cast<void *>(music_db_get_card_default_list));
+    // hook_iat(process, jubeat_handle, "music_db.dll", "music_db_get_default_id", reinterpret_cast<void *>(music_db_get_default_id));
+    // hook_iat(process, jubeat_handle, "music_db.dll", "music_db_get_default_id_by_genre", reinterpret_cast<void *>(music_db_get_default_id_by_genre));
+    // hook_iat(process, jubeat_handle, "music_db.dll", "music_db_get_default_id_by_mode", reinterpret_cast<void *>(music_db_get_default_id_by_mode));
+    //hook_iat(process, jubeat_handle, "music_db.dll", "music_db_get_default_list", reinterpret_cast<void *>(music_db_get_default_list));
+    hook_iat(process, jubeat_handle, "music_db.dll", "music_db_get_genre_list", reinterpret_cast<void *>(music_db_get_genre_list));
+    hook_iat(process, jubeat_handle, "music_db.dll", "music_db_get_grouping_category_list", reinterpret_cast<void *>(music_db_get_grouping_category_list));
+    hook_iat(process, jubeat_handle, "music_db.dll", "music_db_get_index_start", reinterpret_cast<void *>(music_db_get_index_start));
+    //hook_iat(process, jubeat_handle, "music_db.dll", "music_db_get_jukebox_list", reinterpret_cast<void *>(music_db_get_jukebox_list));
+    hook_iat(process, jubeat_handle, "music_db.dll", "music_db_get_level", reinterpret_cast<void *>(music_db_get_level));
+    hook_iat(process, jubeat_handle, "music_db.dll", "music_db_get_level_detail", reinterpret_cast<void *>(music_db_get_level_detail));
+    hook_iat(process, jubeat_handle, "music_db.dll", "music_db_get_music_name_head_index", reinterpret_cast<void *>(music_db_get_music_name_head_index));
+    hook_iat(process, jubeat_handle, "music_db.dll", "music_db_get_music_name_index", reinterpret_cast<void *>(music_db_get_music_name_index));
+    //hook_iat(process, jubeat_handle, "music_db.dll", "music_db_get_offline_default_list", reinterpret_cast<void *>(music_db_get_offline_default_list));
+    hook_iat(process, jubeat_handle, "music_db.dll", "music_db_get_parent_music_id", reinterpret_cast<void *>(music_db_get_parent_music_id));
+    hook_iat(process, jubeat_handle, "music_db.dll", "music_db_get_permitted_music_flag", reinterpret_cast<void *>(music_db_get_permitted_music_flag));
+    hook_iat(process, jubeat_handle, "music_db.dll", "music_db_get_pos_index", reinterpret_cast<void *>(music_db_get_pos_index));
+    hook_iat(process, jubeat_handle, "music_db.dll", "music_db_get_possession_list", reinterpret_cast<void *>(music_db_get_possession_list));
+    hook_iat(process, jubeat_handle, "music_db.dll", "music_db_initialize", reinterpret_cast<void *>(music_db_initialize));
+    //hook_iat(process, jubeat_handle, "music_db.dll", "music_db_is_all_yellow", reinterpret_cast<void *>(music_db_is_all_yellow));
+    //hook_iat(process, jubeat_handle, "music_db.dll", "music_db_is_displayable_level_detail", reinterpret_cast<void *>(music_db_is_displayable_level_detail));
+    hook_iat(process, jubeat_handle, "music_db.dll", "music_db_is_exists_table", reinterpret_cast<void *>(music_db_is_exists_table));
+    hook_iat(process, jubeat_handle, "music_db.dll", "music_db_is_exists_version_from_ver1", reinterpret_cast<void *>(music_db_is_exists_version_from_ver1));
+    hook_iat(process, jubeat_handle, "music_db.dll", "music_db_is_exists_version_from_ver2", reinterpret_cast<void *>(music_db_is_exists_version_from_ver2));
+    hook_iat(process, jubeat_handle, "music_db.dll", "music_db_is_exists_version_from_ver3", reinterpret_cast<void *>(music_db_is_exists_version_from_ver3));
+    hook_iat(process, jubeat_handle, "music_db.dll", "music_db_is_exists_version_from_ver4", reinterpret_cast<void *>(music_db_is_exists_version_from_ver4));
+    hook_iat(process, jubeat_handle, "music_db.dll", "music_db_is_exists_version_from_ver5", reinterpret_cast<void *>(music_db_is_exists_version_from_ver5));
+    hook_iat(process, jubeat_handle, "music_db.dll", "music_db_is_exists_version_from_ver5_5", reinterpret_cast<void *>(music_db_is_exists_version_from_ver5_5));
+    hook_iat(process, jubeat_handle, "music_db.dll", "music_db_is_exists_version_from_ver6", reinterpret_cast<void *>(music_db_is_exists_version_from_ver6));
+    hook_iat(process, jubeat_handle, "music_db.dll", "music_db_is_exists_version_from_ver7", reinterpret_cast<void *>(music_db_is_exists_version_from_ver7));
+    hook_iat(process, jubeat_handle, "music_db.dll", "music_db_is_exists_version_from_ver8", reinterpret_cast<void *>(music_db_is_exists_version_from_ver8));
+    hook_iat(process, jubeat_handle, "music_db.dll", "music_db_is_exists_version_from_ver9", reinterpret_cast<void *>(music_db_is_exists_version_from_ver9));
+    hook_iat(process, jubeat_handle, "music_db.dll", "music_db_is_hold_marker", reinterpret_cast<void *>(music_db_is_hold_marker));
+    hook_iat(process, jubeat_handle, "music_db.dll", "music_db_is_matched_select_type", reinterpret_cast<void *>(music_db_is_matched_select_type));
+    //hook_iat(process, jubeat_handle, "music_db.dll", "music_db_is_matching_select", reinterpret_cast<void *>(music_db_is_matching_select));
+    //hook_iat(process, jubeat_handle, "music_db.dll", "music_db_is_nearly_excellent", reinterpret_cast<void *>(music_db_is_nearly_excellent));
+    //hook_iat(process, jubeat_handle, "music_db.dll", "music_db_is_nearly_fullcombo", reinterpret_cast<void *>(music_db_is_nearly_fullcombo));
+    //hook_iat(process, jubeat_handle, "music_db.dll", "music_db_is_new", reinterpret_cast<void *>(music_db_is_new));
+    //hook_iat(process, jubeat_handle, "music_db.dll", "music_db_is_no_gray", reinterpret_cast<void *>(music_db_is_no_gray));
+    hook_iat(process, jubeat_handle, "music_db.dll", "music_db_is_permitted", reinterpret_cast<void *>(music_db_is_permitted));
+    hook_iat(process, jubeat_handle, "music_db.dll", "music_db_is_possession_for_contained_music_list", reinterpret_cast<void *>(music_db_is_possession_for_contained_music_list));
+    //hook_iat(process, jubeat_handle, "music_db.dll", "music_db_is_random_or_matching_select", reinterpret_cast<void *>(music_db_is_random_or_matching_select));
+    //hook_iat(process, jubeat_handle, "music_db.dll", "music_db_is_random_select", reinterpret_cast<void *>(music_db_is_random_select));
+    //hook_iat(process, jubeat_handle, "music_db.dll", "music_db_music_bar_to_dot_array", reinterpret_cast<void *>(music_db_music_bar_to_dot_array));
+    //hook_iat(process, jubeat_handle, "music_db.dll", "music_db_reset_using_datapackage", reinterpret_cast<void *>(music_db_reset_using_datapackage));
+    // hook_iat(process, jubeat_handle, "music_db.dll", "music_db_set_default_add_music_flag", reinterpret_cast<void *>(music_db_set_default_add_music_flag));
+    // hook_iat(process, jubeat_handle, "music_db.dll", "music_db_set_flag_equivalent_for_music_id", reinterpret_cast<void *>(music_db_set_flag_equivalent_for_music_id));
+    // hook_iat(process, jubeat_handle, "music_db.dll", "music_db_set_permitted_music_flag", reinterpret_cast<void *>(music_db_set_permitted_music_flag));
+    //hook_iat(process, jubeat_handle, "music_db.dll", "music_db_set_select_history_list", reinterpret_cast<void *>(music_db_set_select_history_list));
+
+    // hook_iat(process, jubeat_handle, "music_db.dll", "music_bonus_get_bonus_music", reinterpret_cast<void *>(music_bonus_get_bonus_music));
+    // hook_iat(process, jubeat_handle, "music_db.dll", "music_bonus_is_bonus_music", reinterpret_cast<void *>(music_bonus_is_bonus_music));
+    // hook_iat(process, jubeat_handle, "music_db.dll", "music_only_now_get_count", reinterpret_cast<void *>(music_only_now_get_count));
+    // hook_iat(process, jubeat_handle, "music_db.dll", "music_only_now_get_etime", reinterpret_cast<void *>(music_only_now_get_etime));
+    // hook_iat(process, jubeat_handle, "music_db.dll", "music_only_now_get_music_id", reinterpret_cast<void *>(music_only_now_get_music_id));
+    // hook_iat(process, jubeat_handle, "music_db.dll", "music_only_now_initialize", reinterpret_cast<void *>(music_only_now_initialize));
+
+    // TODO: all music_record function hooks are broken
+    // hook_iat(process, jubeat_handle, "music_db.dll", "music_record_add_clear_count", reinterpret_cast<void *>(music_record_add_clear_count));
+    // hook_iat(process, jubeat_handle, "music_db.dll", "music_record_add_excellent_count", reinterpret_cast<void *>(music_record_add_excellent_count));
+    // hook_iat(process, jubeat_handle, "music_db.dll", "music_record_add_full_combo_count", reinterpret_cast<void *>(music_record_add_full_combo_count));
+    // hook_iat(process, jubeat_handle, "music_db.dll", "music_record_add_play_count", reinterpret_cast<void *>(music_record_add_play_count));
+    // hook_iat(process, jubeat_handle, "music_db.dll", "music_record_clear_context", reinterpret_cast<void *>(music_record_clear_context));
+    // hook_iat(process, jubeat_handle, "music_db.dll", "music_record_get_best_music_rate", reinterpret_cast<void *>(music_record_get_best_music_rate));
+    // hook_iat(process, jubeat_handle, "music_db.dll", "music_record_get_best_score", reinterpret_cast<void *>(music_record_get_best_score));
+    // hook_iat(process, jubeat_handle, "music_db.dll", "music_record_get_clear_count", reinterpret_cast<void *>(music_record_get_clear_count));
+    // hook_iat(process, jubeat_handle, "music_db.dll", "music_record_get_clear_flag", reinterpret_cast<void *>(music_record_get_clear_flag));
+    // hook_iat(process, jubeat_handle, "music_db.dll", "music_record_get_excellent_count", reinterpret_cast<void *>(music_record_get_excellent_count));
+    // hook_iat(process, jubeat_handle, "music_db.dll", "music_record_get_full_combo_count", reinterpret_cast<void *>(music_record_get_full_combo_count));
+    // hook_iat(process, jubeat_handle, "music_db.dll", "music_record_get_jubility", reinterpret_cast<void *>(music_record_get_jubility));
+    // hook_iat(process, jubeat_handle, "music_db.dll", "music_record_get_music_bar", reinterpret_cast<void *>(music_record_get_music_bar));
+    // hook_iat(process, jubeat_handle, "music_db.dll", "music_record_get_play_count", reinterpret_cast<void *>(music_record_get_play_count));
+    // hook_iat(process, jubeat_handle, "music_db.dll", "music_record_get_sequence_record_set", reinterpret_cast<void *>(music_record_get_sequence_record_set));
+    // hook_iat(process, jubeat_handle, "music_db.dll", "music_record_get_total_best_score", reinterpret_cast<void *>(music_record_get_total_best_score));
+    // hook_iat(process, jubeat_handle, "music_db.dll", "music_record_is_all_played", reinterpret_cast<void *>(music_record_is_all_played));
+    // hook_iat(process, jubeat_handle, "music_db.dll", "music_record_is_all_yellow", reinterpret_cast<void *>(music_record_is_all_yellow));
+    // hook_iat(process, jubeat_handle, "music_db.dll", "music_record_is_any_played", reinterpret_cast<void *>(music_record_is_any_played));
+    // hook_iat(process, jubeat_handle, "music_db.dll", "music_record_is_cleared", reinterpret_cast<void *>(music_record_is_cleared));
+    // hook_iat(process, jubeat_handle, "music_db.dll", "music_record_is_excellent", reinterpret_cast<void *>(music_record_is_excellent));
+    // hook_iat(process, jubeat_handle, "music_db.dll", "music_record_is_full_combo", reinterpret_cast<void *>(music_record_is_full_combo));
+    // hook_iat(process, jubeat_handle, "music_db.dll", "music_record_is_no_gray", reinterpret_cast<void *>(music_record_is_no_gray));
+    // hook_iat(process, jubeat_handle, "music_db.dll", "?music_record_is_played@@YA_NIEW4MUSIC_RECORD_TYPE@@@Z", reinterpret_cast<void *>(music_record_is_played));
+    // hook_iat(process, jubeat_handle, "music_db.dll", "music_record_merge_music_bar", reinterpret_cast<void *>(music_record_merge_music_bar));
+    // hook_iat(process, jubeat_handle, "music_db.dll", "music_record_set_best_music_rate", reinterpret_cast<void *>(music_record_set_best_music_rate));
+    // hook_iat(process, jubeat_handle, "music_db.dll", "music_record_set_best_score", reinterpret_cast<void *>(music_record_set_best_score));
+    // hook_iat(process, jubeat_handle, "music_db.dll", "music_record_set_clear_count", reinterpret_cast<void *>(music_record_set_clear_count));
+    // hook_iat(process, jubeat_handle, "music_db.dll", "music_record_set_clear_flag", reinterpret_cast<void *>(music_record_set_clear_flag));
+    // hook_iat(process, jubeat_handle, "music_db.dll", "music_record_set_excellent_count", reinterpret_cast<void *>(music_record_set_excellent_count));
+    // hook_iat(process, jubeat_handle, "music_db.dll", "music_record_set_full_combo_count", reinterpret_cast<void *>(music_record_set_full_combo_count));
+    // hook_iat(process, jubeat_handle, "music_db.dll", "music_record_set_jubility", reinterpret_cast<void *>(music_record_set_jubility));
+    // hook_iat(process, jubeat_handle, "music_db.dll", "music_record_set_play_count", reinterpret_cast<void *>(music_record_set_play_count));
+    // hook_iat(process, jubeat_handle, "music_db.dll", "music_shareable_add_shareable_music", reinterpret_cast<void *>(music_shareable_add_shareable_music));
+    // hook_iat(process, jubeat_handle, "music_db.dll", "music_shareable_initialize", reinterpret_cast<void *>(music_shareable_initialize));
+    // hook_iat(process, jubeat_handle, "music_db.dll", "music_shareable_is_shareable_music", reinterpret_cast<void *>(music_shareable_is_shareable_music));
+    // hook_iat(process, jubeat_handle, "music_db.dll", "music_shareable_set_flag", reinterpret_cast<void *>(music_shareable_set_flag));
+
+    // hook_iat(process, jubeat_handle, "music_db.dll", "?GetInstance@BlackJacket@music_texture@@SAAAV12@XZ", reinterpret_cast<void *>(music_texture_BlackJacket_GetInstance));
+    // hook_iat(process, jubeat_handle, "music_db.dll", "?ReadXmlNode@BlackJacket@music_texture@@QAE_NPAUT_PROPERTY_NODE@@@Z", reinterpret_cast<void *>(music_texture_BlackJacket_ReadXmlNode));
+    // hook_iat(process, jubeat_handle, "music_db.dll", "?music_bonus_get_target_music_info@music_bonus_weekly@@YAXPBUJBMusicFlag_T@@AA_NAAI@Z", reinterpret_cast<void *>(music_bonus_weekly_music_bonus_get_target_music_info));
+    // hook_iat(process, jubeat_handle, "music_db.dll", "?clear@music_bonus_weekly@@YAXXZ", reinterpret_cast<void *>(music_bonus_weekly_clear));
+    // hook_iat(process, jubeat_handle, "music_db.dll", "?music_bonus_weekly_is_target_music@music_bonus_weekly@@YA_NPBUJBMusicFlag_T@@I@Z", reinterpret_cast<void *>(music_bonus_weekly_music_bonus_weekly_is_target_music));
+    // hook_iat(process, jubeat_handle, "music_db.dll", "?clear@music_new@@YAXXZ", reinterpret_cast<void *>(music_new_clear));
+    // hook_iat(process, jubeat_handle, "music_db.dll", "?get_list@music_new@@YAHHQAI@Z", reinterpret_cast<void *>(music_new_get_list));
+    // hook_iat(process, jubeat_handle, "music_db.dll", "?read_xml_node@music_new@@YA_NPAUT_PROPERTY_NODE@@@Z", reinterpret_cast<void *>(music_new_read_xml_node));
+
+    hook_iat(process, music_db_handle, "gftools.dll", "GFHashMapRegist", reinterpret_cast<void *>(GFHashMapRegist));
+    hook_iat(process, music_db_handle, "gftools.dll", "GFHashMapCreate", reinterpret_cast<void *>(GFHashMapCreate));
+    hook_iat(process, music_db_handle, "gftools.dll", "GFHashMapKeyToValue", reinterpret_cast<void *>(GFHashMapKeyToValue));
+    hook_iat(process, music_db_handle, "gftools.dll", "GFHashMapGetEntryList", reinterpret_cast<void *>(GFHashMapGetEntryList));
+    hook_iat(process, music_db_handle, "gftools.dll", "GFHashMapRewindEntryList", reinterpret_cast<void *>(GFHashMapRewindEntryList));
+
     hook_pkfs_fs_open(process, pkfs_handle, pkfs_info);
     hook_banner_textures(process, jubeat_info);
 

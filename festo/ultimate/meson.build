@@ -16,7 +16,7 @@ shared_library(
     ],
     sources: [
         'ultimate.cc',
-        'music_db.c',
+        'music_db.cc',
         'music_db.h',
         'pkfs.c',
         'pkfs.h',

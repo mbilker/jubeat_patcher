@@ -23,6 +23,12 @@ void hook_iat(
         const char *target_module_name,
         const char *import_name,
         void *target_func_ptr);
+void hook_iat_ordinal(
+        HANDLE process,
+        HMODULE module,
+        const char *target_module_name,
+        uint16_t target_func_ordinal,
+        void *target_func_ptr);
 
 #ifdef __cplusplus
 };

@@ -1,9 +1,15 @@
 LIBRARY avs2-core
 
 EXPORTS
+    property_node_refer @176 NONAME
     property_mem_read @184 NONAME
+    property_clear_error @158 NONAME
+    property_search @162 NONAME
+    property_node_traversal @167 NONAME
+    property_destroy @146 NONAME
     avs_strlcpy @224 NONAME
     avs_snprintf @258 NONAME
+    avs_thread_delay @8 NONAME
     log_body_fatal @379 NONAME
     log_body_warning @380 NONAME
     log_body_info @381 NONAME
