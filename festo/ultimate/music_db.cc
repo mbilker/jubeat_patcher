@@ -97,6 +97,43 @@ static int music_count;
 static music_db_entry_t music_db[MAX_SONGS];
 static robin_hood::unordered_map<int, music_db_entry_t*> music_db_map;
 
+void debug_music_entry(music_db_entry_t *song) {
+    if(!song) {
+        log_body_warning("ultimate", "%s: song == NULL", __func__);
+        return;
+    }
+    log_body_misc("ultimate", "music_id = %d", song->music_id);
+    log_body_misc("ultimate", "parent_id = %d", song->parent_id);
+    log_body_misc("ultimate", "name_sort_id_j = %x", song->name_sort_id_j);
+    log_body_misc("ultimate", "name_string = %s", song->name_string);
+    log_body_misc("ultimate", "level_bsc = %d", (int)song->level_bsc);
+    log_body_misc("ultimate", "level_adv = %d", (int)song->level_adv);
+    log_body_misc("ultimate", "level_ext = %d", (int)song->level_ext);
+    log_body_misc("ultimate", "detail_level_bsc = %f", song->detail_level_bsc);
+    log_body_misc("ultimate", "detail_level_adv = %f", song->detail_level_adv);
+    log_body_misc("ultimate", "detail_level_ext = %f", song->detail_level_ext);
+    log_body_misc("ultimate", "bpm_max = %f", song->bpm_max);
+    log_body_misc("ultimate", "bpm_min = %f", song->bpm_min);
+    log_body_misc("ultimate", "music_type = %d", song->music_type);
+    log_body_misc("ultimate", "version = %x", song->version);
+    log_body_misc("ultimate", "pos_index = %d", (int)song->pos_index);
+    log_body_misc("ultimate", "index_start = %d", song->index_start);
+    log_body_misc("ultimate", "is_default = %d", song->is_default);
+    log_body_misc("ultimate", "is_card_default = %d", song->is_card_default);
+    log_body_misc("ultimate", "is_offline_default = %d", song->is_offline_default);
+    log_body_misc("ultimate", "is_hold = %d", song->is_hold);
+    log_body_misc("ultimate", "step = %d", song->step);
+    log_body_misc("ultimate", "genre_list_pops = %d", song->genre_list[0]);
+    log_body_misc("ultimate", "genre_list_anime = %d", song->genre_list[1]);
+    log_body_misc("ultimate", "genre_list_socialmusic = %d", song->genre_list[2]);
+    log_body_misc("ultimate", "genre_list_game = %d", song->genre_list[3]);
+    log_body_misc("ultimate", "genre_list_classical = %d", song->genre_list[4]);
+    log_body_misc("ultimate", "genre_list_original = %d", song->genre_list[5]);
+    log_body_misc("ultimate", "genre_list_toho = %d", song->genre_list[6]);
+    log_body_misc("ultimate", "grouping_category = %lX", (long int)song->grouping_category);
+    log_body_misc("ultimate", "pack_id = %d", song->pack_id);
+}
+
 enum music_load_res {
     MUSIC_LOAD_OK      = 1,
     MUSIC_LOAD_BAD_VER = 2,
@@ -109,6 +146,28 @@ static music_db_entry_t* music_from_id(int id) {
 }
 
 typedef bool (*music_filter_func)(music_db_entry_t *song);
+
+bool filter_func_all(music_db_entry_t *song) {
+    return true;
+}
+
+// the non-extend stuff falls below the 2048 song limit (about 1300 songs)
+// this is thus a nice easy way to get the arcade tracks into jubility calcs
+bool filter_func_not_extend(music_db_entry_t *song) {
+    return song->pack_id == -1;
+}
+
+bool filter_func_is_default(music_db_entry_t *song) {
+    return song->is_default;
+}
+
+bool filter_func_card_default(music_db_entry_t *song) {
+    return song->is_card_default;
+}
+
+bool filter_func_is_offline_default(music_db_entry_t *song) {
+    return song->is_offline_default;
+}
 
 static int music_db_filtered_list(const char *func, int limit, int *results, music_filter_func filter) {
     int returned = 0;
@@ -135,8 +194,40 @@ static int music_db_filtered_list(const char *func, int limit, int *results, mus
             func, found, returned);
     }
 
+    //log_body_misc("ultimate", "%s(%d) -> %d", func, limit, returned);
+
     return returned;
 }
+
+int __cdecl music_db_get_default_list(int limit, int* results) {
+    return music_db_filtered_list(__func__, limit, results, filter_func_not_extend);
+    //return music_db_filtered_list(__func__, limit, results, filter_func_is_default);
+}
+
+int __cdecl music_db_get_offline_default_list(int limit, int* results) {
+    return music_db_filtered_list(__func__, limit, results, filter_func_not_extend);
+    //return music_db_filtered_list(__func__, limit, results, filter_func_is_offline_default);
+}
+
+// this controls which songs are valid for jubility calculations
+int __cdecl music_db_get_all_permitted_list(int limit, int *results) {
+    return music_db_filtered_list(__func__, limit, results, filter_func_not_extend);
+}
+
+int __cdecl music_db_get_possession_list(uint8_t flags[FLAG_LEN], int limit, int *results) {
+    //log_body_warning("ultimate", "music_db_get_possession_list(%p, %d, %p)", flags, limit, results);
+
+    return music_db_filtered_list(__func__, limit, results, filter_func_all);
+}
+
+int __cdecl music_db_get_card_default_list(int limit, int *results) {
+    return music_db_filtered_list(__func__, limit, results, filter_func_card_default);
+}
+
+// int __cdecl music_db_get_jukebox_list() {
+//     log_body_warning("ultimate", "music_db_get_jukebox_list: not implemented");
+//     return 0;
+// }
 
 static enum music_load_res music_load_individual(int index, void *node) {
     // big enough for the hex name
@@ -168,7 +259,6 @@ static enum music_load_res music_load_individual(int index, void *node) {
     song->bpm_max = 0;
     song->bpm_min = 0;
     song->music_type = -1;
-    song->version = -1;
     song->pos_index = -1;
     song->index_start = -1;
     song->is_default = -1;
@@ -219,6 +309,9 @@ static enum music_load_res music_load_individual(int index, void *node) {
 
     // YOU HAVE A SHIFT-JIS XML FORMAT YOU IDIOTS
     property_node_refer(NULL, node, "/name_string", PROP_TYPE_str, tmp, sizeof(tmp));
+    // clamp the 256 hex/128 real byte input to the 64 byte output
+    tmp[(sizeof(song->name_string) - 1) * 2] = '\0';
+
     int i;
     for(i = 0; tmp[i]; i+= 2) {
         char blah[3];
@@ -307,15 +400,6 @@ bool __cdecl music_db_initialize() {
 //     return 0;
 // }
 
-bool filter_func_not_extend(music_db_entry_t *song) {
-    return song->pack_id == -1;
-}
-
-// this controls which songs are valid for jubility calculations
-int __cdecl music_db_get_all_permitted_list(int limit, int *results) {
-    return music_db_filtered_list(__func__, limit, results, filter_func_not_extend);
-}
-
 float __cdecl music_db_get_bpm(int id) {
     music_db_entry_t *song = music_from_id(id);
     return song ? song->bpm_max : 0.0;
@@ -324,14 +408,6 @@ float __cdecl music_db_get_bpm(int id) {
 float __cdecl music_db_get_bpm_min(int id) {
     music_db_entry_t *song = music_from_id(id);
     return song ? song->bpm_min : -1.0;
-}
-
-static bool filter_func_card_default(music_db_entry_t *song) {
-    return song->is_card_default;
-}
-
-int __cdecl music_db_get_card_default_list(int limit, int *results) {
-    return music_db_filtered_list(__func__, limit, results, filter_func_card_default);
 }
 
 // get_default_x: returns the song to play first? No patch needed
@@ -348,11 +424,6 @@ int __cdecl music_db_get_card_default_list(int limit, int *results) {
 
 // int __cdecl music_db_get_default_id_by_mode() {
 //     log_body_warning("ultimate", "music_db_get_default_id_by_mode: not implemented");
-//     return 0;
-// }
-
-// int __cdecl music_db_get_default_list(int a1, void* a2) {
-//     // it appears this call can just return 0 with no ill effect
 //     return 0;
 // }
 
@@ -373,10 +444,6 @@ int __cdecl music_db_get_index_start(int id) {
     return song ? song->index_start : -1;
 }
 
-// int __cdecl music_db_get_jukebox_list() {
-//     log_body_warning("ultimate", "music_db_get_jukebox_list: not implemented");
-//     return 0;
-// }
 
 uint8_t __cdecl music_db_get_level(int id, uint8_t difficulty) {
     music_db_entry_t *song = music_from_id(id);
@@ -395,6 +462,20 @@ uint8_t __cdecl music_db_get_level(int id, uint8_t difficulty) {
             return 1;
     }
 }
+
+// we were having problems here, if they come back, uncomment and hook this
+// uint8_t __cdecl music_db_get_level_logged(int id, uint8_t difficulty) {
+//     uint8_t ret = music_db_get_level(id, difficulty);
+//     if(ret > 10) {
+//         music_db_entry_t *song = music_from_id(id);
+//         debug_music_entry(song);
+//         log_body_fatal("ultimate", "music_db_get_level(%d, %d) -> %d", id, difficulty, ret);
+//     } else {
+//         log_body_misc("ultimate", "music_db_get_level(%d, %d) -> %d", id, difficulty, ret);
+//     }
+
+//     return ret;
+// }
 
 // returns the fractional part of levels, ie 9.4 -> 4
 uint8_t __cdecl music_db_get_level_detail(int id, uint8_t difficulty) {
@@ -426,7 +507,10 @@ uint8_t __cdecl music_db_get_level_detail(int id, uint8_t difficulty) {
 
 int __cdecl music_db_get_music_name_head_index(int id) {
     music_db_entry_t *song = music_from_id(id);
-    // why bitshift 12? fucked if I know
+    // the bottom 12 bits are the sort order inside the category
+    // the upper 20 bits (of which 10 are used) are the first letter of the
+    // sort, with a single bit set ie (upper = 1<<letter)
+    // this returns just that main sort category
     return song ? song->name_sort_id_j >> 12 : 0;
 }
 
@@ -435,43 +519,13 @@ int __cdecl music_db_get_music_name_index(int id) {
     return song ? song->name_sort_id_j : 0;
 }
 
-// int __cdecl music_db_get_offline_default_list(int limit, int* results) {
-//     // it appears this call can just return 0 with no ill effect
-//     return 0;
-
-//     // int returned = 0;
-//     // int found = 0;
-
-//     // for(int i = 0; i < music_count; i++) {
-//     //     music_db_entry_t *song = &music_db[i];
-
-//     //     if(!song->is_offline_default) {
-//     //         continue;
-//     //     }
-//     //     found++;
-//     //     if(returned < limit) {
-//     //         returned++;
-//     //         *results++ = song->music_id;
-//     //     }
-//     // }
-
-//     // if(found != returned) {
-//     //     log_body_warning(
-//     //         "ultimate",
-//     //         "music_db_get_offline_default_list could have returned %d but capped at %d",
-//     //         found, returned);
-//     // }
-
-//     // return returned;
-// }
-
 int __cdecl music_db_get_parent_music_id(int id) {
     music_db_entry_t *song = music_from_id(id);
     return song ? song->parent_id : 0;
 }
 
-int8_t *__cdecl music_db_get_permitted_music_flag() {
-    static int8_t flags[FLAG_LEN];
+uint8_t *__cdecl music_db_get_permitted_music_flag() {
+    static uint8_t flags[FLAG_LEN];
     memset(flags, -1, sizeof(flags));
     return flags;
 }
@@ -479,16 +533,6 @@ int8_t *__cdecl music_db_get_permitted_music_flag() {
 int16_t __cdecl music_db_get_pos_index(int id) {
     music_db_entry_t *song = music_from_id(id);
     return song ? song->pos_index : -1;
-}
-
-static bool filter_func_all(music_db_entry_t *song) {
-    return true;
-}
-
-int __cdecl music_db_get_possession_list(int8_t flags[FLAG_LEN], int limit, int *results) {
-    //log_body_warning("ultimate", "music_db_get_possession_list(%p, %d, %p)", flags, limit, results);
-
-    return music_db_filtered_list(__func__, limit, results, filter_func_all);
 }
 
 // bool __cdecl music_db_is_all_yellow() {
@@ -586,7 +630,7 @@ bool __cdecl music_db_is_matched_select_type(uint8_t type, int id, uint8_t diffi
         case 4:
             return (level - 9) <= 1;
         default:
-            return 1;
+            return true;
     }
 }
 
@@ -620,8 +664,70 @@ bool __cdecl music_db_is_permitted(int id) {
     return music_db_is_exists_table(id);
 }
 
-bool __cdecl music_db_is_possession_for_contained_music_list(char *a1, int id) {
-    return music_db_is_exists_table(id);
+// this is used along with the hot_music_list bitfield to determine
+// pickup/common in jubility rankings. You can't just return every song or the
+// common folder will be empty. Every *other* place it appears should just
+// return true all the time as an "unlock all" patch.
+// hot_music_list THANKFULLY is one of two lists that comes in from .data, every
+// other call uses a stack variable. By detecting this we can only perform
+// filtering when we absolutely have to.
+bool __cdecl music_db_is_possession_for_contained_music_list(uint8_t flags[FLAG_LEN], int id) {
+    static uint8_t *hot_music = NULL;
+    static uint8_t *data_start = NULL;
+    static uint8_t *data_end = NULL;
+
+    if(data_start == NULL) {
+        auto dll_dos = (PIMAGE_DOS_HEADER) GetModuleHandle("jubeat.dll");
+        GFAssert(dll_dos->e_magic == IMAGE_DOS_SIGNATURE);
+
+        auto nt_headers = (PIMAGE_NT_HEADERS) ((uint8_t*) dll_dos + dll_dos->e_lfanew);
+
+        // iterate sections
+        auto section_count = nt_headers->FileHeader.NumberOfSections;
+        PIMAGE_SECTION_HEADER section_header = IMAGE_FIRST_SECTION(nt_headers);
+        for (size_t i = 0; i < section_count; section_header++, i++) {
+            if(strcmp(".data", (char*)section_header->Name) != 0) {
+                continue;
+            }
+
+            data_start = (uint8_t*)((DWORD)dll_dos + section_header->VirtualAddress);
+            data_end = data_start + section_header->Misc.VirtualSize;
+
+            log_body_misc("ultimate", ".data found from %p to %p", data_start, data_end);
+        }
+
+        GFAssert(data_start != NULL);
+        GFAssert(data_end != NULL);
+    }
+
+    if(hot_music == NULL &&
+            flags >= data_start &&
+            flags < data_end &&
+            // hot_music lives at a significantly larger offset than the others
+            (flags - data_start) > 0x1000000) {
+        hot_music = flags;
+        log_body_misc("ultimate", "hot_music found at %p", hot_music);
+    }
+
+    // where we just unlock things
+    if(flags != hot_music) {
+        return music_db_is_exists_table(id);
+    }
+
+    // jubility stuff
+    music_db_entry_t *song = music_from_id(id);
+    if(!song) {
+        return false;
+    }
+
+    if(song->pos_index < 0 || song->pos_index >= MAX_SONGS_STOCK) {
+        return 0;
+    }
+
+    size_t flag_byte = song->pos_index / 8;
+    size_t flag_bit  = song->pos_index % 8;
+
+    return (flags[flag_byte] & (1<<flag_bit)) != 0;
 }
 
 // ID test
@@ -640,7 +746,7 @@ bool __cdecl music_db_is_possession_for_contained_music_list(char *a1, int id) {
 //     return 0;
 // }
 
-// int __cdecl music_db_set_default_add_music_flag(int8_t flags[FLAG_LEN]) {
+// int __cdecl music_db_set_default_add_music_flag(uint8_t flags[FLAG_LEN]) {
 //     return 0;
 // }
 
@@ -650,14 +756,14 @@ bool __cdecl music_db_is_possession_for_contained_music_list(char *a1, int id) {
 //     return 0;
 // }
 
-// int __cdecl music_db_set_permitted_music_flag(int8_t flags[FLAG_LEN]) {
+// int __cdecl music_db_set_permitted_music_flag(uint8_t flags[FLAG_LEN]) {
 //     return 0;
 // }
 
 // these functions handily replace all the music_record functions because
 // they call GFHashMapKeyToValue before checking size limits
 static int music_record_count;
-static uint8_t music_records[MAX_SONGS][3000]; // dll says 2112 bytes each, add leeway
+static uint8_t music_records[MAX_SONGS][2112]; // dll says 2112 bytes each
 static robin_hood::unordered_map<int, void*> music_record_map;
 
 void* GFHashMapCreate(void *mem, int mem_sz, int max_elems) {
@@ -896,7 +1002,7 @@ bool GFHashMapGetEntryList(void *map, int *key, void **val) {
 //     log_body_warning("ultimate", "music_shareable_is_shareable_music: not implemented");
 //     return 1;
 // }
-// void __cdecl music_shareable_set_flag(int8_t flags[FLAG_LEN]) {
+// void __cdecl music_shareable_set_flag(uint8_t flags[FLAG_LEN]) {
 // }
 
 // void *__cdecl music_texture_BlackJacket_GetInstance() {
