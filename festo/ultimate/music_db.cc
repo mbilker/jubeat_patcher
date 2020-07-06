@@ -50,10 +50,9 @@ bool __cdecl music_db_get_sound_filename(void *a1, void *a2, int music_id, uint8
 void __cdecl *mem_set(void *s, int c, size_t n) {
     if(n == 1296) {
         log_body_info("ultimate", "hooked d3_initialize");
-        size_t jb_dll = (size_t)GetModuleHandle("jubeat.dll");
 
-        uint16_t *limit = (uint16_t*)(jb_dll + 0x971CF8);
-        void **buf = (void**)(jb_dll + 0x273BB0);
+        uint16_t *limit = (uint16_t*)((DWORD)s + 0xAEE8);
+        void **buf = (void**)((DWORD)s - 0x6F3260);
 
         const size_t new_sz = 8192 * 28 * 4;
         size_t new_limit = new_sz / 28;
