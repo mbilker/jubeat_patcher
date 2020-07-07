@@ -89,7 +89,7 @@ typedef struct {
   // pops/anime/socialmusic/game/classical/original/toho
   char genre_list[7];
   uint64_t grouping_category;
-  int16_t pack_id; // custom! Extend pack ID from Jubeat mobile versions
+  int32_t pack_id; // custom! Extend pack ID from Jubeat mobile versions
 } music_db_entry_t;
 
 static int music_count;
@@ -298,7 +298,7 @@ static enum music_load_res music_load_individual(int index, void *node) {
     property_node_refer(NULL, node, "genre/classic", PROP_TYPE_u8, &song->genre_list[4], 1);
     property_node_refer(NULL, node, "genre/original", PROP_TYPE_u8, &song->genre_list[5], 1);
     property_node_refer(NULL, node, "genre/toho", PROP_TYPE_u8, &song->genre_list[6], 1);
-    property_node_refer(NULL, node, "/pack_id", PROP_TYPE_s16, &song->pack_id, 2);
+    property_node_refer(NULL, node, "/pack_id", PROP_TYPE_s32, &song->pack_id, 4);
     property_node_refer(NULL, node, "/grouping_category", PROP_TYPE_str, tmp, sizeof(tmp));
     song->grouping_category = strtoul(tmp, NULL, 16);
 
@@ -708,8 +708,35 @@ bool __cdecl music_db_is_possession_for_contained_music_list(uint8_t flags[FLAG_
         log_body_misc("ultimate", "hot_music found at %p", hot_music);
     }
 
+    // log_body_misc("ultimate", "%s(%p, %d)", __func__, flags, id);
+
+    // static void* last_flags = NULL;
+    // if(flags != last_flags) {
+    //     last_flags = flags;
+    //     for(int i = 0; i < FLAG_LEN; i+=8) {
+    //         log_body_misc("ultimate", "%s %d: %X %X %X %X %X %X %X %X",
+    //             __func__,
+    //             i,
+    //             flags[i+0],
+    //             flags[i+1],
+    //             flags[i+2],
+    //             flags[i+3],
+    //             flags[i+4],
+    //             flags[i+5],
+    //             flags[i+6],
+    //             flags[i+7]
+    //         );
+    //     }
+    // }
+
+    // static uint8_t all_ff[FLAG_LEN] = {0};
+    // if(all_ff[0] == 0) {
+    //     memset(all_ff, 0xff, sizeof(all_ff));
+    // }
+
     // where we just unlock things
     if(flags != hot_music) {
+    //if(memcmp(all_ff, flags, FLAG_LEN) == 0) {
         return music_db_is_exists_table(id);
     }
 
