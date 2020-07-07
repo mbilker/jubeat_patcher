@@ -193,7 +193,7 @@ static int music_db_filtered_list(const char *func, int limit, int *results, mus
             func, found, returned);
     }
 
-    //log_body_misc("ultimate", "%s(%d) -> %d", func, limit, returned);
+    log_body_misc("ultimate", "%s(%d, %p) -> %d", func, limit, results, returned);
 
     return returned;
 }
@@ -208,9 +208,13 @@ int __cdecl music_db_get_offline_default_list(int limit, int* results) {
     //return music_db_filtered_list(__func__, limit, results, filter_func_is_offline_default);
 }
 
-// this controls which songs are valid for jubility calculations
+// any song missing from here won't be included in jubility pick-up, and any
+// song missing from here that blindly returns true in music_db_is_permitted
+// will errorneously increment jubility locally when played, but reset next
+// login. Patch the initial jubility function's arrays to allow full
+// functionality
 int __cdecl music_db_get_all_permitted_list(int limit, int *results) {
-    return music_db_filtered_list(__func__, limit, results, filter_func_not_extend);
+    return music_db_filtered_list(__func__, limit, results, filter_func_all);
 }
 
 int __cdecl music_db_get_possession_list(uint8_t flags[FLAG_LEN], int limit, int *results) {

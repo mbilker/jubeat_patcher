@@ -98,13 +98,18 @@ const struct patch_t song_unlock_patch {
 };
 
 static int stack_replacer[MAX_SONGS];
-const size_t mdb_arr_patch = (int)stack_replacer;
+const size_t mdb_arr_patch = (size_t)stack_replacer;
+
+static uint8_t score_stack_replacer[MAX_SONGS][20];
+const size_t score_arr_patch = (size_t)score_stack_replacer;
+// the asm to replace needs the end of the array
+const size_t end_score_arr_patch = (size_t)(&score_stack_replacer[MAX_SONGS]);
 
 #define U32_TO_CONST_BYTES_LE(x) \
         (uint8_t)((x) & 0xff), \
-        (uint8_t)((x >> 8) & 0xff), \
-        (uint8_t)((x >> 16) & 0xff), \
-        (uint8_t)((x >> 24) & 0xff)
+        (uint8_t)(((x) >> 8) & 0xff), \
+        (uint8_t)(((x) >> 16) & 0xff), \
+        (uint8_t)(((x) >> 24) & 0xff)
 
 struct patch_t mdb_array_1_0 {
     .name = "mdb 1.0",
@@ -165,6 +170,81 @@ struct patch_t mdb_array_2_2 {
         U32_TO_CONST_BYTES_LE(mdb_arr_patch),
     },
     .data_offset = 0,
+};
+
+// list passed to music_db_get_all_permitted_list
+struct patch_t mdb_array_3_0 {
+    .name = "mdb 3.0",
+    .pattern = { 0x56, 0x57, 0x8D, 0x85, 0xFC, 0xDF, 0xFF, 0xFF },
+    .data =    {
+        0xB8, // mov eax, imm32
+        U32_TO_CONST_BYTES_LE(mdb_arr_patch),
+        0x90,
+    },
+    .data_offset = 2,
+};
+// size passed to music_db_get_all_permitted_list
+struct patch_t mdb_array_3_1 {
+    .name = "mdb 3.1",
+    .pattern = { 0x8B, 0xD9, 0x50, 0x68, 0x00, 0x08, 0x00, 0x00 },
+    .data =    {
+        U32_TO_CONST_BYTES_LE(MAX_SONGS),
+    },
+    .data_offset = 4,
+};
+// iteration list deref
+struct patch_t mdb_array_3_2 {
+    .name = "mdb 3.2",
+    .pattern = { 0x8B, 0xB4, 0x85, 0xFC, 0xDF, 0xFF, 0xFF }, // mov esi, [ebp+eax*4+permitted_list]
+    .data =    {
+        0x8B, 0x34, 0x85, // mov esi, [eax*4+imm32]
+        U32_TO_CONST_BYTES_LE(mdb_arr_patch),
+    },
+    .data_offset = 0,
+};
+// score info ref
+struct patch_t mdb_array_3_3 {
+    .name = "mdb 3.3",
+    .pattern = { 0x8D, 0x8D, 0xFC, 0xFF, 0xFD, 0xFF },
+    .data =    {
+        0xB9, // mov ecx, imm32
+        U32_TO_CONST_BYTES_LE(score_arr_patch),
+        0x90,
+    },
+    .data_offset = 0,
+};
+// score info ref #2, passed to avs_qsort
+struct patch_t mdb_array_3_4 {
+    .name = "mdb 3.4",
+    .pattern = { 0x8D, 0x85, 0xFC, 0xFF, 0xFD, 0xFF },
+    .data =    {
+        0xB8, // mov eax, imm32
+        U32_TO_CONST_BYTES_LE(score_arr_patch),
+        0x90,
+    },
+    .data_offset = 0,
+};
+// score info ref #3
+struct patch_t mdb_array_3_5 {
+    .name = "mdb 3.5",
+    .pattern = { 0x8D, 0xB5, 0xFC, 0xFF, 0xFD, 0xFF }, // lea esi, [ebp+score_info]
+    .data =    {
+        0xBE, // mov esi, imm32
+        U32_TO_CONST_BYTES_LE(score_arr_patch),
+        0x90,
+    },
+    .data_offset = 0,
+};
+// loop terminator, end of score array
+struct patch_t mdb_array_3_6 {
+    .name = "mdb 3.6",
+    .pattern = { 0xC6, 0x14, 0x8D, 0x85, 0xFC, 0xDF, 0xFF, 0xFF },
+    .data =    {
+        0xB8, // mov eax, imm32
+        U32_TO_CONST_BYTES_LE(end_score_arr_patch),
+        0x90,
+    },
+    .data_offset = 2,
 };
 
 static void *D3_PACKAGE_LOAD = nullptr;
@@ -504,7 +584,11 @@ extern "C" bool __declspec(dllexport) dll_entry_init(char *sid_code, void *app_c
         log_fatal("GetModuleInformation(\"pkfs.dll\") failed: 0x%08lx", GetLastError());
     }
 
-    log_body_info("ultimate", "patch array lives at %X", mdb_arr_patch);
+    log_body_info("ultimate", "mdb_arr_patch: %p score_arr_patch: %p end_score_arr_patch: %p",
+        (void*)mdb_arr_patch,
+        (void*)score_arr_patch,
+        (void*)end_score_arr_patch
+    );
     do_patch(process, jubeat_info, tutorial_skip);
     do_patch(process, jubeat_info, select_timer_freeze);
     do_patch(process, jubeat_info, packlist_pluslist);
@@ -514,6 +598,13 @@ extern "C" bool __declspec(dllexport) dll_entry_init(char *sid_code, void *app_c
     do_patch(process, jubeat_info, mdb_array_2_0);
     do_patch(process, jubeat_info, mdb_array_2_1);
     do_patch(process, jubeat_info, mdb_array_2_2);
+    do_patch(process, jubeat_info, mdb_array_3_0);
+    do_patch(process, jubeat_info, mdb_array_3_1);
+    do_patch(process, jubeat_info, mdb_array_3_2);
+    do_patch(process, jubeat_info, mdb_array_3_3);
+    do_patch(process, jubeat_info, mdb_array_3_4);
+    do_patch(process, jubeat_info, mdb_array_3_5);
+    do_patch(process, jubeat_info, mdb_array_3_6);
     // do_patch(process, music_db_info, music_db_limit_1);
     // do_patch(process, music_db_info, music_db_limit_2_old);
     // do_patch(process, music_db_info, music_db_limit_2_new);
