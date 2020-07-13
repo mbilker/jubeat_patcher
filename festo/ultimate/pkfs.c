@@ -9,8 +9,9 @@
 
 //#include "util/log.h"
 
-size_t __cdecl pkfs_avs_strlcpy(char *dst, const char *src, size_t dst_size) {
-    //log_misc("avs_strlcpy(%p, \"%s\", %u)", dst, src, dst_size);
+size_t __cdecl pkfs_avs_strlcpy(char *dst, const char *src, size_t dst_size)
+{
+    // log_misc("avs_strlcpy(%p, \"%s\", %u)", dst, src, dst_size);
 
     if (dst_size != 9) {
         return avs_strlcpy(dst, src, dst_size);
@@ -25,9 +26,10 @@ size_t __cdecl pkfs_avs_strlcpy(char *dst, const char *src, size_t dst_size) {
     return avs_strlcpy(dst, src, 10);
 }
 
-size_t __cdecl pkfs_avs_strlen(const char *str) {
+size_t __cdecl pkfs_avs_strlen(const char *str)
+{
     size_t len = strlen(str);
-    //log_misc("avs_strlen(\"%s\") = %u", str, len);
+    // log_misc("avs_strlen(\"%s\") = %u", str, len);
 
     if (len >= 8 && len <= 9) {
         len = 8;
@@ -36,8 +38,9 @@ size_t __cdecl pkfs_avs_strlen(const char *str) {
     return len;
 }
 
-int __cdecl pkfs_avs_snprintf(char *dst, size_t dst_size, const char *fmt, ...) {
-    //log_misc("avs_snprintf(%p, %u, \"%s\")", dst, dst_size, fmt);
+int __cdecl pkfs_avs_snprintf(char *dst, size_t dst_size, const char *fmt, ...)
+{
+    // log_misc("avs_snprintf(%p, %u, \"%s\")", dst, dst_size, fmt);
 
     const char *music_id, *str2, *dir, *msc;
     char music_dir[7];
@@ -71,51 +74,51 @@ int __cdecl pkfs_avs_snprintf(char *dst, size_t dst_size, const char *fmt, ...) 
         if (strlen(music_id) == 9) {
             if (music_id[0] == '0') {
                 return snprintf(
-                        dst,
-                        dst_size,
-                        fmt,
-                        dir,
-                        music_id[1],
-                        music_id[2],
-                        music_id[3],
-                        music_id[4],
-                        music_id[5],
-                        music_id[6],
-                        music_id[7],
-                        &music_id[1],
-                        msc);
-            } else {
-                return snprintf(
-                        dst,
-                        dst_size,
-                        "%s/d%c%c%c%c%c%c%c%c/%s_%s.ifs",
-                        "/data/ifs_pack",
-                        music_id[0],
-                        music_id[1],
-                        music_id[2],
-                        music_id[3],
-                        music_id[4],
-                        music_id[5],
-                        music_id[6],
-                        music_id[7],
-                        music_id,
-                        msc);
-            }
-        } else {
-            return snprintf(
                     dst,
                     dst_size,
                     fmt,
                     dir,
-                    music_dir[0],
-                    music_dir[1],
-                    music_dir[2],
-                    music_dir[3],
-                    music_dir[4],
-                    music_dir[5],
-                    music_dir[6],
+                    music_id[1],
+                    music_id[2],
+                    music_id[3],
+                    music_id[4],
+                    music_id[5],
+                    music_id[6],
+                    music_id[7],
+                    &music_id[1],
+                    msc);
+            } else {
+                return snprintf(
+                    dst,
+                    dst_size,
+                    "%s/d%c%c%c%c%c%c%c%c/%s_%s.ifs",
+                    "/data/ifs_pack",
+                    music_id[0],
+                    music_id[1],
+                    music_id[2],
+                    music_id[3],
+                    music_id[4],
+                    music_id[5],
+                    music_id[6],
+                    music_id[7],
                     music_id,
                     msc);
+            }
+        } else {
+            return snprintf(
+                dst,
+                dst_size,
+                fmt,
+                dir,
+                music_dir[0],
+                music_dir[1],
+                music_dir[2],
+                music_dir[3],
+                music_dir[4],
+                music_dir[5],
+                music_dir[6],
+                music_id,
+                msc);
         }
     } else if (strcmp(fmt, "/data/imagefs/%s/%s") == 0) {
         music_id = va_arg(args, const char *);

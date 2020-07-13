@@ -7,7 +7,7 @@
 
 #ifdef __GNUC__
 /* This is compiled with GCC (MinGW, specifically) as of version 5 */
-#define LOG_CHECK_FMT __attribute__(( format(printf, 2, 3) ))
+#define LOG_CHECK_FMT __attribute__((format(printf, 2, 3)))
 #else
 /* Compile it out for MSVC plebs */
 #define LOG_CHECK_FMT
@@ -27,7 +27,6 @@
    from libavs, which has its own printf implementation (including a number of
    proprietary extensions), so don't use any overly exotic formats. */
 
-typedef void (*log_formatter_t)(const char *module, const char *fmt, ...)
-        LOG_CHECK_FMT;
+typedef void (*log_formatter_t)(const char *module, const char *fmt, ...) LOG_CHECK_FMT;
 
 #endif

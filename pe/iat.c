@@ -1,7 +1,9 @@
 #define LOG_MODULE "pe"
 
+// clang-format off
 #include <windows.h>
 #include <dbghelp.h>
+// clang-format on
 
 #include <stdbool.h>
 #include <stdint.h>
@@ -9,20 +11,15 @@
 #include "util/log.h"
 #include "util/mem.h"
 
-const IMAGE_IMPORT_DESCRIPTOR *module_get_iid_for_name(
-        HANDLE process,
-        HMODULE module,
-        const char *target_module_name)
+const IMAGE_IMPORT_DESCRIPTOR *
+module_get_iid_for_name(HANDLE process, HMODULE module, const char *target_module_name)
 {
     IMAGE_IMPORT_DESCRIPTOR *import_descriptor;
     unsigned long size;
     const char *module_name;
 
-    import_descriptor = ImageDirectoryEntryToData(
-            module,
-            true,
-            IMAGE_DIRECTORY_ENTRY_IMPORT,
-            &size);
+    import_descriptor =
+        ImageDirectoryEntryToData(module, true, IMAGE_DIRECTORY_ENTRY_IMPORT, &size);
 
     if (import_descriptor == NULL) {
         log_warning("failed to get import descriptor for module: 0x%08lx", GetLastError());
@@ -54,10 +51,10 @@ const IMAGE_IMPORT_DESCRIPTOR *module_get_iid_for_name(
 }
 
 void *iid_get_addr_for_name(
-        HMODULE module,
-        const IMAGE_IMPORT_DESCRIPTOR *import_descriptor,
-        uint16_t ordinal,
-        const char *name)
+    HMODULE module,
+    const IMAGE_IMPORT_DESCRIPTOR *import_descriptor,
+    uint16_t ordinal,
+    const char *name)
 {
     uintptr_t module_base;
     intptr_t *import_rvas;
@@ -99,11 +96,11 @@ void *iid_get_addr_for_name(
 }
 
 void hook_iat(
-        HANDLE process,
-        HMODULE module,
-        const char *target_module_name,
-        const char *import_name,
-        void *target_func_ptr)
+    HANDLE process,
+    HMODULE module,
+    const char *target_module_name,
+    const char *import_name,
+    void *target_func_ptr)
 {
     const IMAGE_IMPORT_DESCRIPTOR *import_descriptor;
     void *target;
@@ -122,15 +119,20 @@ void hook_iat(
 
     memory_write(process, target, &target_func_ptr, sizeof(target));
 
-    log_misc("patched '%s'(%p) in '%s' with %p", import_name, target, target_module_name, target_func_ptr);
+    log_misc(
+        "patched '%s'(%p) in '%s' with %p",
+        import_name,
+        target,
+        target_module_name,
+        target_func_ptr);
 }
 
 void hook_iat_ordinal(
-        HANDLE process,
-        HMODULE module,
-        const char *target_module_name,
-        uint16_t target_func_ordinal,
-        void *target_func_ptr)
+    HANDLE process,
+    HMODULE module,
+    const char *target_module_name,
+    uint16_t target_func_ordinal,
+    void *target_func_ptr)
 {
     const IMAGE_IMPORT_DESCRIPTOR *import_descriptor;
     void *target;
@@ -149,5 +151,10 @@ void hook_iat_ordinal(
 
     memory_write(process, target, &target_func_ptr, sizeof(target));
 
-    log_misc("patched '%d'(%p) in '%s' with %p", target_func_ordinal, target, target_module_name, target_func_ptr);
+    log_misc(
+        "patched '%d'(%p) in '%s' with %p",
+        target_func_ordinal,
+        target,
+        target_module_name,
+        target_func_ptr);
 }

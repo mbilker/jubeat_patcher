@@ -18,17 +18,17 @@ static void log_builtin_fatal(const char *module, const char *fmt, ...);
 static void log_builtin_info(const char *module, const char *fmt, ...);
 static void log_builtin_misc(const char *module, const char *fmt, ...);
 static void log_builtin_warning(const char *module, const char *fmt, ...);
-static void log_builtin_format(unsigned int msg_level, const char *module,
-        const char *fmt, va_list ap);
+static void
+log_builtin_format(unsigned int msg_level, const char *module, const char *fmt, va_list ap);
 
-#define IMPLEMENT_SINK(name, msg_level) \
-    static void name(const char *module, const char *fmt, ...) \
-    { \
-        va_list ap; \
-        \
-        va_start(ap, fmt); \
-        log_builtin_format(msg_level, module, fmt, ap); \
-        va_end(ap); \
+#define IMPLEMENT_SINK(name, msg_level)                                                            \
+    static void name(const char *module, const char *fmt, ...)                                     \
+    {                                                                                              \
+        va_list ap;                                                                                \
+                                                                                                   \
+        va_start(ap, fmt);                                                                         \
+        log_builtin_format(msg_level, module, fmt, ap);                                            \
+        va_end(ap);                                                                                \
     }
 
 IMPLEMENT_SINK(log_builtin_info, 2)
@@ -47,8 +47,8 @@ static void log_builtin_fatal(const char *module, const char *fmt, ...)
     ExitProcess(EXIT_FAILURE);
 }
 
-static void log_builtin_format(unsigned int msg_level, const char *module,
-        const char *fmt, va_list ap)
+static void
+log_builtin_format(unsigned int msg_level, const char *module, const char *fmt, va_list ap)
 {
     static const char chars[] = "FWIM";
 
@@ -58,8 +58,7 @@ static void log_builtin_format(unsigned int msg_level, const char *module,
     int result;
 
     str_vformat(msg, sizeof(msg), fmt, ap);
-    result = str_format(line, sizeof(line), "%c:%s: %s\n", chars[msg_level],
-            module, msg);
+    result = str_format(line, sizeof(line), "%c:%s: %s\n", chars[msg_level], module, msg);
 
     if (msg_level <= log_level) {
         log_writer(log_writer_ctx, line, result);
@@ -71,8 +70,8 @@ void log_assert_body(const char *file, int line, const char *function)
     log_impl_fatal("assert", "%s:%d: function `%s'", file, line, function);
 }
 
-void log_to_external(log_formatter_t misc, log_formatter_t info,
-        log_formatter_t warning, log_formatter_t fatal)
+void log_to_external(
+    log_formatter_t misc, log_formatter_t info, log_formatter_t warning, log_formatter_t fatal)
 {
     log_impl_misc = misc;
     log_impl_info = info;
@@ -119,7 +118,8 @@ void log_writer_file(void *ctx, const char *chars, size_t nchars)
 */
 
 void log_writer_null(void *ctx, const char *chars, size_t nchars)
-{}
+{
+}
 
 log_formatter_t log_impl_misc = log_builtin_misc;
 log_formatter_t log_impl_info = log_builtin_info;
@@ -127,4 +127,3 @@ log_formatter_t log_impl_warning = log_builtin_warning;
 log_formatter_t log_impl_fatal = log_builtin_fatal;
 static log_writer_t log_writer = log_writer_null;
 static unsigned int log_level = 4;
-

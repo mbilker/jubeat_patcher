@@ -19,36 +19,36 @@ bool __cdecl music_db_get_sound_filename(void *a1, void *a2, int music_id, uint8
 
 extern bool __cdecl (*music_db_initialize_orig)();
 
-//bool __cdecl music_db_finalize();
+// bool __cdecl music_db_finalize();
 bool __cdecl music_db_initialize();
-//bool __cdecl music_db_reset_using_datapackage(int a1);
-//int __cdecl music_db_dbg_get_all_list();
-//int __cdecl music_db_dot_array_to_music_bar();
-int __cdecl music_db_get_default_list(int limit, int* results);
-int __cdecl music_db_get_offline_default_list(int limit, int* results);
+// bool __cdecl music_db_reset_using_datapackage(int a1);
+// int __cdecl music_db_dbg_get_all_list();
+// int __cdecl music_db_dot_array_to_music_bar();
+int __cdecl music_db_get_default_list(int limit, int *results);
+int __cdecl music_db_get_offline_default_list(int limit, int *results);
 int __cdecl music_db_get_all_permitted_list(int limit, int *results);
 int __cdecl music_db_get_possession_list(uint8_t flags[FLAG_LEN], int limit, int *results);
 int __cdecl music_db_get_card_default_list(int limit, int *results);
-//int __cdecl music_db_get_jukebox_list();
+// int __cdecl music_db_get_jukebox_list();
 float __cdecl music_db_get_bpm(int id);
 float __cdecl music_db_get_bpm_min(int id);
 // int __cdecl music_db_get_default_id();
 // int __cdecl music_db_get_default_id_by_genre();
 // int __cdecl music_db_get_default_id_by_mode();
-char* __cdecl music_db_get_genre_list(int id);
+char *__cdecl music_db_get_genre_list(int id);
 uint64_t __cdecl music_db_get_grouping_category_list(int id);
 int __cdecl music_db_get_index_start(int id);
 uint8_t __cdecl music_db_get_level(int id, uint8_t difficulty);
 // hook this instead if you're having issues
-//uint8_t __cdecl music_db_get_level_logged(int id, uint8_t difficulty);
+// uint8_t __cdecl music_db_get_level_logged(int id, uint8_t difficulty);
 uint8_t __cdecl music_db_get_level_detail(int id, uint8_t difficulty);
 int __cdecl music_db_get_music_name_head_index(int id);
 int __cdecl music_db_get_music_name_index(int id);
 int __cdecl music_db_get_parent_music_id(int id);
 uint8_t *__cdecl music_db_get_permitted_music_flag();
 int16_t __cdecl music_db_get_pos_index(int a1);
-//bool __cdecl music_db_is_all_yellow();
-//bool __cdecl music_db_is_displayable_level_detail();
+// bool __cdecl music_db_is_all_yellow();
+// bool __cdecl music_db_is_displayable_level_detail();
 bool __cdecl music_db_is_exists_table(int id);
 bool __cdecl music_db_is_exists_version_from_ver1(int id);
 bool __cdecl music_db_is_exists_version_from_ver2(int id);
@@ -62,20 +62,21 @@ bool __cdecl music_db_is_exists_version_from_ver8(int id);
 bool __cdecl music_db_is_exists_version_from_ver9(int id);
 bool __cdecl music_db_is_hold_marker(int id);
 bool __cdecl music_db_is_matched_select_type(uint8_t type, int id, uint8_t difficulty);
-//bool __cdecl music_db_is_matching_select();
+// bool __cdecl music_db_is_matching_select();
 // bool __cdecl music_db_is_nearly_excellent();
 // bool __cdecl music_db_is_nearly_fullcombo();
-//bool __cdecl music_db_is_new();
-//bool __cdecl music_db_is_no_gray();
+// bool __cdecl music_db_is_new();
+// bool __cdecl music_db_is_no_gray();
 bool __cdecl music_db_is_permitted(int id);
 bool __cdecl music_db_is_possession_for_contained_music_list(uint8_t flags[FLAG_LEN], int a2);
-//bool __cdecl music_db_is_random_or_matching_select();
-//bool __cdecl music_db_is_random_select();
-//int __cdecl music_db_music_bar_to_dot_array();
+// bool __cdecl music_db_is_random_or_matching_select();
+// bool __cdecl music_db_is_random_select();
+// int __cdecl music_db_music_bar_to_dot_array();
 // int __cdecl music_db_set_default_add_music_flag(uint8_t flags[FLAG_LEN]);
-// int __cdecl music_db_set_flag_equivalent_for_music_id(void *a1, unsigned int flag, int value);
-// int __cdecl music_db_set_permitted_music_flag(uint8_t flags[FLAG_LEN]);
-//int __cdecl music_db_set_select_history_list();
+// int __cdecl music_db_set_flag_equivalent_for_music_id(void *a1, unsigned int
+// flag, int value); int __cdecl music_db_set_permitted_music_flag(uint8_t
+// flags[FLAG_LEN]);
+// int __cdecl music_db_set_select_history_list();
 
 // int __cdecl music_bonus_get_bonus_music();
 // int __cdecl music_bonus_is_bonus_music();
@@ -133,8 +134,8 @@ bool __cdecl music_db_is_possession_for_contained_music_list(uint8_t flags[FLAG_
 void __cdecl *mem_set(void *s, int c, size_t n);
 
 void GFHashMapRegist(void *map, int key, void *val);
-void* GFHashMapCreate(void *mem, int mem_sz, int max_elems);
-void* GFHashMapKeyToValue(void *map, int key);
+void *GFHashMapCreate(void *mem, int mem_sz, int max_elems);
+void *GFHashMapKeyToValue(void *map, int key);
 bool GFHashMapGetEntryList(void *map, int *key, void **val);
 void GFHashMapRewindEntryList(void *map);
 

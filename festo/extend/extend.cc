@@ -2,8 +2,10 @@
 
 #include <vector>
 
+// clang-format off
 #include <windows.h>
 #include <psapi.h>
+// clang-format on
 
 #include <stdint.h>
 
@@ -30,6 +32,7 @@ struct patch_t {
     size_t data_offset;
 };
 
+// clang-format off
 const struct patch_t tutorial_skip {
     .name = "tutorial skip",
     .pattern = { 0x3D, 0x21, 0x00, 0x00, 0x80, 0x75, 0x75, 0x56, 0x68, 0x00, 0x00, 0x60, 0x23, 0x57, 0xFF, 0x15 },
@@ -106,8 +109,10 @@ static const char *BNR_TEXTURES[] = {
     "L44FO_BNR_J_EX_005",
     "L44FO_BNR_J_99_999",
 };
+// clang-format on
 
-static void do_patch(HANDLE process, const MODULEINFO &module_info, const struct patch_t &patch) {
+static void do_patch(HANDLE process, const MODULEINFO &module_info, const struct patch_t &patch)
+{
 #ifdef VERBOSE
     char *hex_data;
 #endif
@@ -121,18 +126,19 @@ static void do_patch(HANDLE process, const MODULEINFO &module_info, const struct
     free(hex_data);
 
     if (patch.pattern_mask != nullptr) {
-        hex_data = to_hex(reinterpret_cast<const uint8_t *>(patch.pattern_mask), patch.pattern.size());
+        hex_data =
+            to_hex(reinterpret_cast<const uint8_t *>(patch.pattern_mask), patch.pattern.size());
         log_info("mask   : %s", hex_data);
         free(hex_data);
     }
 #endif
 
     addr = find_pattern(
-            reinterpret_cast<uint8_t *>(module_info.lpBaseOfDll),
-            module_info.SizeOfImage,
-            patch.pattern.data(),
-            patch.pattern_mask,
-            patch.pattern.size());
+        reinterpret_cast<uint8_t *>(module_info.lpBaseOfDll),
+        module_info.SizeOfImage,
+        patch.pattern.data(),
+        patch.pattern_mask,
+        patch.pattern.size());
 
     if (addr != nullptr) {
 #ifdef VERBOSE
@@ -157,10 +163,7 @@ static void do_patch(HANDLE process, const MODULEINFO &module_info, const struct
     }
 }
 
-static void hook_pkfs_fs_open(
-        HANDLE process,
-        HMODULE pkfs_module,
-        const MODULEINFO &module_info)
+static void hook_pkfs_fs_open(HANDLE process, HMODULE pkfs_module, const MODULEINFO &module_info)
 {
     const IMAGE_IMPORT_DESCRIPTOR *avs2_import_descriptor;
     void *avs_strlcpy_entry_ptr, *avs_strlen_entry_ptr, *avs_snprintf_entry_ptr;
@@ -171,9 +174,11 @@ static void hook_pkfs_fs_open(
 
     log_assert(avs2_import_descriptor != nullptr);
 
-    avs_strlcpy_entry_ptr = iid_get_addr_for_name(pkfs_module, avs2_import_descriptor, 224, nullptr);
+    avs_strlcpy_entry_ptr =
+        iid_get_addr_for_name(pkfs_module, avs2_import_descriptor, 224, nullptr);
     avs_strlen_entry_ptr = iid_get_addr_for_name(pkfs_module, avs2_import_descriptor, 222, nullptr);
-    avs_snprintf_entry_ptr = iid_get_addr_for_name(pkfs_module, avs2_import_descriptor, 258, nullptr);
+    avs_snprintf_entry_ptr =
+        iid_get_addr_for_name(pkfs_module, avs2_import_descriptor, 258, nullptr);
 
     log_assert(avs_strlcpy_entry_ptr != nullptr);
     log_assert(avs_strlen_entry_ptr != nullptr);
@@ -193,7 +198,8 @@ static void hook_pkfs_fs_open(
     memcpy(&avs_strlen_pattern[2], &avs_strlen_entry_ptr, 4);
     memcpy(&avs_snprintf_pattern[2], &avs_snprintf_entry_ptr, 4);
 
-    // `pkfs_fs_open` and `pkfs_fs_open_w` are right next to each other, we abuse that fact
+    // `pkfs_fs_open` and `pkfs_fs_open_w` are right next to each other, we abuse
+    // that fact
     uintptr_t start = reinterpret_cast<uintptr_t>(GetProcAddress(pkfs_module, "pkfs_fs_open"));
     uintptr_t end = reinterpret_cast<uintptr_t>(GetProcAddress(pkfs_module, "pkfs_fs_open_w"));
     size_t total_size = start - end;
@@ -205,11 +211,7 @@ static void hook_pkfs_fs_open(
     remaining = total_size;
     while (current != nullptr) {
         current = find_pattern(
-                current,
-                remaining,
-                avs_strlcpy_pattern,
-                nullptr,
-                std::size(avs_strlcpy_pattern));
+            current, remaining, avs_strlcpy_pattern, nullptr, std::size(avs_strlcpy_pattern));
 
         if (current != nullptr) {
             remaining = end - reinterpret_cast<uintptr_t>(current);
@@ -222,11 +224,7 @@ static void hook_pkfs_fs_open(
     remaining = total_size;
     while (current != nullptr) {
         current = find_pattern(
-                current,
-                remaining,
-                avs_strlen_pattern,
-                nullptr,
-                std::size(avs_strlen_pattern));
+            current, remaining, avs_strlen_pattern, nullptr, std::size(avs_strlen_pattern));
 
         if (current != nullptr) {
             remaining = end - reinterpret_cast<uintptr_t>(current);
@@ -239,11 +237,7 @@ static void hook_pkfs_fs_open(
     remaining = total_size;
     while (current != nullptr) {
         current = find_pattern(
-                current,
-                remaining,
-                avs_snprintf_pattern,
-                nullptr,
-                std::size(avs_snprintf_pattern));
+            current, remaining, avs_snprintf_pattern, nullptr, std::size(avs_snprintf_pattern));
 
         if (current != nullptr) {
             remaining = end - reinterpret_cast<uintptr_t>(current);
@@ -253,22 +247,22 @@ static void hook_pkfs_fs_open(
     }
 }
 
-static void __cdecl banner_load_hook() {
+static void __cdecl banner_load_hook()
+{
     for (const char *bnr_package : BNR_TEXTURES) {
-        __asm__(
-            "push esp\n"
-            "mov ecx, %0\n"
-            "call %1\n"
-            "pop esp"
-            :
-            : "r" (bnr_package), "r" (D3_PACKAGE_LOAD)
-            // 2020021900 saves `ebx`, `ebp`, `edi`, and `esi` in `D3_PACKAGE_LOAD`
-            : "eax", "ecx", "edx"
-        );
+        __asm__("push esp\n"
+                "mov ecx, %0\n"
+                "call %1\n"
+                "pop esp"
+                :
+                : "r"(bnr_package), "r"(D3_PACKAGE_LOAD)
+                // 2020021900 saves `ebx`, `ebp`, `edi`, and `esi` in `D3_PACKAGE_LOAD`
+                : "eax", "ecx", "edx");
     }
 }
 
-static void hook_banner_textures(HANDLE process, const MODULEINFO &module_info) {
+static void hook_banner_textures(HANDLE process, const MODULEINFO &module_info)
+{
     // Unique pattern for prologue for banner texture loading
     // add esp, 12
     // mov ecx, 12
@@ -285,20 +279,20 @@ static void hook_banner_textures(HANDLE process, const MODULEINFO &module_info) 
     const bool d3_package_load_pattern_mask[] = { 1, 1, 1, 0, 0, 0, 0 };
 
     void *base_addr = find_pattern(
-            reinterpret_cast<uint8_t *>(module_info.lpBaseOfDll),
-            module_info.SizeOfImage,
-            prologue_pattern,
-            nullptr,
-            std::size(prologue_pattern));
+        reinterpret_cast<uint8_t *>(module_info.lpBaseOfDll),
+        module_info.SizeOfImage,
+        prologue_pattern,
+        nullptr,
+        std::size(prologue_pattern));
 
     log_assert(base_addr != nullptr);
 
     void *loop_jz_addr = find_pattern(
-            reinterpret_cast<uint8_t *>(base_addr),
-            module_info.SizeOfImage - reinterpret_cast<uintptr_t>(base_addr),
-            loop_jz_pattern,
-            nullptr,
-            std::size(loop_jz_pattern));
+        reinterpret_cast<uint8_t *>(base_addr),
+        module_info.SizeOfImage - reinterpret_cast<uintptr_t>(base_addr),
+        loop_jz_pattern,
+        nullptr,
+        std::size(loop_jz_pattern));
 
     log_assert(loop_jz_addr != nullptr);
 
@@ -306,20 +300,20 @@ static void hook_banner_textures(HANDLE process, const MODULEINFO &module_info) 
     loop_jz_addr = reinterpret_cast<uint8_t *>(loop_jz_addr) + 2;
 
     void *loop_jnz_addr = find_pattern(
-            reinterpret_cast<uint8_t *>(loop_jz_addr),
-            module_info.SizeOfImage - reinterpret_cast<uintptr_t>(loop_jz_addr),
-            loop_jnz_pattern,
-            nullptr,
-            std::size(loop_jnz_pattern));
+        reinterpret_cast<uint8_t *>(loop_jz_addr),
+        module_info.SizeOfImage - reinterpret_cast<uintptr_t>(loop_jz_addr),
+        loop_jnz_pattern,
+        nullptr,
+        std::size(loop_jnz_pattern));
 
     log_assert(loop_jnz_addr != nullptr);
 
     void *d3_package_load_call_addr = find_pattern(
-            reinterpret_cast<uint8_t *>(loop_jz_addr),
-            reinterpret_cast<uintptr_t>(loop_jnz_addr) - reinterpret_cast<uintptr_t>(loop_jz_addr),
-            d3_package_load_pattern,
-            d3_package_load_pattern_mask,
-            std::size(d3_package_load_pattern));
+        reinterpret_cast<uint8_t *>(loop_jz_addr),
+        reinterpret_cast<uintptr_t>(loop_jnz_addr) - reinterpret_cast<uintptr_t>(loop_jz_addr),
+        d3_package_load_pattern,
+        d3_package_load_pattern_mask,
+        std::size(d3_package_load_pattern));
 
     log_assert(d3_package_load_call_addr != nullptr);
 
@@ -345,25 +339,25 @@ static void hook_banner_textures(HANDLE process, const MODULEINFO &module_info) 
         } __attribute__((packed));
 
         struct call_replacement d3_package_load_call_replacement {
-            .load_opcode = 0xB8,
-            .addr = reinterpret_cast<uint32_t>(banner_load_hook),
-            .call_opcode = 0xFF,
-            .reg_index = 0xD0,
+            .load_opcode = 0xB8, .addr = reinterpret_cast<uint32_t>(banner_load_hook),
+            .call_opcode = 0xFF, .reg_index = 0xD0,
         };
         static_assert(sizeof(d3_package_load_call_replacement) == sizeof(d3_package_load_pattern));
 
         memory_write(
-                process,
-                d3_package_load_call_addr,
-                &d3_package_load_call_replacement,
-                sizeof(d3_package_load_call_replacement));
+            process,
+            d3_package_load_call_addr,
+            &d3_package_load_call_replacement,
+            sizeof(d3_package_load_call_replacement));
     }
 
-    // `nop` out the loop increment and jump part (adding one to include the jump target)
+    // `nop` out the loop increment and jump part (adding one to include the jump
+    // target)
     memory_set(process, loop_jnz_addr, 0x90, sizeof(loop_jnz_pattern) + 1);
 }
 
-extern "C" bool __declspec(dllexport) dll_entry_init(char *sid_code, void *app_config) {
+extern "C" bool __declspec(dllexport) dll_entry_init(char *sid_code, void *app_config)
+{
     DWORD pid;
     HANDLE process;
     HMODULE avs2_core_handle, jubeat_handle, music_db_handle, pkfs_handle;
@@ -377,7 +371,10 @@ extern "C" bool __declspec(dllexport) dll_entry_init(char *sid_code, void *app_c
     log_info("jubeat extend hook by Felix v" OMNIMIX_VERSION " (Build " __DATE__ " " __TIME__ ")");
 
     pid = GetCurrentProcessId();
-    process = OpenProcess(PROCESS_QUERY_INFORMATION | PROCESS_VM_OPERATION | PROCESS_VM_READ | PROCESS_VM_WRITE, false, pid);
+    process = OpenProcess(
+        PROCESS_QUERY_INFORMATION | PROCESS_VM_OPERATION | PROCESS_VM_READ | PROCESS_VM_WRITE,
+        false,
+        pid);
 
     if ((avs2_core_handle = GetModuleHandleA("avs2-core.dll")) == nullptr) {
         log_fatal("GetModuleHandle(\"avs2-core.dll\") failed: 0x%08lx", GetLastError());
@@ -424,17 +421,17 @@ extern "C" bool __declspec(dllexport) dll_entry_init(char *sid_code, void *app_c
     do_patch(process, music_db_info, song_unlock_patch);
 
     hook_iat(
-            process,
-            jubeat_handle,
-            "music_db.dll",
-            "music_db_get_sequence_filename",
-            reinterpret_cast<void *>(music_db_get_sequence_filename_hook));
+        process,
+        jubeat_handle,
+        "music_db.dll",
+        "music_db_get_sequence_filename",
+        reinterpret_cast<void *>(music_db_get_sequence_filename_hook));
     hook_iat(
-            process,
-            jubeat_handle,
-            "music_db.dll",
-            "music_db_get_sound_filename",
-            reinterpret_cast<void *>(music_db_get_sound_filename_hook));
+        process,
+        jubeat_handle,
+        "music_db.dll",
+        "music_db_get_sound_filename",
+        reinterpret_cast<void *>(music_db_get_sound_filename_hook));
 
     hook_pkfs_fs_open(process, pkfs_handle, pkfs_info);
     hook_banner_textures(process, jubeat_info);
@@ -451,13 +448,14 @@ extern "C" bool __declspec(dllexport) dll_entry_init(char *sid_code, void *app_c
     sid_code[5] = 'Y';
 
     return ret;
-
 }
 
-extern "C" bool __declspec(dllexport) dll_entry_main(void) {
+extern "C" bool __declspec(dllexport) dll_entry_main(void)
+{
     return jb_dll_entry_main();
 }
 
-BOOL WINAPI DllMain(HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpvReserved) {
+BOOL WINAPI DllMain(HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpvReserved)
+{
     return TRUE;
 }

@@ -6,7 +6,7 @@
 extern "C" {
 #endif
 
-#define LOG_CHECK_FMT __attribute__(( format(printf, 2, 3) ))
+#define LOG_CHECK_FMT __attribute__((format(printf, 2, 3)))
 
 enum property_type {
     PROP_TYPE_node = 1,
@@ -80,15 +80,15 @@ enum prop_traverse_option {
 };
 
 enum prop_create_flag {
-    PROP_XML                  = 0x000,
-    PROP_READ                 = 0x001,
-    PROP_WRITE                = 0x002,
-    PROP_CREATE               = 0x004,
-    PROP_BINARY               = 0x008,
-    PROP_APPEND               = 0x010,
-    PROP_XML_HEADER           = 0x100,
-    PROP_DEBUG_VERBOSE        = 0x400,
-    PROP_JSON                 = 0x800,
+    PROP_XML = 0x000,
+    PROP_READ = 0x001,
+    PROP_WRITE = 0x002,
+    PROP_CREATE = 0x004,
+    PROP_BINARY = 0x008,
+    PROP_APPEND = 0x010,
+    PROP_XML_HEADER = 0x100,
+    PROP_DEBUG_VERBOSE = 0x400,
+    PROP_JSON = 0x800,
     PROP_BIN_PLAIN_NODE_NAMES = 0x1000,
 };
 
@@ -102,22 +102,13 @@ size_t __declspec(dllimport) avs_snprintf(char *dst, size_t dst_size, const char
 void __declspec(dllimport) avs_thread_delay(int time, int a2);
 
 void *__declspec(dllimport) property_mem_read(
-        void *src_buf,
-        size_t src_size,
-        unsigned int flags,
-        void *buffer,
-        uint32_t buffer_size);
+    void *src_buf, size_t src_size, unsigned int flags, void *buffer, uint32_t buffer_size);
 void __declspec(dllimport) property_destroy(void *prop);
 void __declspec(dllimport) property_clear_error(void *prop);
 void *__declspec(dllimport) property_node_traversal(void *prop, enum prop_traverse_option opt);
 void *__declspec(dllimport) property_search(void *prop, void *node, const char *path);
 int __declspec(dllimport) property_node_refer(
-        void* prop,
-        void* node,
-        const char* path,
-        enum property_type type,
-        void* dest,
-        int size);
+    void *prop, void *node, const char *path, enum property_type type, void *dest, int size);
 
 #ifdef __cplusplus
 };

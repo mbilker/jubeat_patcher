@@ -1,7 +1,9 @@
 #define LOG_MODULE "omnimix"
 
+// clang-format off
 #include <windows.h>
 #include <psapi.h>
+// clang-format on
 
 #include <stdint.h>
 
@@ -23,12 +25,16 @@ struct patch_t {
     size_t data_offset;
 };
 
+// clang-format off
+
 const uint8_t tutorial_skip_pattern[] = {
     0x3D, 0x21, 0x00, 0x00, 0x80, 0x75, 0x75, 0x56, 0x68, 0x00, 0x00, 0x60, 0x23, 0x57, 0xFF, 0x15,
 };
 const uint8_t tutorial_skip_data[] = { 0xE9, 0x01, 0x01, 0x00, 0x00 };
 
-const uint8_t select_timer_freeze_pattern[] = { 0x74, 0x00, 0xE8, 0x00, 0x00, 0x00, 0x00, 0x84, 0xC0, 0x75, 0x00, 0x38 };
+const uint8_t select_timer_freeze_pattern[] = {
+    0x74, 0x00, 0xE8, 0x00, 0x00, 0x00, 0x00, 0x84, 0xC0, 0x75, 0x00, 0x38,
+};
 const bool select_timer_freeze_pattern_mask[] = { 1, 0, 1, 0, 0, 0, 0, 1, 1, 1, 0, 1 };
 const uint8_t select_timer_freeze_data[] = { 0xEB };
 
@@ -41,7 +47,9 @@ const uint8_t music_db_limit_pattern_3[] = { 0x00, 0x00, 0x20, 0x00, 0x6A, 0x00,
 const uint8_t music_db_limit_pattern_4[] = { 0x00, 0x00, 0x20, 0x00, 0x50, 0x6A, 0x17 };
 const uint8_t music_db_limit_data[] = { 0x40 };
 
-const uint8_t music_info_pattern[] = { 'm', 'u', 's', 'i', 'c', '_', 'i', 'n', 'f', 'o', '.', 'x', 'm', 'l' };
+const uint8_t music_info_pattern[] = {
+    'm', 'u', 's', 'i', 'c', '_', 'i', 'n', 'f', 'o', '.', 'x', 'm', 'l',
+};
 const uint8_t music_omni_data[] = { 'o', 'm', 'n', 'i' };
 
 const uint8_t song_unlock_pattern[] = { 0xC4, 0x04, 0x84, 0xC0, 0x74, 0x09 };
@@ -126,7 +134,10 @@ const struct patch_t song_unlock_patch = {
     .data_offset = 4,
 };
 
-void do_patch(HANDLE process, const MODULEINFO *module_info, const struct patch_t *patch) {
+// clang-format on
+
+void do_patch(HANDLE process, const MODULEINFO *module_info, const struct patch_t *patch)
+{
 #ifdef VERBOSE
     char *hex_data;
 #endif
@@ -146,7 +157,12 @@ void do_patch(HANDLE process, const MODULEINFO *module_info, const struct patch_
     }
 #endif
 
-    addr = find_pattern(module_info->lpBaseOfDll, module_info->SizeOfImage, patch->pattern, patch->pattern_mask, patch->pattern_size);
+    addr = find_pattern(
+        module_info->lpBaseOfDll,
+        module_info->SizeOfImage,
+        patch->pattern,
+        patch->pattern_mask,
+        patch->pattern_size);
 
     if (addr != NULL) {
 #ifdef VERBOSE
@@ -171,7 +187,8 @@ void do_patch(HANDLE process, const MODULEINFO *module_info, const struct patch_
     }
 }
 
-bool __declspec(dllexport) dll_entry_init(char *sid_code, void *app_config) {
+bool __declspec(dllexport) dll_entry_init(char *sid_code, void *app_config)
+{
     DWORD pid;
     HANDLE process;
     HMODULE jubeat_handle, music_db_handle;
@@ -185,7 +202,10 @@ bool __declspec(dllexport) dll_entry_init(char *sid_code, void *app_config) {
     log_info("jubeat omnimix hook by Felix v" OMNIMIX_VERSION " (Build " __DATE__ " " __TIME__ ")");
 
     pid = GetCurrentProcessId();
-    process = OpenProcess(PROCESS_QUERY_INFORMATION | PROCESS_VM_OPERATION | PROCESS_VM_READ | PROCESS_VM_WRITE, FALSE, pid);
+    process = OpenProcess(
+        PROCESS_QUERY_INFORMATION | PROCESS_VM_OPERATION | PROCESS_VM_READ | PROCESS_VM_WRITE,
+        FALSE,
+        pid);
 
     if ((jubeat_handle = GetModuleHandleA("jubeat.dll")) == NULL) {
         log_fatal("GetModuleHandle(\"jubeat.dll\") failed: %08lx", GetLastError());
@@ -234,10 +254,12 @@ bool __declspec(dllexport) dll_entry_init(char *sid_code, void *app_config) {
     return ret;
 }
 
-bool __declspec(dllexport) dll_entry_main(void) {
+bool __declspec(dllexport) dll_entry_main(void)
+{
     return jb_dll_entry_main();
 }
 
-BOOL WINAPI DllMain(HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpvReserved) {
+BOOL WINAPI DllMain(HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpvReserved)
+{
     return TRUE;
 }

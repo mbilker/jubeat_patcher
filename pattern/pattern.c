@@ -9,7 +9,8 @@
 #ifdef VERBOSE
 #include "util/log.h"
 
-char *to_hex(const uint8_t *data, size_t data_len) {
+char *to_hex(const uint8_t *data, size_t data_len)
+{
     char *output = (char *) malloc(data_len * 3);
 
     char *current = output;
@@ -24,7 +25,13 @@ char *to_hex(const uint8_t *data, size_t data_len) {
 }
 #endif
 
-uint8_t *find_pattern(uint8_t *data, size_t data_size, const uint8_t *pattern, const bool *pattern_mask, size_t pattern_size) {
+uint8_t *find_pattern(
+    uint8_t *data,
+    size_t data_size,
+    const uint8_t *pattern,
+    const bool *pattern_mask,
+    size_t pattern_size)
+{
     size_t i, j;
     bool pattern_found;
 
