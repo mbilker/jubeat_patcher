@@ -56,6 +56,34 @@ const struct patch_t packlist_pluslist {
     .data_offset = 0,
 };
 
+const struct patch_t smc_mm_text_ja {
+    .name = "smc_mm_text_ja patch",
+    .pattern = { 'S', 'M', 'C', '_', 'M', 'M', '_', 'T', 'E', 'X', 'T', '_', 'J', 'A' },
+    .data = { 'E', 'X' },
+    .data_offset = 12,
+};
+
+const struct patch_t smc_mm_text_ko {
+    .name = "smc_mm_text_ko patch",
+    .pattern = { 'S', 'M', 'C', '_', 'M', 'M', '_', 'T', 'E', 'X', 'T', '_', 'K', 'O' },
+    .data = { 'E', 'X' },
+    .data_offset = 12,
+};
+
+const struct patch_t smc_mm_hierarchy_ja {
+    .name = "smc_mm_hierarchy_ja patch",
+    .pattern = { 'S', 'M', 'C', '_', 'M', 'M', '_', 'H', 'I', 'E', 'R', 'A', 'R', 'C', 'H', 'Y', '_', 'J', 'A' },
+    .data = { 'E', 'X' },
+    .data_offset = 17,
+};
+
+const struct patch_t smc_mm_hierarchy_ko {
+    .name = "smc_mm_hierarchy_ko patch",
+    .pattern = { 'S', 'M', 'C', '_', 'M', 'M', '_', 'H', 'I', 'E', 'R', 'A', 'R', 'C', 'H', 'Y', '_', 'K', 'O' },
+    .data = { 'E', 'X' },
+    .data_offset = 17,
+};
+
 const struct patch_t music_db_limit_1 {
     .name = "music_db limit patch 1",
     .pattern = { 0x00, 0x00, 0x20, 0x00, 0x57, 0xFF, 0x15 },
@@ -598,6 +626,10 @@ extern "C" bool __declspec(dllexport) dll_entry_init(char *sid_code, void *app_c
     // do_patch(process, music_db_info, music_db_limit_4);
     // do_patch(process, music_db_info, music_plus_patch);
     do_patch(process, music_db_info, song_unlock_patch);
+	do_patch(process, jubeat_info, smc_mm_text_ja);
+	do_patch(process, jubeat_info, smc_mm_text_ko);
+	do_patch(process, jubeat_info, smc_mm_hierarchy_ja);
+	do_patch(process, jubeat_info, smc_mm_hierarchy_ko);
 
     hook_iat(
         process,
