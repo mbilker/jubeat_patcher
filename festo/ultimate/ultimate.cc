@@ -627,10 +627,10 @@ extern "C" bool __declspec(dllexport) dll_entry_init(char *sid_code, void *app_c
     // do_patch(process, music_db_info, music_db_limit_4);
     // do_patch(process, music_db_info, music_plus_patch);
     do_patch(process, music_db_info, song_unlock_patch);
-	do_patch(process, jubeat_info, smc_mm_text_ja);
-	do_patch(process, jubeat_info, smc_mm_text_ko);
-	do_patch(process, jubeat_info, smc_mm_hierarchy_ja);
-	do_patch(process, jubeat_info, smc_mm_hierarchy_ko);
+	// do_patch(process, jubeat_info, smc_mm_text_ja);
+	// do_patch(process, jubeat_info, smc_mm_text_ko);
+	// do_patch(process, jubeat_info, smc_mm_hierarchy_ja);
+	// do_patch(process, jubeat_info, smc_mm_hierarchy_ko);
 
     hook_iat(
         process,
