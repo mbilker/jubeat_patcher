@@ -401,7 +401,7 @@ bool __cdecl music_db_initialize()
     void *body = property_search(prop, 0, "/music_data/body");
 
     void *song = property_node_traversal(body, TRAVERSE_FIRST_CHILD);
-    for (; song; song = property_node_traversal(song, TRAVERSE_NEXT_SIBLING)) {
+    for (; song != nullptr; song = property_node_traversal(song, TRAVERSE_NEXT_SIBLING)) {
         if (music_load_individual(music_count, song) == MUSIC_LOAD_OK)
             ++music_count;
     }

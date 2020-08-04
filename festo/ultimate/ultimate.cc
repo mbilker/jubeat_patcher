@@ -84,44 +84,6 @@ const struct patch_t smc_mm_hierarchy_ko {
     .data_offset = 17,
 };
 
-const struct patch_t music_db_limit_1 {
-    .name = "music_db limit patch 1",
-    .pattern = { 0x00, 0x00, 0x20, 0x00, 0x57, 0xFF, 0x15 },
-    .data = { 0x60 },
-    .data_offset = 2,
-};
-const struct patch_t music_db_limit_2_old {
-    .name = "music_db limit patch 2 (old)",
-    .pattern = { 0x00, 0x00, 0x20, 0x00, 0x8B, 0xF8, 0x57 },
-    .data = { 0x60 },
-    .data_offset = 2,
-};
-const struct patch_t music_db_limit_2_new {
-    .name = "music_db limit patch 2 (new)",
-    .pattern = { 0x00, 0x00, 0x20, 0x00, 0x53, 0x6A, 0x01 },
-    .data = { 0x60 },
-    .data_offset = 2,
-};
-const struct patch_t music_db_limit_3 {
-    .name = "music_db limit patch 3",
-    .pattern = { 0x00, 0x00, 0x20, 0x00, 0x6A, 0x00, 0xFF },
-    .data = { 0x60 },
-    .data_offset = 2,
-};
-const struct patch_t music_db_limit_4 {
-    .name = "music_db limit patch 4",
-    .pattern = { 0x00, 0x00, 0x20, 0x00, 0x50, 0x6A, 0x17 },
-    .data = { 0x60 },
-    .data_offset = 2,
-};
-
-const struct patch_t music_plus_patch {
-    .name = "music_ulti patch",
-    .pattern = { 'm', 'u', 's', 'i', 'c', '_', 'i', 'n', 'f', 'o', '.', 'x', 'm', 'l' },
-    .data = { 'u', 'l', 't', 'i' },
-    .data_offset = 6,
-};
-
 const struct patch_t song_unlock_patch {
     .name = "song unlock",
     .pattern = { 0xC4, 0x04, 0x84, 0xC0, 0x74, 0x09 },
@@ -290,7 +252,7 @@ static const char *BNR_TEXTURES[] {
     "L44FO_BNR_J_09_012",
     "L44FO_BNR_J_09_014",
     "L44FO_BNR_J_09_015",
-	"L44FO_BNR_J_09_016",
+    "L44FO_BNR_J_09_016",
     "L44FO_BNR_J_OM_001",
     "L44FO_BNR_J_OM_002",
     "L44FO_BNR_J_EX_001",
@@ -620,17 +582,13 @@ extern "C" bool __declspec(dllexport) dll_entry_init(char *sid_code, void *app_c
     do_patch(process, jubeat_info, mdb_array_3_4);
     do_patch(process, jubeat_info, mdb_array_3_5);
     do_patch(process, jubeat_info, mdb_array_3_6);
-    // do_patch(process, music_db_info, music_db_limit_1);
-    // do_patch(process, music_db_info, music_db_limit_2_old);
-    // do_patch(process, music_db_info, music_db_limit_2_new);
-    // do_patch(process, music_db_info, music_db_limit_3);
-    // do_patch(process, music_db_info, music_db_limit_4);
-    // do_patch(process, music_db_info, music_plus_patch);
     do_patch(process, music_db_info, song_unlock_patch);
-	// do_patch(process, jubeat_info, smc_mm_text_ja);
-	// do_patch(process, jubeat_info, smc_mm_text_ko);
-	// do_patch(process, jubeat_info, smc_mm_hierarchy_ja);
-	// do_patch(process, jubeat_info, smc_mm_hierarchy_ko);
+    /*
+    do_patch(process, jubeat_info, smc_mm_text_ja);
+    do_patch(process, jubeat_info, smc_mm_text_ko);
+    do_patch(process, jubeat_info, smc_mm_hierarchy_ja);
+    do_patch(process, jubeat_info, smc_mm_hierarchy_ko);
+    */
 
     hook_iat(
         process,
