@@ -102,6 +102,9 @@ struct music_db_entry_t {
     char genre_list[7];
     uint64_t grouping_category;
     int32_t pack_id; // custom! Extend pack ID from Jubeat mobile versions
+    // custom! real, human-readable name. Max seen was 64 bytes, 256 for massive
+    // overkill in case of weird songs. Used to auto-generate sort IDs
+    char title_name[256];
 };
 
 static int music_count;
@@ -340,6 +343,8 @@ static enum music_load_res music_load_individual(int index, void *node)
     property_node_refer(nullptr, node, "/pack_id", PROP_TYPE_s32, &song->pack_id, 4);
     property_node_refer(nullptr, node, "/grouping_category", PROP_TYPE_str, tmp, sizeof(tmp));
     song->grouping_category = strtoul(tmp, nullptr, 16);
+    property_node_refer(nullptr, node, "/title_name", PROP_TYPE_str, song->title_name,
+        sizeof(song->title_name));
 
     if (song->music_id == 70000154 && !song->grouping_category) {
         song->grouping_category = 4736;
@@ -363,6 +368,12 @@ static enum music_load_res music_load_individual(int index, void *node)
     music_db_map[song->music_id] = song;
 
     return MUSIC_LOAD_OK;
+}
+
+int music_db_entry_sorter(const void *_a, const void *_b) {
+    music_db_entry_t* a = *(music_db_entry_t**)_a;
+    music_db_entry_t* b = *(music_db_entry_t**)_b;
+    return stricmp(a->title_name, b->title_name);
 }
 
 bool __cdecl music_db_initialize()
@@ -417,6 +428,19 @@ bool __cdecl music_db_initialize()
     free(prop_mem);
 
     log_body_info("ultimate", "Loaded %d songs into music db", music_count);
+
+    music_db_entry_t* sorted[MAX_SONGS];
+    for(int i = 0; i < music_count; i++) {
+        sorted[i] = &music_db[i];
+    }
+
+    // I could use avs_qsort here but what's the point when the stdlib is
+    // guaranteed to be sane
+    qsort(sorted, music_count, sizeof(music_db_entry_t*), music_db_entry_sorter);
+
+    for(int i = 0; i < music_count; i++) {
+        sorted[i]->name_sort_id_j = i;
+    }
 
     return true;
 }
