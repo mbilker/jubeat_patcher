@@ -60,11 +60,15 @@ void __cdecl *mem_set(void *s, int c, size_t n)
         log_body_info("ultimate", "hooked d3_initialize");
 
         uint16_t *limit = (uint16_t *) ((DWORD) s + 0xAEE8);
-        void **buf = (void **) ((DWORD) s - 0x6F3508);
+        void **buf = (void **) ((DWORD) s - 0x6F3598);
 
         const size_t new_sz = 8192 * 28 * 4;
         size_t new_limit = new_sz / 28;
-        *buf = malloc(new_sz);
+        void* new_buf = malloc(new_sz);
+
+        log_body_info("ultimate", "d3 limit %d->%d buf %p->%p", *limit, new_limit, *buf, new_buf);
+
+        *buf = new_buf;
         *limit = new_limit;
     }
 
