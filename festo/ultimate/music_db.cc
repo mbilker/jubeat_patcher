@@ -560,6 +560,19 @@ int __cdecl music_db_get_music_name_head_index(int id)
     // the upper 20 bits (of which 10 are used) are the first letter of the
     // sort, with a single bit set ie (upper = 1<<letter)
     // this returns just that main sort category
+
+    // specifically, these are the exact upper 20 bit assignments
+    // 'ア': 0, 'イ': 0, 'ウ': 0, 'エ': 0, 'オ': 0, 'ン': 0,
+    // 'カ': 1, 'キ': 1, 'ク': 1, 'ケ': 1, 'コ': 1,
+    // 'サ': 2, 'シ': 2, 'ス': 2, 'セ': 2, 'ソ': 2,
+    // 'タ': 3, 'チ': 3, 'ツ': 3, 'テ': 3, 'ト': 3,
+    // 'ナ': 4, 'ニ': 4, 'ネ': 4, 'ノ': 4,
+    // 'ハ': 5, 'ヒ': 5, 'フ': 5, 'ヘ': 5, 'ホ': 5,
+    // 'マ': 6, 'ミ': 6, 'ム': 6, 'メ': 6, 'モ': 6,
+    // 'ヤ': 7, 'ユ': 7, 'ヨ': 7,
+    // 'ラ': 8, 'リ': 8, 'ル': 8, 'レ': 8, 'ロ': 8,
+    // 'ワ': 9,
+
     return song ? song->name_sort_id_j >> 12 : 0;
 }
 
