@@ -37,7 +37,14 @@ struct patch_t {
 const struct patch_t tutorial_skip {
     .name = "tutorial skip",
     .pattern = { 0x3D, 0x21, 0x00, 0x00, 0x80, 0x75, 0x75, 0x56, 0x68, 0x00, 0x00, 0x60, 0x23, 0x57, 0xFF, 0x15 },
-    .data = { 0xE9, 0x01, 0x01, 0x00, 0x00 },
+    .data = { 0xEB },
+    .data_offset = 5,
+};
+
+const struct patch_t tutorial_skip2 {
+    .name = "tutorial skip 2",
+    .pattern = { 0x3D, 0x22, 0x00, 0x00, 0x80, 0x75, 0x31, 0x56, 0x68, 0x00, 0x00, 0x60, 0x23 },
+    .data = { 0xEB },
     .data_offset = 5,
 };
 
@@ -569,7 +576,9 @@ extern "C" bool __declspec(dllexport) dll_entry_init(char *sid_code, void *app_c
         mdb_arr_patch,
         score_arr_patch,
         end_score_arr_patch);
-    do_patch(process, jubeat_info, tutorial_skip);
+    // broken for now, no longer crashes on 2020120801 but does not skip correctly
+    //do_patch(process, jubeat_info, tutorial_skip);
+    //do_patch(process, jubeat_info, tutorial_skip2);
     do_patch(process, jubeat_info, select_timer_freeze);
     do_patch(process, jubeat_info, packlist_pluslist);
     do_patch(process, jubeat_info, mdb_array_1_0);
