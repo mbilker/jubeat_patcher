@@ -1,5 +1,4 @@
-//#define LOG_MODULE "extend::music_db"
-
+#define LOG_MODULE "ultimate::music_db"
 #include <math.h>
 #include <stdint.h>
 #include <stdlib.h>
@@ -16,9 +15,25 @@
 
 #include "music_db.h"
 
-//#include "util/log.h"
+#include "util/log.h"
+
+// include this #define to validate every song in the MDB has an associated
+// ifs file in the ifs_pack folder
+#define DEBUG_CHECK_MUSIC_IFS_EXISTS
 
 bool __cdecl (*music_db_initialize_orig)();
+
+struct avs_stat {
+    uint64_t st_atime;
+    uint64_t st_mtime;
+    uint64_t st_ctime;
+    int32_t unk1;
+    uint32_t filesize;
+    // not actually sure how big theirs is
+    struct stat padding;
+};
+
+int (*avs_fs_lstat)(const char* path, struct avs_stat *st);
 
 // default: 2meg, ultimate: 6meg
 #define MDB_XML_SIZE (6 * 1024 * 1024)
@@ -367,6 +382,21 @@ static enum music_load_res music_load_individual(int index, void *node)
 
     music_db_map[song->music_id] = song;
 
+#ifdef DEBUG_CHECK_MUSIC_IFS_EXISTS
+    struct avs_stat st;
+    char path[256];
+    int lstat;
+    snprintf(path, sizeof(path), "/data/ifs_pack/d%d/%d_msc.ifs", song->music_id / 10, song->music_id);
+    if((lstat = avs_fs_lstat(path, &st)) <= 0) {
+        log_warning("Missing song IFS file for ID %d (%s)", song->music_id, song->title_name);
+    } else if(st.filesize < 256) { // deleted songs don't get deleted, but have their IFS file stubbed
+        log_warning("Too-short song IFS file for ID %d (%s)", song->music_id, song->title_name);
+    } else {
+        // for extra extra debugging
+        //log_misc("Song id %d (%s) exists at %s lstat %d with size %d", song->music_id, song->title_name, path, lstat, st.filesize);
+    }
+#endif
+
     return MUSIC_LOAD_OK;
 }
 
@@ -386,6 +416,16 @@ bool __cdecl music_db_initialize()
     music_count = 0;
     memset(music_db, 0, sizeof(music_db));
     music_db_map.clear();
+
+#ifdef DEBUG_CHECK_MUSIC_IFS_EXISTS
+    HMODULE avs2_core_handle;
+    if ((avs2_core_handle = GetModuleHandleA("avs2-core.dll")) == nullptr) {
+        log_fatal("GetModuleHandle(\"avs2-core.dll\") failed: 0x%08lx", GetLastError());
+    }
+    if((avs_fs_lstat = (int (*)(const char*, struct avs_stat*))GetProcAddress(avs2_core_handle, "XCgsqzn0000063")) == nullptr) {
+        log_fatal("GetProcAddress(\"avs_fs_lstat\") failed: 0x%08lx", GetLastError());
+    }
+#endif
 
     void *prop = nullptr;
     void *prop_mem = nullptr;
