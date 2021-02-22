@@ -21,7 +21,7 @@
 // ifs file in the ifs_pack folder
 #define DEBUG_CHECK_MUSIC_IFS_EXISTS
 
-bool __cdecl (*music_db_initialize_orig)(void);
+bool (__cdecl *music_db_initialize_orig)(void);
 
 struct avs_stat {
     uint64_t st_atime;
@@ -69,7 +69,7 @@ bool __cdecl music_db_get_sound_filename(void *a1, void *a2, int music_id, uint8
 // d3_initialize calls this at its very end, so we use the lucky uniqueness
 // of the size parameter to overwrite the texture memory + texture limit
 // after it's called
-void __cdecl *mem_set(void *s, int c, size_t n)
+void *__cdecl mem_set(void *s, int c, size_t n)
 {
     if (n == 1296) {
         log_body_info("ultimate", "hooked d3_initialize");
@@ -952,7 +952,7 @@ static int music_record_count;
 static uint8_t music_records[MAX_SONGS][2112]; // dll says 2112 bytes each
 static robin_hood::unordered_map<int, void *> music_record_map;
 
-void *GFHashMapCreate(void *mem, int mem_sz, int max_elems)
+void *__cdecl GFHashMapCreate(void *mem, int mem_sz, int max_elems)
 {
     log_body_info("ultimate", "hooked GFHashMapCreate");
 
@@ -972,12 +972,12 @@ void *GFHashMapCreate(void *mem, int mem_sz, int max_elems)
     return &music_record_map;
 }
 
-void GFHashMapRegist(void *map, int key, void *val)
+void __cdecl GFHashMapRegist(void *map, int key, void *val)
 {
     log_body_fatal("ultimate", "GFHashMapRegist should not be called if patches worked");
 }
 
-void *GFHashMapKeyToValue(void *map, int key)
+void *__cdecl GFHashMapKeyToValue(void *map, int key)
 {
     if (music_count == 0) {
         log_body_fatal("ultimate", "GFHashMapKeyToValue called before mdb load, cannot continue");
@@ -1001,7 +1001,7 @@ void *GFHashMapKeyToValue(void *map, int key)
 // this has potential for failure, but it works for now
 static int music_record_iter;
 
-void GFHashMapRewindEntryList(void *map)
+void __cdecl GFHashMapRewindEntryList(void *map)
 {
     music_record_iter = 0;
 }

@@ -386,8 +386,8 @@ static const struct hook_symbol music_db_hooks[] = {
     },
     /*
     {
-        .name =
-        .patch =
+        .name = 
+        .patch = 
         .link = nullptr,
     },
     */

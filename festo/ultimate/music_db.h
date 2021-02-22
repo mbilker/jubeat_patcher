@@ -17,7 +17,7 @@ extern "C" {
 bool __cdecl music_db_get_sequence_filename(void *a1, void *a2, int music_id, uint8_t seq);
 bool __cdecl music_db_get_sound_filename(void *a1, void *a2, int music_id, uint8_t seq);
 
-extern bool __cdecl (*music_db_initialize_orig)(void);
+extern bool (__cdecl *music_db_initialize_orig)(void);
 
 // bool __cdecl music_db_finalize();
 bool __cdecl music_db_initialize();
@@ -131,13 +131,13 @@ bool __cdecl music_db_is_possession_for_contained_music_list(uint8_t flags[FLAG_
 // int __cdecl music_new_get_list();
 // int __cdecl music_new_read_xml_node();
 
-void __cdecl *mem_set(void *s, int c, size_t n);
+void *__cdecl mem_set(void *s, int c, size_t n);
 
-void GFHashMapRegist(void *map, int key, void *val);
-void *GFHashMapCreate(void *mem, int mem_sz, int max_elems);
-void *GFHashMapKeyToValue(void *map, int key);
-bool GFHashMapGetEntryList(void *map, int *key, void **val);
-void GFHashMapRewindEntryList(void *map);
+void __cdecl GFHashMapRegist(void *map, int key, void *val);
+void *__cdecl GFHashMapCreate(void *mem, int mem_sz, int max_elems);
+void *__cdecl GFHashMapKeyToValue(void *map, int key);
+bool __cdecl GFHashMapGetEntryList(void *map, int *key, void **val);
+void __cdecl GFHashMapRewindEntryList(void *map);
 
 #ifdef __cplusplus
 };
