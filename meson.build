@@ -34,7 +34,6 @@ if cc.get_argument_syntax() != 'msvc'
         '-ffunction-sections',
         '-fdata-sections',
         '-fvisibility=hidden',
-        '-masm=intel',
         language: [
             'c',
             'cpp',
@@ -65,6 +64,5 @@ subdir('util')
 subdir('pattern')
 subdir('pe')
 
-#subdir('qubell')
 subdir('clan')
 subdir('festo')

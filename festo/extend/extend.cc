@@ -250,14 +250,18 @@ static void hook_pkfs_fs_open(HANDLE process, HMODULE pkfs_module, const MODULEI
 static void __cdecl banner_load_hook()
 {
     for (const char *bnr_package : BNR_TEXTURES) {
-        __asm__("push esp\n"
-                "mov ecx, %0\n"
-                "call %1\n"
-                "pop esp"
-                :
-                : "r"(bnr_package), "r"(D3_PACKAGE_LOAD)
-                // 2020021900 saves `ebx`, `ebp`, `edi`, and `esi` in `D3_PACKAGE_LOAD`
-                : "eax", "ecx", "edx");
+        __asm__(
+            ".intel_syntax\n"
+            "push esp\n"
+            "mov ecx, %0\n"
+            "call %1\n"
+            "pop esp\n"
+            ".att_syntax\n"
+            :
+            : "r"(bnr_package), "r"(D3_PACKAGE_LOAD)
+            // 2020021900 saves `ebx`, `ebp`, `edi`, and `esi` in `D3_PACKAGE_LOAD`
+            : "eax", "ecx", "edx"
+        );
     }
 }
 
