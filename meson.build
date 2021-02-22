@@ -53,7 +53,7 @@ if cc.get_argument_syntax() != 'msvc'
     )
 endif
 
-psapi_lib = cc.find_library('psapi', static:true)
+psapi_lib = cc.find_library('psapi')
 
 inc = include_directories('.')
 capnhook = subproject('capnhook')
