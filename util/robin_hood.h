@@ -319,20 +319,20 @@ inline T reinterpret_cast_no_cast_align_warning(void const *ptr) noexcept
 template <typename E, typename... Args>
 ROBIN_HOOD(NOINLINE)
 #if ROBIN_HOOD(HAS_EXCEPTIONS)
-void doThrow(Args &&... args)
+void doThrow(Args &&...args)
 {
     // NOLINTNEXTLINE(cppcoreguidelines-pro-bounds-array-to-pointer-decay)
     throw E(std::forward<Args>(args)...);
 }
 #else
-void doThrow(Args &&... ROBIN_HOOD_UNUSED(args) /*unused*/)
+void doThrow(Args &&...ROBIN_HOOD_UNUSED(args) /*unused*/)
 {
     abort();
 }
 #endif
 
 template <typename E, typename T, typename... Args>
-T *assertNotNull(T *t, Args &&... args)
+T *assertNotNull(T *t, Args &&...args)
 {
     if (ROBIN_HOOD_UNLIKELY(nullptr == t)) {
         doThrow<E>(std::forward<Args>(args)...);
@@ -984,7 +984,7 @@ class Table
     class DataNode<M, true> final {
       public:
         template <typename... Args>
-        explicit DataNode(M &ROBIN_HOOD_UNUSED(map) /*unused*/, Args &&... args) noexcept(
+        explicit DataNode(M &ROBIN_HOOD_UNUSED(map) /*unused*/, Args &&...args) noexcept(
             noexcept(value_type(std::forward<Args>(args)...)))
             : mData(std::forward<Args>(args)...)
         {
@@ -1079,7 +1079,7 @@ class Table
     class DataNode<M, false> {
       public:
         template <typename... Args>
-        explicit DataNode(M &map, Args &&... args) : mData(map.allocate())
+        explicit DataNode(M &map, Args &&...args) : mData(map.allocate())
         {
             ::new (static_cast<void *>(mData)) value_type(std::forward<Args>(args)...);
         }
@@ -1824,7 +1824,7 @@ class Table
     }
 
     template <typename... Args>
-    std::pair<iterator, bool> emplace(Args &&... args)
+    std::pair<iterator, bool> emplace(Args &&...args)
     {
         ROBIN_HOOD_TRACE(this)
         Node n { *this, std::forward<Args>(args)... };

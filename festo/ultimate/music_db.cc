@@ -33,7 +33,7 @@ struct avs_stat {
     struct stat padding;
 };
 
-int (*avs_fs_lstat)(const char* path, struct avs_stat *st);
+int (*avs_fs_lstat)(const char *path, struct avs_stat *st);
 
 // default: 2meg, ultimate: 6meg
 #define MDB_XML_SIZE (6 * 1024 * 1024)
@@ -79,7 +79,7 @@ void __cdecl *mem_set(void *s, int c, size_t n)
 
         const size_t new_sz = 8192 * 28 * 4;
         size_t new_limit = new_sz / 28;
-        void* new_buf = malloc(new_sz);
+        void *new_buf = malloc(new_sz);
 
         log_body_info("ultimate", "d3 limit %d->%d buf %p->%p", *limit, new_limit, *buf, new_buf);
 
@@ -358,8 +358,8 @@ static enum music_load_res music_load_individual(int index, void *node)
     property_node_refer(nullptr, node, "/pack_id", PROP_TYPE_s32, &song->pack_id, 4);
     property_node_refer(nullptr, node, "/grouping_category", PROP_TYPE_str, tmp, sizeof(tmp));
     song->grouping_category = strtoul(tmp, nullptr, 16);
-    property_node_refer(nullptr, node, "/title_name", PROP_TYPE_str, song->title_name,
-        sizeof(song->title_name));
+    property_node_refer(
+        nullptr, node, "/title_name", PROP_TYPE_str, song->title_name, sizeof(song->title_name));
 
     if (song->music_id == 70000154 && !song->grouping_category) {
         song->grouping_category = 4736;
@@ -386,10 +386,12 @@ static enum music_load_res music_load_individual(int index, void *node)
     struct avs_stat st;
     char path[256];
     int lstat;
-    snprintf(path, sizeof(path), "/data/ifs_pack/d%d/%d_msc.ifs", song->music_id / 10, song->music_id);
-    if((lstat = avs_fs_lstat(path, &st)) <= 0) {
+    snprintf(
+        path, sizeof(path), "/data/ifs_pack/d%d/%d_msc.ifs", song->music_id / 10, song->music_id);
+    if ((lstat = avs_fs_lstat(path, &st)) <= 0) {
         log_warning("Missing song IFS file for ID %d (%s)", song->music_id, song->title_name);
-    } else if(st.filesize < 256) { // deleted songs don't get deleted, but have their IFS file stubbed
+    } else if (st.filesize < 256)
+    { // deleted songs don't get deleted, but have their IFS file stubbed
         log_warning("Too-short song IFS file for ID %d (%s)", song->music_id, song->title_name);
     } else {
         // for extra extra debugging
@@ -400,9 +402,10 @@ static enum music_load_res music_load_individual(int index, void *node)
     return MUSIC_LOAD_OK;
 }
 
-int music_db_entry_sorter(const void *_a, const void *_b) {
-    music_db_entry_t* a = *(music_db_entry_t**)_a;
-    music_db_entry_t* b = *(music_db_entry_t**)_b;
+int music_db_entry_sorter(const void *_a, const void *_b)
+{
+    music_db_entry_t *a = *(music_db_entry_t **) _a;
+    music_db_entry_t *b = *(music_db_entry_t **) _b;
     return stricmp(a->title_name, b->title_name);
 }
 
@@ -422,7 +425,9 @@ bool __cdecl music_db_initialize(void)
     if ((avs2_core_handle = GetModuleHandleA("avs2-core.dll")) == nullptr) {
         log_fatal("GetModuleHandle(\"avs2-core.dll\") failed: 0x%08lx", GetLastError());
     }
-    if((avs_fs_lstat = (int (*)(const char*, struct avs_stat*))GetProcAddress(avs2_core_handle, "XCgsqzn0000063")) == nullptr) {
+    if ((avs_fs_lstat = (int (*)(const char *, struct avs_stat *)) GetProcAddress(
+             avs2_core_handle, "XCgsqzn0000063")) == nullptr)
+    {
         log_fatal("GetProcAddress(\"avs_fs_lstat\") failed: 0x%08lx", GetLastError());
     }
 #endif
@@ -469,16 +474,16 @@ bool __cdecl music_db_initialize(void)
 
     log_body_info("ultimate", "Loaded %d songs into music db", music_count);
 
-    music_db_entry_t* sorted[MAX_SONGS];
-    for(int i = 0; i < music_count; i++) {
+    music_db_entry_t *sorted[MAX_SONGS];
+    for (int i = 0; i < music_count; i++) {
         sorted[i] = &music_db[i];
     }
 
     // I could use avs_qsort here but what's the point when the stdlib is
     // guaranteed to be sane
-    qsort(sorted, music_count, sizeof(music_db_entry_t*), music_db_entry_sorter);
+    qsort(sorted, music_count, sizeof(music_db_entry_t *), music_db_entry_sorter);
 
-    for(int i = 0; i < music_count; i++) {
+    for (int i = 0; i < music_count; i++) {
         sorted[i]->name_sort_id_j = i;
     }
 

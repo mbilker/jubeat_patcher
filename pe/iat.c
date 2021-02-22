@@ -12,8 +12,7 @@
 #include "util/log.h"
 #include "util/mem.h"
 
-const pe_iid_t *
-module_get_iid_for_name(HMODULE module, const char *target_module_name)
+const pe_iid_t *module_get_iid_for_name(HMODULE module, const char *target_module_name)
 {
     const pe_iid_t *iid;
     const char *iid_name;
@@ -45,11 +44,7 @@ module_get_iid_for_name(HMODULE module, const char *target_module_name)
     return iid;
 }
 
-void *iid_get_addr_for_name(
-    HMODULE module,
-    const pe_iid_t *iid,
-    uint16_t ordinal,
-    const char *name)
+void *iid_get_addr_for_name(HMODULE module, const pe_iid_t *iid, uint16_t ordinal, const char *name)
 {
     struct pe_iat_entry entry;
     size_t i;
