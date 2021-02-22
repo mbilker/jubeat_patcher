@@ -9,6 +9,8 @@
 
 #include <stdint.h>
 
+#include "hook/table.h"
+
 #include "imports/avs2-core/avs.h"
 #include "imports/gftools.h"
 #include "imports/jubeat.h"
@@ -235,7 +237,7 @@ const struct patch_t mdb_array_3_6 {
 };
 
 static void *D3_PACKAGE_LOAD = nullptr;
-static const char *BNR_TEXTURES[] {
+static const char *BNR_TEXTURES[] = {
     "L44FO_BNR_J_01_001",
     "L44FO_BNR_J_02_001",
     "L44FO_BNR_J_03_001",
@@ -261,9 +263,9 @@ static const char *BNR_TEXTURES[] {
     "L44FO_BNR_J_09_015",
     "L44FO_BNR_J_09_016",
     "L44FO_BNR_J_09_017",
-	"L44FO_BNR_J_09_018",
+    "L44FO_BNR_J_09_018",
     "L44FO_BNR_J_09_019",
-	"L44FO_BNR_J_09_020",
+    "L44FO_BNR_J_09_020",
     "L44FO_BNR_J_OM_001",
     "L44FO_BNR_J_OM_002",
     "L44FO_BNR_J_EX_001",
@@ -275,6 +277,120 @@ static const char *BNR_TEXTURES[] {
 };
 
 // clang-format on
+
+static const struct hook_symbol music_db_hooks[] = {
+    {
+        .name = "music_db_get_sequence_filename",
+        .patch = reinterpret_cast<void *>(music_db_get_sequence_filename),
+        .link = nullptr,
+    },
+    {
+        .name = "music_db_get_sound_filename",
+        .patch = reinterpret_cast<void *>(music_db_get_sound_filename),
+        .link = nullptr,
+    },
+    /*
+    {
+        .name = "music_db_dbg_get_all_list",
+        .patch = reinterpret_cast<void *>(music_db_dbg_get_all_list),
+        .link = nullptr,
+    },
+    {
+        .name = "music_db_dot_array_to_music_bar",
+        .patch = reinterpret_cast<void *>(music_db_dot_array_to_music_bar),
+        .link = nullptr,
+    },
+    {
+        .name = "music_db_finalize",
+        .patch = reinterpret_cast<void *>(music_db_finalize),
+        .link = nullptr,
+    },
+    */
+    {
+        .name = "music_db_get_bpm",
+        .patch = reinterpret_cast<void *>(music_db_get_bpm),
+        .link = nullptr,
+    },
+    {
+        .name = "music_db_get_bpm_min",
+        .patch = reinterpret_cast<void *>(music_db_get_bpm_min),
+        .link = nullptr,
+    },
+    {
+        .name = "music_db_get_default_list",
+        .patch = reinterpret_cast<void *>(music_db_get_default_list),
+        .link = nullptr,
+    },
+    {
+        .name = "music_db_get_offline_default_list",
+        .patch = reinterpret_cast<void *>(music_db_get_offline_default_list),
+        .link = nullptr,
+    },
+    {
+        .name = "music_db_get_all_permitted_list",
+        .patch = reinterpret_cast<void *>(music_db_get_all_permitted_list),
+        .link = nullptr,
+    },
+    {
+        .name = "music_db_get_possession_list",
+        .patch = reinterpret_cast<void *>(music_db_get_possession_list),
+        .link = nullptr,
+    },
+    {
+        .name = "music_db_get_card_default_list",
+        .patch = reinterpret_cast<void *>(music_db_get_card_default_list),
+        .link = nullptr,
+    },
+    /*
+    {
+        .name = "music_db_get_jukebox_list",
+        .patch = reinterpret_cast<void *>(music_db_get_jukebox_list),
+        .link = nullptr,
+    },
+    {
+        .name = "music_db_get_default_id",
+        .patch = reinterpret_cast<void *>(music_db_get_default_id),
+        .link = nullptr,
+    },
+    {
+        .name = "music_db_get_default_id_by_genre",
+        .patch = reinterpret_cast<void *>(music_db_get_default_id_by_genre),
+        .link = nullptr,
+    },
+    {
+        .name = "music_db_get_default_id_by_mode",
+        .patch = reinterpret_cast<void *>(music_db_get_default_id_by_mode),
+        .link = nullptr,
+    },
+    */
+    {
+        .name = "music_db_get_genre_list",
+        .patch = reinterpret_cast<void *>(music_db_get_genre_list),
+        .link = nullptr,
+    },
+    {
+        .name = "music_db_get_grouping_category_list",
+        .patch = reinterpret_cast<void *>(music_db_get_grouping_category_list),
+        .link = nullptr,
+    },
+    {
+        .name = "music_db_get_index_start",
+        .patch = reinterpret_cast<void *>(music_db_get_index_start),
+        .link = nullptr,
+    },
+    {
+        .name = "music_db_get_level",
+        .patch = reinterpret_cast<void *>(music_db_get_level),
+        .link = nullptr,
+    },
+    /*
+    {
+        .name =
+        .patch =
+        .link = nullptr,
+    },
+    */
+};
 
 static void do_patch(HANDLE process, const MODULEINFO &module_info, const struct patch_t &patch)
 {
@@ -605,137 +721,15 @@ extern "C" bool __declspec(dllexport) dll_entry_init(char *sid_code, void *app_c
     do_patch(process, jubeat_info, smc_mm_hierarchy_ko);
     */
 
-    hook_iat(
-        process,
-        jubeat_handle,
-        "music_db.dll",
-        "music_db_get_sequence_filename",
-        reinterpret_cast<void *>(music_db_get_sequence_filename));
-    hook_iat(
-        process,
-        jubeat_handle,
-        "music_db.dll",
-        "music_db_get_sound_filename",
-        reinterpret_cast<void *>(music_db_get_sound_filename));
-
     music_db_initialize_orig = (bool (*)()) GetProcAddress(music_db_handle, "music_db_initialize");
 
     // mem_set
     hook_iat_ordinal(
         process, jubeat_handle, "avs2-core.dll", 0xF4, reinterpret_cast<void *>(mem_set));
 
-    /*
-    hook_iat(
-        process,
-        jubeat_handle,
-        "music_db.dll",
-        "music_db_dbg_get_all_list",
-        reinterpret_cast<void *>(music_db_dbg_get_all_list));
-    hook_iat(
-        process,
-        jubeat_handle,
-        "music_db.dll",
-        "music_db_dot_array_to_music_bar",
-        reinterpret_cast<void *>(music_db_dot_array_to_music_bar));
-    hook_iat(
-        process,
-        jubeat_handle,
-        "music_db.dll",
-        "music_db_finalize",
-        reinterpret_cast<void *>(music_db_finalize));
-    */
-    hook_iat(
-        process,
-        jubeat_handle,
-        "music_db.dll",
-        "music_db_get_bpm",
-        reinterpret_cast<void *>(music_db_get_bpm));
-    hook_iat(
-        process,
-        jubeat_handle,
-        "music_db.dll",
-        "music_db_get_bpm_min",
-        reinterpret_cast<void *>(music_db_get_bpm_min));
-    hook_iat(
-        process,
-        jubeat_handle,
-        "music_db.dll",
-        "music_db_get_default_list",
-        reinterpret_cast<void *>(music_db_get_default_list));
-    hook_iat(
-        process,
-        jubeat_handle,
-        "music_db.dll",
-        "music_db_get_offline_default_list",
-        reinterpret_cast<void *>(music_db_get_offline_default_list));
-    hook_iat(
-        process,
-        jubeat_handle,
-        "music_db.dll",
-        "music_db_get_all_permitted_list",
-        reinterpret_cast<void *>(music_db_get_all_permitted_list));
-    hook_iat(
-        process,
-        jubeat_handle,
-        "music_db.dll",
-        "music_db_get_possession_list",
-        reinterpret_cast<void *>(music_db_get_possession_list));
-    hook_iat(
-        process,
-        jubeat_handle,
-        "music_db.dll",
-        "music_db_get_card_default_list",
-        reinterpret_cast<void *>(music_db_get_card_default_list));
-    /*
-    hook_iat(
-        process,
-        jubeat_handle,
-        "music_db.dll",
-        "music_db_get_jukebox_list",
-        reinterpret_cast<void *>(music_db_get_jukebox_list));
-    hook_iat(
-        process,
-        jubeat_handle,
-        "music_db.dll",
-        "music_db_get_default_id",
-        reinterpret_cast<void *>(music_db_get_default_id));
-    hook_iat(
-        process,
-        jubeat_handle,
-        "music_db.dll",
-        "music_db_get_default_id_by_genre",
-        reinterpret_cast<void *>(music_db_get_default_id_by_genre));
-    hook_iat(
-        process,
-        jubeat_handle,
-        "music_db.dll",
-        "music_db_get_default_id_by_mode",
-        reinterpret_cast<void *>(music_db_get_default_id_by_mode));
-    */
-    hook_iat(
-        process,
-        jubeat_handle,
-        "music_db.dll",
-        "music_db_get_genre_list",
-        reinterpret_cast<void *>(music_db_get_genre_list));
-    hook_iat(
-        process,
-        jubeat_handle,
-        "music_db.dll",
-        "music_db_get_grouping_category_list",
-        reinterpret_cast<void *>(music_db_get_grouping_category_list));
-    hook_iat(
-        process,
-        jubeat_handle,
-        "music_db.dll",
-        "music_db_get_index_start",
-        reinterpret_cast<void *>(music_db_get_index_start));
-    hook_iat(
-        process,
-        jubeat_handle,
-        "music_db.dll",
-        "music_db_get_level",
-        reinterpret_cast<void *>(music_db_get_level));
+    iat_hook_table_apply(
+        process, jubeat_handle, "music_db.dll", music_db_hooks, std::size(music_db_hooks));
+
     hook_iat(
         process,
         jubeat_handle,
