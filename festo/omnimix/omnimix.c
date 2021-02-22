@@ -12,6 +12,7 @@
 
 #include "pattern/pattern.h"
 
+#include "util/defs.h"
 #include "util/log.h"
 #include "util/mem.h"
 
@@ -187,7 +188,7 @@ void do_patch(HANDLE process, const MODULEINFO *module_info, const struct patch_
     }
 }
 
-bool __declspec(dllexport) dll_entry_init(char *sid_code, void *app_config)
+DLL_EXPORT bool dll_entry_init(char *sid_code, void *app_config)
 {
     DWORD pid;
     HANDLE process;
@@ -254,7 +255,7 @@ bool __declspec(dllexport) dll_entry_init(char *sid_code, void *app_config)
     return ret;
 }
 
-bool __declspec(dllexport) dll_entry_main(void)
+DLL_EXPORT bool dll_entry_main(void)
 {
     return jb_dll_entry_main();
 }

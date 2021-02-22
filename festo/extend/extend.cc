@@ -17,6 +17,7 @@
 
 #include "pe/iat.h"
 
+#include "util/defs.h"
 #include "util/log.h"
 #include "util/mem.h"
 #include "util/x86.h"
@@ -358,7 +359,7 @@ static void hook_banner_textures(HANDLE process, const MODULEINFO &module_info)
     memory_set(process, loop_jnz_addr, 0x90, sizeof(loop_jnz_pattern) + 1);
 }
 
-extern "C" bool __declspec(dllexport) dll_entry_init(char *sid_code, void *app_config)
+extern "C" DLL_EXPORT bool dll_entry_init(char *sid_code, void *app_config)
 {
     DWORD pid;
     HANDLE process;
@@ -440,7 +441,7 @@ extern "C" bool __declspec(dllexport) dll_entry_init(char *sid_code, void *app_c
     return ret;
 }
 
-extern "C" bool __declspec(dllexport) dll_entry_main(void)
+extern "C" DLL_EXPORT bool dll_entry_main(void)
 {
     return jb_dll_entry_main();
 }

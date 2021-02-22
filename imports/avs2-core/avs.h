@@ -2,15 +2,17 @@
 
 #include <stdint.h>
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+#include "util/defs.h"
 
 #ifdef __GNUC__
 #define LOG_CHECK_FMT __attribute__((format(printf, 2, 3)))
 #else
 // `__attribute__` is not a thing under MSVC
 #define LOG_CHECK_FMT
+#endif
+
+#ifdef __cplusplus
+extern "C" {
 #endif
 
 enum property_type {
@@ -97,22 +99,22 @@ enum prop_create_flag {
     PROP_BIN_PLAIN_NODE_NAMES = 0x1000,
 };
 
-void __declspec(dllimport) log_body_misc(const char *module, const char *fmt, ...) LOG_CHECK_FMT;
-void __declspec(dllimport) log_body_info(const char *module, const char *fmt, ...) LOG_CHECK_FMT;
-void __declspec(dllimport) log_body_warning(const char *module, const char *fmt, ...) LOG_CHECK_FMT;
-void __declspec(dllimport) log_body_fatal(const char *module, const char *fmt, ...) LOG_CHECK_FMT;
+DLL_IMPORT void log_body_misc(const char *module, const char *fmt, ...) LOG_CHECK_FMT;
+DLL_IMPORT void log_body_info(const char *module, const char *fmt, ...) LOG_CHECK_FMT;
+DLL_IMPORT void log_body_warning(const char *module, const char *fmt, ...) LOG_CHECK_FMT;
+DLL_IMPORT void log_body_fatal(const char *module, const char *fmt, ...) LOG_CHECK_FMT;
 
-size_t __declspec(dllimport) avs_strlcpy(char *dst, const char *src, size_t dst_size);
-size_t __declspec(dllimport) avs_snprintf(char *dst, size_t dst_size, const char *fmt, ...);
-void __declspec(dllimport) avs_thread_delay(int time, int a2);
+DLL_IMPORT size_t avs_strlcpy(char *dst, const char *src, size_t dst_size);
+DLL_IMPORT size_t avs_snprintf(char *dst, size_t dst_size, const char *fmt, ...);
+DLL_IMPORT void avs_thread_delay(int time, int a2);
 
-void *__declspec(dllimport) property_mem_read(
+DLL_IMPORT void *property_mem_read(
     void *src_buf, size_t src_size, unsigned int flags, void *buffer, uint32_t buffer_size);
-void __declspec(dllimport) property_destroy(void *prop);
-void __declspec(dllimport) property_clear_error(void *prop);
-void *__declspec(dllimport) property_node_traversal(void *prop, enum prop_traverse_option opt);
-void *__declspec(dllimport) property_search(void *prop, void *node, const char *path);
-int __declspec(dllimport) property_node_refer(
+DLL_IMPORT void property_destroy(void *prop);
+DLL_IMPORT void property_clear_error(void *prop);
+DLL_IMPORT void *property_node_traversal(void *prop, enum prop_traverse_option opt);
+DLL_IMPORT void *property_search(void *prop, void *node, const char *path);
+DLL_IMPORT int property_node_refer(
     void *prop, void *node, const char *path, enum property_type type, void *dest, int size);
 
 #ifdef __cplusplus

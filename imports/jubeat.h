@@ -2,12 +2,14 @@
 
 #include <stdbool.h>
 
+#include "util/defs.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-bool __declspec(dllimport) jb_dll_entry_init(char *, void *);
-bool __declspec(dllimport) jb_dll_entry_main(void);
+DLL_IMPORT bool jb_dll_entry_init(char *, void *);
+DLL_IMPORT bool jb_dll_entry_main(void);
 
 #ifdef __cplusplus
 };
