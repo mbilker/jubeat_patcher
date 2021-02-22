@@ -17,7 +17,7 @@ extern "C" {
 bool __cdecl music_db_get_sequence_filename(void *a1, void *a2, int music_id, uint8_t seq);
 bool __cdecl music_db_get_sound_filename(void *a1, void *a2, int music_id, uint8_t seq);
 
-extern bool __cdecl (*music_db_initialize_orig)();
+extern bool __cdecl (*music_db_initialize_orig)(void);
 
 // bool __cdecl music_db_finalize();
 bool __cdecl music_db_initialize();

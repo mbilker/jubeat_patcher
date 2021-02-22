@@ -170,7 +170,7 @@ static void hook_pkfs_fs_open(HANDLE process, HMODULE pkfs_module, const MODULEI
     uint8_t *current;
     size_t remaining;
 
-    avs2_import_descriptor = module_get_iid_for_name(process, pkfs_module, "avs2-core.dll");
+    avs2_import_descriptor = module_get_iid_for_name(pkfs_module, "avs2-core.dll");
 
     log_assert(avs2_import_descriptor != nullptr);
 
@@ -250,18 +250,16 @@ static void hook_pkfs_fs_open(HANDLE process, HMODULE pkfs_module, const MODULEI
 static void __cdecl banner_load_hook()
 {
     for (const char *bnr_package : BNR_TEXTURES) {
-        __asm__(
-            ".intel_syntax\n"
-            "push esp\n"
-            "mov ecx, %0\n"
-            "call %1\n"
-            "pop esp\n"
-            ".att_syntax\n"
-            :
-            : "r"(bnr_package), "r"(D3_PACKAGE_LOAD)
-            // 2020021900 saves `ebx`, `ebp`, `edi`, and `esi` in `D3_PACKAGE_LOAD`
-            : "eax", "ecx", "edx"
-        );
+        __asm__(".intel_syntax\n"
+                "push esp\n"
+                "mov ecx, %0\n"
+                "call %1\n"
+                "pop esp\n"
+                ".att_syntax\n"
+                :
+                : "r"(bnr_package), "r"(D3_PACKAGE_LOAD)
+                // 2020021900 saves `ebx`, `ebp`, `edi`, and `esi` in `D3_PACKAGE_LOAD`
+                : "eax", "ecx", "edx");
     }
 }
 

@@ -2,97 +2,71 @@
 
 // clang-format off
 #include <windows.h>
-#include <dbghelp.h>
 // clang-format on
 
 #include <stdbool.h>
 #include <stdint.h>
 
+#include "hook/pe.h"
+
 #include "util/log.h"
 #include "util/mem.h"
 
-const IMAGE_IMPORT_DESCRIPTOR *
-module_get_iid_for_name(HANDLE process, HMODULE module, const char *target_module_name)
+const pe_iid_t *
+module_get_iid_for_name(HMODULE module, const char *target_module_name)
 {
-    IMAGE_IMPORT_DESCRIPTOR *import_descriptor;
-    unsigned long size;
-    const char *module_name;
+    const pe_iid_t *iid;
+    const char *iid_name;
 
-    import_descriptor =
-        ImageDirectoryEntryToData(module, true, IMAGE_DIRECTORY_ENTRY_IMPORT, &size);
+    iid = pe_iid_get_first(module);
 
-    if (import_descriptor == NULL) {
+    if (iid == NULL) {
         log_warning("failed to get import descriptor for module: 0x%08lx", GetLastError());
         return NULL;
     }
-    if (size == 0) {
-        log_warning("no imports for module %p", module);
-        return NULL;
-    }
 
-    while (import_descriptor->Name != 0) {
-        module_name = (const char *) (((uintptr_t) module) + ((uintptr_t) import_descriptor->Name));
+    while (iid != NULL) {
+        iid_name = pe_iid_get_name(module, iid);
 
-        if (_stricmp(module_name, target_module_name) == 0) {
+        if (_stricmp(iid_name, target_module_name) == 0) {
             break;
         }
 
-        import_descriptor++;
+        iid = pe_iid_get_next(module, iid);
     }
 
-    if (import_descriptor->Name == 0) {
+    if (iid == NULL) {
         log_warning("failed to find import descriptor for '%s'", target_module_name);
         return NULL;
     }
 
-    log_misc("found import descriptor for '%s' at %p", target_module_name, import_descriptor);
+    log_misc("found import descriptor for '%s' at %p", target_module_name, iid);
 
-    return import_descriptor;
+    return iid;
 }
 
 void *iid_get_addr_for_name(
     HMODULE module,
-    const IMAGE_IMPORT_DESCRIPTOR *import_descriptor,
+    const pe_iid_t *iid,
     uint16_t ordinal,
     const char *name)
 {
-    uintptr_t module_base;
-    intptr_t *import_rvas;
-    const IMAGE_IMPORT_BY_NAME *import;
-    IMAGE_THUNK_DATA *thunk_data;
+    struct pe_iat_entry entry;
     size_t i;
 
-    module_base = (uintptr_t) module;
-    import_rvas = (intptr_t *) (module_base + ((uintptr_t) import_descriptor->OriginalFirstThunk));
+    memset(&entry, 0, sizeof(entry));
 
     i = 0;
 
-    while (true) {
-        // Check if the end of the import list was reached
-        if (import_rvas[i] == 0) {
-            return NULL;
+    while (pe_iid_get_iat_entry(module, iid, i++, &entry) == S_OK) {
+        if (ordinal != 0 && ordinal == entry.ordinal) {
+            return entry.ppointer;
+        } else if (name != NULL && entry.name != NULL && _stricmp(entry.name, name) == 0) {
+            return entry.ppointer;
         }
-
-        // Check if this import entry is an ordinal import
-        if (import_rvas[i] & INTPTR_MIN) {
-            if (ordinal != 0 && ordinal == (uint16_t) import_rvas[i]) {
-                break;
-            }
-        } else {
-            import = (const IMAGE_IMPORT_BY_NAME *) (module_base + ((uintptr_t) import_rvas[i]));
-
-            // Check if this import entry matches the desired import name
-            if (name != NULL && _stricmp(import->Name, name) == 0) {
-                break;
-            }
-        }
-
-        i++;
     }
 
-    thunk_data = (IMAGE_THUNK_DATA *) (module_base + ((uintptr_t) import_descriptor->FirstThunk));
-
-    return &thunk_data[i].u1.Function;
+    return NULL;
 }
 
 void hook_iat(
@@ -102,16 +76,16 @@ void hook_iat(
     const char *import_name,
     void *target_func_ptr)
 {
-    const IMAGE_IMPORT_DESCRIPTOR *import_descriptor;
+    const pe_iid_t *iid;
     void *target;
 
-    import_descriptor = module_get_iid_for_name(process, module, target_module_name);
+    iid = module_get_iid_for_name(module, target_module_name);
 
-    if (!import_descriptor) {
+    if (!iid) {
         return;
     }
 
-    target = iid_get_addr_for_name(module, import_descriptor, 0, import_name);
+    target = iid_get_addr_for_name(module, iid, 0, import_name);
 
     if (!target) {
         return;
@@ -134,16 +108,16 @@ void hook_iat_ordinal(
     uint16_t target_func_ordinal,
     void *target_func_ptr)
 {
-    const IMAGE_IMPORT_DESCRIPTOR *import_descriptor;
+    const pe_iid_t *iid;
     void *target;
 
-    import_descriptor = module_get_iid_for_name(process, module, target_module_name);
+    iid = module_get_iid_for_name(module, target_module_name);
 
-    if (!import_descriptor) {
+    if (!iid) {
         return;
     }
 
-    target = iid_get_addr_for_name(module, import_descriptor, target_func_ordinal, NULL);
+    target = iid_get_addr_for_name(module, iid, target_func_ordinal, NULL);
 
     if (!target) {
         return;

@@ -6,12 +6,14 @@
 
 #include <stdint.h>
 
+#include "hook/pe.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-const IMAGE_IMPORT_DESCRIPTOR *
-module_get_iid_for_name(HANDLE process, HMODULE module, const char *target_module_name);
+const pe_iid_t *
+module_get_iid_for_name(HMODULE module, const char *target_module_name);
 void *iid_get_addr_for_name(
     HMODULE module,
     const IMAGE_IMPORT_DESCRIPTOR *import_descriptor,

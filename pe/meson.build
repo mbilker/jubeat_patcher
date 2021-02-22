@@ -3,7 +3,7 @@ pe_lib = static_library(
     include_directories: inc,
     implicit_include_directories: false,
     dependencies: [
-        dbghelp_lib,
+        capnhook.get_variable('hook_dep'),
     ],
     sources: [
         'iat.c',

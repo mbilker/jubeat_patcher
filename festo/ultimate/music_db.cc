@@ -21,7 +21,7 @@
 // ifs file in the ifs_pack folder
 #define DEBUG_CHECK_MUSIC_IFS_EXISTS
 
-bool __cdecl (*music_db_initialize_orig)();
+bool __cdecl (*music_db_initialize_orig)(void);
 
 struct avs_stat {
     uint64_t st_atime;
@@ -406,7 +406,7 @@ int music_db_entry_sorter(const void *_a, const void *_b) {
     return stricmp(a->title_name, b->title_name);
 }
 
-bool __cdecl music_db_initialize()
+bool __cdecl music_db_initialize(void)
 {
     // some features are not worth reimplementing because their results aren't
     // changed by the ultimate songs. This lets us use these functions easily.

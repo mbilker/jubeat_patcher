@@ -57,6 +57,7 @@ dbghelp_lib = cc.find_library('dbghelp', static:true)
 psapi_lib = cc.find_library('psapi', static:true)
 
 inc = include_directories('.')
+capnhook = subproject('capnhook')
 
 subdir('imports')
 

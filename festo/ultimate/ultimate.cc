@@ -335,7 +335,7 @@ static void hook_pkfs_fs_open(HANDLE process, HMODULE pkfs_module, const MODULEI
     uint8_t *current;
     size_t remaining;
 
-    avs2_import_descriptor = module_get_iid_for_name(process, pkfs_module, "avs2-core.dll");
+    avs2_import_descriptor = module_get_iid_for_name(pkfs_module, "avs2-core.dll");
 
     log_assert(avs2_import_descriptor != nullptr);
 

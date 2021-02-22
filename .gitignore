@@ -1,2 +1,8 @@
+.*.swp
+
+# Build directories
 /_build32
 /_build
+
+# External dependencies
+subprojects/capnhook

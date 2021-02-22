@@ -4,6 +4,7 @@ shared_library(
     include_directories: inc,
     implicit_include_directories: false,
     dependencies: [
+        capnhook.get_variable('hook_dep'),
         psapi_lib,
     ],
     link_with: [
