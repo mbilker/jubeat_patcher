@@ -30,7 +30,9 @@
 struct patch_t {
     const char *name;
     const std::vector<uint8_t> pattern;
-    const bool *pattern_mask;
+    // MSVC does not allow the `(const bool[]) { ... }` initializer and `std::vector<bool>` is a
+    // specialization, so use `std::vector<uint8_t>` instead
+    const std::vector<uint8_t> pattern_mask;
     const std::vector<uint8_t> data;
     size_t data_offset;
 };
@@ -54,7 +56,7 @@ const struct patch_t tutorial_skip2 {
 const struct patch_t select_timer_freeze {
     .name = "song select timer freeze",
     .pattern = { 0x74, 0x00, 0xE8, 0x00, 0x00, 0x00, 0x00, 0x84, 0xC0, 0x75, 0x00, 0x38 },
-    .pattern_mask = (const bool[]) { 1, 0, 1, 0, 0, 0, 0, 1, 1, 1, 0, 1 },
+    .pattern_mask = { 1, 0, 1, 0, 0, 0, 0, 1, 1, 1, 0, 1 },
     .data = { 0xEB },
     .data_offset = 9,
 };
@@ -407,9 +409,9 @@ static void do_patch(HANDLE process, const MODULEINFO &module_info, const struct
     log_info("pattern: %s", hex_data);
     free(hex_data);
 
-    if (patch.pattern_mask != nullptr) {
+    if (!patch.pattern_mask.empty()) {
         hex_data =
-            to_hex(reinterpret_cast<const uint8_t *>(patch.pattern_mask), patch.pattern.size());
+            to_hex(patch.pattern_mask.data(), patch.pattern.size());
         log_info("mask   : %s", hex_data);
         free(hex_data);
     }
@@ -419,7 +421,7 @@ static void do_patch(HANDLE process, const MODULEINFO &module_info, const struct
         reinterpret_cast<uint8_t *>(module_info.lpBaseOfDll),
         module_info.SizeOfImage,
         patch.pattern.data(),
-        patch.pattern_mask,
+        reinterpret_cast<const bool *>(patch.pattern_mask.data()),
         patch.pattern.size());
 
     if (addr != nullptr) {
