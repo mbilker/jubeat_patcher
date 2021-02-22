@@ -251,6 +251,26 @@ static void hook_pkfs_fs_open(HANDLE process, HMODULE pkfs_module, const MODULEI
 static void __cdecl banner_load_hook()
 {
     for (const char *bnr_package : BNR_TEXTURES) {
+#ifdef _MSC_VER
+        __asm  {
+            // These registers are overwritten
+            push eax
+            push ecx
+            push edx
+
+            // `esp` is used by `D3_PACKAGE_LOAD`
+            push esp
+            mov ecx, bnr_package
+            call D3_PACKAGE_LOAD
+            pop esp
+
+            // Restore overwritten registers
+            pop edx
+            pop ecx
+            pop eax
+
+        }
+#else
         __asm__(".intel_syntax\n"
                 "push esp\n"
                 "mov ecx, %0\n"
@@ -261,6 +281,7 @@ static void __cdecl banner_load_hook()
                 : "r"(bnr_package), "r"(D3_PACKAGE_LOAD)
                 // 2020021900 saves `ebx`, `ebp`, `edi`, and `esi` in `D3_PACKAGE_LOAD`
                 : "eax", "ecx", "edx");
+#endif
     }
 }
 
@@ -334,12 +355,16 @@ static void hook_banner_textures(HANDLE process, const MODULEINFO &module_info)
 
     // Patch function call location
     {
+#pragma pack(push, 1)
+
         struct call_replacement {
             uint8_t load_opcode;
             uint32_t addr;
             uint8_t call_opcode;
             uint8_t reg_index;
-        } __attribute__((packed));
+        };
+
+#pragma pack(pop)
 
         struct call_replacement d3_package_load_call_replacement {
             .load_opcode = 0xB8, .addr = reinterpret_cast<uint32_t>(banner_load_hook),
