@@ -6,7 +6,12 @@
 extern "C" {
 #endif
 
+#ifdef __GNUC__
 #define LOG_CHECK_FMT __attribute__((format(printf, 2, 3)))
+#else
+// `__attribute__` is not a thing under MSVC
+#define LOG_CHECK_FMT
+#endif
 
 enum property_type {
     PROP_TYPE_node = 1,
