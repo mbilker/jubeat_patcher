@@ -410,8 +410,7 @@ static void do_patch(HANDLE process, const MODULEINFO &module_info, const struct
     free(hex_data);
 
     if (!patch.pattern_mask.empty()) {
-        hex_data =
-            to_hex(patch.pattern_mask.data(), patch.pattern.size());
+        hex_data = to_hex(patch.pattern_mask.data(), patch.pattern.size());
         log_info("mask   : %s", hex_data);
         free(hex_data);
     }
@@ -537,7 +536,7 @@ static void __cdecl banner_load_hook()
 {
     for (const char *bnr_package : BNR_TEXTURES) {
 #ifdef _MSC_VER
-        __asm  {
+        __asm {
             // These registers are overwritten
             push eax
             push ecx
