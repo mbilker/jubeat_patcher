@@ -2,6 +2,7 @@
 
 #include <windows.h>
 
+#include <assert.h>
 #include <stdbool.h>
 #include <stdint.h>
 
@@ -14,6 +15,7 @@ struct addr_relative_replacement {
     uint32_t addr_offset;
     uint8_t nop;
 };
+static_assert(sizeof(struct addr_relative_replacement) == 6, "addr_relative_replacement size");
 
 #pragma pack(pop)
 
