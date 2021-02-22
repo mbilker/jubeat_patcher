@@ -111,6 +111,19 @@ static const char *BNR_TEXTURES[] = {
 };
 // clang-format on
 
+static const struct hook_symbol music_db_hooks[] = {
+    {
+        .name = "music_db_get_sequence_filename",
+        .patch = reinterpret_cast<void *>(music_db_get_sequence_filename_hook),
+        .link = nullptr,
+    },
+    {
+        .name = "music_db_get_sound_filename",
+        .patch = reinterpret_cast<void *>(music_db_get_sound_filename_hook),
+        .link = nullptr,
+    },
+};
+
 static void do_patch(HANDLE process, const MODULEINFO &module_info, const struct patch_t &patch)
 {
 #ifdef VERBOSE
@@ -422,18 +435,8 @@ extern "C" bool __declspec(dllexport) dll_entry_init(char *sid_code, void *app_c
     do_patch(process, music_db_info, music_plus_patch);
     do_patch(process, music_db_info, song_unlock_patch);
 
-    hook_iat(
-        process,
-        jubeat_handle,
-        "music_db.dll",
-        "music_db_get_sequence_filename",
-        reinterpret_cast<void *>(music_db_get_sequence_filename_hook));
-    hook_iat(
-        process,
-        jubeat_handle,
-        "music_db.dll",
-        "music_db_get_sound_filename",
-        reinterpret_cast<void *>(music_db_get_sound_filename_hook));
+    iat_hook_table_apply(
+        process, jubeat_handle, "music_db.dll", music_db_hooks, std::size(music_db_hooks));
 
     hook_pkfs_fs_open(process, pkfs_handle, pkfs_info);
     hook_banner_textures(process, jubeat_info);
