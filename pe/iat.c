@@ -7,6 +7,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 
+#include "hook/table.h"
 #include "hook/pe.h"
 
 #include "util/log.h"
@@ -20,18 +21,16 @@ const pe_iid_t *module_get_iid_for_name(HMODULE module, const char *target_modul
     iid = pe_iid_get_first(module);
 
     if (iid == NULL) {
-        log_warning("failed to get import descriptor for module: 0x%08lx", GetLastError());
+        log_warning("no imports for module %p", module);
         return NULL;
     }
 
-    while (iid != NULL) {
+    for (; iid != NULL; iid = pe_iid_get_next(module, iid)) {
         iid_name = pe_iid_get_name(module, iid);
 
         if (_stricmp(iid_name, target_module_name) == 0) {
             break;
         }
-
-        iid = pe_iid_get_next(module, iid);
     }
 
     if (iid == NULL) {
@@ -62,6 +61,67 @@ void *iid_get_addr_for_name(HMODULE module, const pe_iid_t *iid, uint16_t ordina
     }
 
     return NULL;
+}
+
+static bool hook_table_match_proc(const struct pe_iat_entry *entry, const struct hook_symbol *sym)
+{
+    if (sym->name != NULL && entry->name != NULL && _stricmp(sym->name, entry->name) == 0) {
+        return true;
+    }
+
+    if (sym->ordinal != 0 && sym->ordinal == entry->ordinal) {
+        return true;
+    }
+
+    return false;
+}
+
+// Based on capnhook's `hook_table_apply` with logging added
+void iat_hook_table_apply(
+    HANDLE process,
+    HMODULE module,
+    const char *target_module_name,
+    const struct hook_symbol *syms,
+    size_t num_syms)
+{
+    const pe_iid_t *iid;
+    struct pe_iat_entry entry;
+    size_t i;
+    size_t j;
+    const struct hook_symbol *sym;
+
+    log_assert(module != NULL);
+    log_assert(target_module_name != NULL);
+    log_assert(syms != NULL || num_syms == 0);
+
+    iid = module_get_iid_for_name(module, target_module_name);
+
+    if (!iid) {
+        return;
+    }
+
+    i = 0;
+
+    while (pe_iid_get_iat_entry(module, iid, i++, &entry) == S_OK) {
+        for (j = 0; j < num_syms; j++) {
+            sym = &syms[j];
+
+            if (hook_table_match_proc(&entry, sym)) {
+                if (sym->link != NULL && *sym->link == NULL) {
+                    *sym->link = *entry.ppointer;
+                }
+
+                memory_write(process, entry.ppointer, &sym->patch, sizeof(sym->patch));
+
+                log_misc(
+                    "patched '%s'(%p) in '%s' with %p",
+                    sym->name,
+                    entry.ppointer,
+                    target_module_name,
+                    sym->patch);
+            }
+        }
+    }
 }
 
 void hook_iat(
