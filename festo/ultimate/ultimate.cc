@@ -386,13 +386,188 @@ static const struct hook_symbol music_db_hooks[] = {
         .patch = reinterpret_cast<void *>(music_db_get_level),
         .link = nullptr,
     },
+    {
+        .name = "music_db_get_level_detail",
+        .patch = reinterpret_cast<void *>(music_db_get_level_detail),
+        .link = nullptr,
+    },
+    {
+        .name = "music_db_get_music_name_head_index",
+        .patch = reinterpret_cast<void *>(music_db_get_music_name_head_index),
+        .link = nullptr,
+    },
+    {
+        .name = "music_db_get_music_name_index",
+        .patch = reinterpret_cast<void *>(music_db_get_music_name_index),
+        .link = nullptr,
+    },
+    {
+        .name = "music_db_get_parent_music_id",
+        .patch = reinterpret_cast<void *>(music_db_get_parent_music_id),
+        .link = nullptr,
+    },
+    {
+        .name = "music_db_get_permitted_music_flag",
+        .patch = reinterpret_cast<void *>(music_db_get_permitted_music_flag),
+        .link = nullptr,
+    },
+    {
+        .name = "music_db_get_pos_index",
+        .patch = reinterpret_cast<void *>(music_db_get_pos_index),
+        .link = nullptr,
+    },
+    {
+        .name = "music_db_initialize",
+        .patch = reinterpret_cast<void *>(music_db_initialize),
+        .link = reinterpret_cast<void **>(&music_db_initialize_orig),
+    },
     /*
     {
-        .name = 
-        .patch = 
+        .name = "music_db_is_all_yellow",
+        .patch = reinterpret_cast<void *>(music_db_is_all_yellow),
+        .link = nullptr,
+    },
+    {
+        .name = "music_db_is_displayable_level_detail",
+        .patch = reinterpret_cast<void *>(music_db_is_displayable_level_detail),
         .link = nullptr,
     },
     */
+    {
+        .name = "music_db_is_exists_table",
+        .patch = reinterpret_cast<void *>(music_db_is_exists_table),
+        .link = nullptr,
+    },
+    {
+        .name = "music_db_is_exists_version_from_ver1",
+        .patch = reinterpret_cast<void *>(music_db_is_exists_version_from_ver1),
+        .link = nullptr,
+    },
+    {
+        .name = "music_db_is_exists_version_from_ver2",
+        .patch = reinterpret_cast<void *>(music_db_is_exists_version_from_ver2),
+        .link = nullptr,
+    },
+    {
+        .name = "music_db_is_exists_version_from_ver3",
+        .patch = reinterpret_cast<void *>(music_db_is_exists_version_from_ver3),
+        .link = nullptr,
+    },
+    {
+        .name = "music_db_is_exists_version_from_ver4",
+        .patch = reinterpret_cast<void *>(music_db_is_exists_version_from_ver4),
+        .link = nullptr,
+    },
+    {
+        .name = "music_db_is_exists_version_from_ver5",
+        .patch = reinterpret_cast<void *>(music_db_is_exists_version_from_ver5),
+        .link = nullptr,
+    },
+    {
+        .name = "music_db_is_exists_version_from_ver5_5",
+        .patch = reinterpret_cast<void *>(music_db_is_exists_version_from_ver5_5),
+        .link = nullptr,
+    },
+    {
+        .name = "music_db_is_exists_version_from_ver6",
+        .patch = reinterpret_cast<void *>(music_db_is_exists_version_from_ver6),
+        .link = nullptr,
+    },
+    {
+        .name = "music_db_is_exists_version_from_ver7",
+        .patch = reinterpret_cast<void *>(music_db_is_exists_version_from_ver7),
+        .link = nullptr,
+    },
+    {
+        .name = "music_db_is_exists_version_from_ver8",
+        .patch = reinterpret_cast<void *>(music_db_is_exists_version_from_ver8),
+        .link = nullptr,
+    },
+    {
+        .name = "music_db_is_exists_version_from_ver9",
+        .patch = reinterpret_cast<void *>(music_db_is_exists_version_from_ver9),
+        .link = nullptr,
+    },
+    {
+        .name = "music_db_is_hold_marker",
+        .patch = reinterpret_cast<void *>(music_db_is_hold_marker),
+        .link = nullptr,
+    },
+    {
+        .name = "music_db_is_matched_select_type",
+        .patch = reinterpret_cast<void *>(music_db_is_matched_select_type),
+        .link = nullptr,
+    },
+    /*
+    {
+        .name = "music_db_is_matching_select",
+        .patch = reinterpret_cast<void *>(music_db_is_matching_select),
+        .link = nullptr,
+    },
+    {
+        .name = "music_db_is_nearly_excellent",
+        .patch = reinterpret_cast<void *>(music_db_is_nearly_excellent),
+        .link = nullptr,
+    },
+    {
+        .name = "music_db_is_nearly_fullcombo",
+        .patch = reinterpret_cast<void *>(music_db_is_nearly_fullcombo),
+        .link = nullptr,
+    },
+    {
+        .name = "music_db_is_new",
+        .patch = reinterpret_cast<void *>(music_db_is_new),
+        .link = nullptr,
+    },
+    {
+        .name = "music_db_is_no_gray",
+        .patch = reinterpret_cast<void *>(music_db_is_no_gray),
+        .link = nullptr,
+    },
+    */
+    {
+        .name = "music_db_is_permitted",
+        .patch = reinterpret_cast<void *>(music_db_is_permitted),
+        .link = nullptr,
+    },
+    {
+        .name = "music_db_is_possession_for_contained_music_list",
+        .patch = reinterpret_cast<void *>(music_db_is_possession_for_contained_music_list),
+        .link = nullptr,
+    },
+    /*
+    {
+        .link = nullptr,
+    },
+    */
+};
+
+static const struct hook_symbol gftools_hooks[] = {
+    {
+        .name = "GFHashMapRegist",
+        .patch = reinterpret_cast<void *>(GFHashMapRegist),
+        .link = nullptr,
+    },
+    {
+        .name = "GFHashMapCreate",
+        .patch = reinterpret_cast<void *>(GFHashMapCreate),
+        .link = nullptr,
+    },
+    {
+        .name = "GFHashMapKeyToValue",
+        .patch = reinterpret_cast<void *>(GFHashMapKeyToValue),
+        .link = nullptr,
+    },
+    {
+        .name = "GFHashMapGetEntryList",
+        .patch = reinterpret_cast<void *>(GFHashMapGetEntryList),
+        .link = nullptr,
+    },
+    {
+        .name = "GFHashMapRewindEntryList",
+        .patch = reinterpret_cast<void *>(GFHashMapRewindEntryList),
+        .link = nullptr,
+    },
 };
 
 static void do_patch(HANDLE process, const MODULEINFO &module_info, const struct patch_t &patch)
@@ -552,7 +727,6 @@ static void __cdecl banner_load_hook()
             pop edx
             pop ecx
             pop eax
-
         }
 #else
         __asm__(".intel_syntax\n"
@@ -748,193 +922,15 @@ extern "C" DLL_EXPORT bool __cdecl ultimate_dll_entry_init(char *sid_code, void 
     do_patch(process, jubeat_info, smc_mm_hierarchy_ko);
     */
 
-    music_db_initialize_orig = (bool (*)()) GetProcAddress(music_db_handle, "music_db_initialize");
-
     // mem_set
     hook_iat_ordinal(
         process, jubeat_handle, "avs2-core.dll", 0xF4, reinterpret_cast<void *>(mem_set));
 
     iat_hook_table_apply(
         process, jubeat_handle, "music_db.dll", music_db_hooks, std::size(music_db_hooks));
+    iat_hook_table_apply(
+        process, music_db_handle, "gftools.dll", gftools_hooks, std::size(gftools_hooks));
 
-    hook_iat(
-        process,
-        jubeat_handle,
-        "music_db.dll",
-        "music_db_get_level_detail",
-        reinterpret_cast<void *>(music_db_get_level_detail));
-    hook_iat(
-        process,
-        jubeat_handle,
-        "music_db.dll",
-        "music_db_get_music_name_head_index",
-        reinterpret_cast<void *>(music_db_get_music_name_head_index));
-    hook_iat(
-        process,
-        jubeat_handle,
-        "music_db.dll",
-        "music_db_get_music_name_index",
-        reinterpret_cast<void *>(music_db_get_music_name_index));
-    hook_iat(
-        process,
-        jubeat_handle,
-        "music_db.dll",
-        "music_db_get_parent_music_id",
-        reinterpret_cast<void *>(music_db_get_parent_music_id));
-    hook_iat(
-        process,
-        jubeat_handle,
-        "music_db.dll",
-        "music_db_get_permitted_music_flag",
-        reinterpret_cast<void *>(music_db_get_permitted_music_flag));
-    hook_iat(
-        process,
-        jubeat_handle,
-        "music_db.dll",
-        "music_db_get_pos_index",
-        reinterpret_cast<void *>(music_db_get_pos_index));
-    hook_iat(
-        process,
-        jubeat_handle,
-        "music_db.dll",
-        "music_db_initialize",
-        reinterpret_cast<void *>(music_db_initialize));
-    /*
-    hook_iat(
-        process,
-        jubeat_handle,
-        "music_db.dll",
-        "music_db_is_all_yellow",
-        reinterpret_cast<void *>(music_db_is_all_yellow));
-    hook_iat(
-        process,
-        jubeat_handle,
-        "music_db.dll",
-        "music_db_is_displayable_level_detail",
-        reinterpret_cast<void *>(music_db_is_displayable_level_detail));
-    */
-    hook_iat(
-        process,
-        jubeat_handle,
-        "music_db.dll",
-        "music_db_is_exists_table",
-        reinterpret_cast<void *>(music_db_is_exists_table));
-    hook_iat(
-        process,
-        jubeat_handle,
-        "music_db.dll",
-        "music_db_is_exists_version_from_ver1",
-        reinterpret_cast<void *>(music_db_is_exists_version_from_ver1));
-    hook_iat(
-        process,
-        jubeat_handle,
-        "music_db.dll",
-        "music_db_is_exists_version_from_ver2",
-        reinterpret_cast<void *>(music_db_is_exists_version_from_ver2));
-    hook_iat(
-        process,
-        jubeat_handle,
-        "music_db.dll",
-        "music_db_is_exists_version_from_ver3",
-        reinterpret_cast<void *>(music_db_is_exists_version_from_ver3));
-    hook_iat(
-        process,
-        jubeat_handle,
-        "music_db.dll",
-        "music_db_is_exists_version_from_ver4",
-        reinterpret_cast<void *>(music_db_is_exists_version_from_ver4));
-    hook_iat(
-        process,
-        jubeat_handle,
-        "music_db.dll",
-        "music_db_is_exists_version_from_ver5",
-        reinterpret_cast<void *>(music_db_is_exists_version_from_ver5));
-    hook_iat(
-        process,
-        jubeat_handle,
-        "music_db.dll",
-        "music_db_is_exists_version_from_ver5_5",
-        reinterpret_cast<void *>(music_db_is_exists_version_from_ver5_5));
-    hook_iat(
-        process,
-        jubeat_handle,
-        "music_db.dll",
-        "music_db_is_exists_version_from_ver6",
-        reinterpret_cast<void *>(music_db_is_exists_version_from_ver6));
-    hook_iat(
-        process,
-        jubeat_handle,
-        "music_db.dll",
-        "music_db_is_exists_version_from_ver7",
-        reinterpret_cast<void *>(music_db_is_exists_version_from_ver7));
-    hook_iat(
-        process,
-        jubeat_handle,
-        "music_db.dll",
-        "music_db_is_exists_version_from_ver8",
-        reinterpret_cast<void *>(music_db_is_exists_version_from_ver8));
-    hook_iat(
-        process,
-        jubeat_handle,
-        "music_db.dll",
-        "music_db_is_exists_version_from_ver9",
-        reinterpret_cast<void *>(music_db_is_exists_version_from_ver9));
-    hook_iat(
-        process,
-        jubeat_handle,
-        "music_db.dll",
-        "music_db_is_hold_marker",
-        reinterpret_cast<void *>(music_db_is_hold_marker));
-    hook_iat(
-        process,
-        jubeat_handle,
-        "music_db.dll",
-        "music_db_is_matched_select_type",
-        reinterpret_cast<void *>(music_db_is_matched_select_type));
-    /*
-    hook_iat(
-        process,
-        jubeat_handle,
-        "music_db.dll",
-        "music_db_is_matching_select",
-        reinterpret_cast<void *>(music_db_is_matching_select));
-    hook_iat(
-        process,
-        jubeat_handle,
-        "music_db.dll",
-        "music_db_is_nearly_excellent",
-        reinterpret_cast<void *>(music_db_is_nearly_excellent));
-    hook_iat(
-        process,
-        jubeat_handle,
-        "music_db.dll",
-        "music_db_is_nearly_fullcombo",
-        reinterpret_cast<void *>(music_db_is_nearly_fullcombo));
-    hook_iat(
-        process,
-        jubeat_handle,
-        "music_db.dll",
-        "music_db_is_new",
-        reinterpret_cast<void *>(music_db_is_new));
-    hook_iat(
-        process,
-        jubeat_handle,
-        "music_db.dll",
-        "music_db_is_no_gray",
-        reinterpret_cast<void *>(music_db_is_no_gray));
-    */
-    hook_iat(
-        process,
-        jubeat_handle,
-        "music_db.dll",
-        "music_db_is_permitted",
-        reinterpret_cast<void *>(music_db_is_permitted));
-    hook_iat(
-        process,
-        jubeat_handle,
-        "music_db.dll",
-        "music_db_is_possession_for_contained_music_list",
-        reinterpret_cast<void *>(music_db_is_possession_for_contained_music_list));
     /*
     hook_iat(
         process,
@@ -1301,37 +1297,6 @@ extern "C" DLL_EXPORT bool __cdecl ultimate_dll_entry_init(char *sid_code, void 
         "?read_xml_node@music_new@@YA_NPAUT_PROPERTY_NODE@@@Z",
         reinterpret_cast<void *>(music_new_read_xml_node));
     */
-
-    hook_iat(
-        process,
-        music_db_handle,
-        "gftools.dll",
-        "GFHashMapRegist",
-        reinterpret_cast<void *>(GFHashMapRegist));
-    hook_iat(
-        process,
-        music_db_handle,
-        "gftools.dll",
-        "GFHashMapCreate",
-        reinterpret_cast<void *>(GFHashMapCreate));
-    hook_iat(
-        process,
-        music_db_handle,
-        "gftools.dll",
-        "GFHashMapKeyToValue",
-        reinterpret_cast<void *>(GFHashMapKeyToValue));
-    hook_iat(
-        process,
-        music_db_handle,
-        "gftools.dll",
-        "GFHashMapGetEntryList",
-        reinterpret_cast<void *>(GFHashMapGetEntryList));
-    hook_iat(
-        process,
-        music_db_handle,
-        "gftools.dll",
-        "GFHashMapRewindEntryList",
-        reinterpret_cast<void *>(GFHashMapRewindEntryList));
 
     hook_pkfs_fs_open(process, pkfs_handle, pkfs_info);
     hook_banner_textures(process, jubeat_info);
