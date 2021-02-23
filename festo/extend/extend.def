@@ -1,0 +1,5 @@
+LIBRARY extend
+
+EXPORTS
+    dll_entry_init=extend_dll_entry_init
+    dll_entry_main

@@ -8,8 +8,8 @@
 extern "C" {
 #endif
 
-DLL_IMPORT bool jb_dll_entry_init(char *, void *);
-DLL_IMPORT bool jb_dll_entry_main(void);
+DLL_IMPORT bool dll_entry_init(char *, void *);
+DLL_IMPORT bool dll_entry_main(void);
 
 #ifdef __cplusplus
 };

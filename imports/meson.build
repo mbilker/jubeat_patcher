@@ -44,8 +44,6 @@ else
         input: 'jubeat.def',
         command: [
             'i686-w64-mingw32-dlltool',
-            '-p',
-            'jb',
             '-d',
             '@INPUT@',
             '-l',

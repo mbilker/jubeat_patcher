@@ -3,6 +3,7 @@ shared_library(
     name_prefix: '',
     include_directories: inc,
     implicit_include_directories: false,
+    vs_module_defs: 'ultimate.def',
     dependencies: [
         capnhook.get_variable('hook_dep'),
         psapi_lib,

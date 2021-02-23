@@ -188,7 +188,7 @@ void do_patch(HANDLE process, const MODULEINFO *module_info, const struct patch_
     }
 }
 
-DLL_EXPORT bool dll_entry_init(char *sid_code, void *app_config)
+DLL_EXPORT bool __cdecl omnimix_dll_entry_init(char *sid_code, void *app_config)
 {
     DWORD pid;
     HANDLE process;
@@ -246,18 +246,13 @@ DLL_EXPORT bool dll_entry_init(char *sid_code, void *app_config)
     SetEnvironmentVariableA("MB_MODEL", "----");
 
     // Call original
-    bool ret = jb_dll_entry_init(sid_code, app_config);
+    bool ret = dll_entry_init(sid_code, app_config);
 
     // Set `rev` to indicate omnimix
     sid_code[5] = 'X';
 
     // Call original
     return ret;
-}
-
-DLL_EXPORT bool dll_entry_main(void)
-{
-    return jb_dll_entry_main();
 }
 
 BOOL WINAPI DllMain(HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpvReserved)

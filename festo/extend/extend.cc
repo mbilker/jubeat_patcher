@@ -385,7 +385,7 @@ static void hook_banner_textures(HANDLE process, const MODULEINFO &module_info)
     memory_set(process, loop_jnz_addr, 0x90, sizeof(loop_jnz_pattern) + 1);
 }
 
-extern "C" DLL_EXPORT bool dll_entry_init(char *sid_code, void *app_config)
+extern "C" DLL_EXPORT bool __cdecl extend_dll_entry_init(char *sid_code, void *app_config)
 {
     DWORD pid;
     HANDLE process;
@@ -459,17 +459,12 @@ extern "C" DLL_EXPORT bool dll_entry_init(char *sid_code, void *app_config)
     SetEnvironmentVariableA("MB_MODEL", "----");
 
     // Call original
-    bool ret = jb_dll_entry_init(sid_code, app_config);
+    bool ret = dll_entry_init(sid_code, app_config);
 
     // Set `rev` to indicate extend
     sid_code[5] = 'Y';
 
     return ret;
-}
-
-extern "C" DLL_EXPORT bool dll_entry_main(void)
-{
-    return jb_dll_entry_main();
 }
 
 BOOL WINAPI DllMain(HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpvReserved)

@@ -1,0 +1,5 @@
+LIBRARY ultimate
+
+EXPORTS
+    dll_entry_init=ultimate_dll_entry_init
+    dll_entry_main
