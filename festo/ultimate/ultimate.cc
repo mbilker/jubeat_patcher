@@ -537,6 +537,305 @@ static const struct hook_symbol music_db_hooks[] = {
     },
     /*
     {
+        .name = "music_db_is_random_or_matching_select",
+        .patch = reinterpret_cast<void *>(music_db_is_random_or_matching_select),
+        .link = nullptr,
+    },
+    {
+        .name = "music_db_is_random_select",
+        .patch = reinterpret_cast<void *>(music_db_is_random_select),
+        .link = nullptr,
+    },
+    {
+        .name = "music_db_music_bar_to_dot_array",
+        .patch = reinterpret_cast<void *>(music_db_music_bar_to_dot_array),
+        .link = nullptr,
+    },
+    {
+        .name = "music_db_reset_using_datapackage",
+        .patch = reinterpret_cast<void *>(music_db_reset_using_datapackage),
+        .link = nullptr,
+    },
+    {
+        .name = "music_db_set_default_add_music_flag",
+        .patch = reinterpret_cast<void *>(music_db_set_default_add_music_flag),
+        .link = nullptr,
+    },
+    {
+        .name = "music_db_set_flag_equivalent_for_music_id",
+        .patch = reinterpret_cast<void *>(music_db_set_flag_equivalent_for_music_id),
+        .link = nullptr,
+    },
+    {
+        .name = "music_db_set_permitted_music_flag",
+        .patch = reinterpret_cast<void *>(music_db_set_permitted_music_flag),
+        .link = nullptr,
+    },
+    {
+        .name = "music_db_set_select_history_list",
+        .patch = reinterpret_cast<void *>(music_db_set_select_history_list),
+        .link = nullptr,
+    },
+    */
+    /*
+    {
+        .name = "music_bonus_get_bonus_music",
+        .patch = reinterpret_cast<void *>(music_bonus_get_bonus_music),
+        .link = nullptr,
+    },
+    {
+        .name = "music_bonus_is_bonus_music",
+        .patch = reinterpret_cast<void *>(music_bonus_is_bonus_music),
+        .link = nullptr,
+    },
+    {
+        .name = "music_only_now_get_count",
+        .patch = reinterpret_cast<void *>(music_only_now_get_count),
+        .link = nullptr,
+    },
+    {
+        .name = "music_only_now_get_etime",
+        .patch = reinterpret_cast<void *>(music_only_now_get_etime),
+        .link = nullptr,
+    },
+    {
+        .name = "music_only_now_get_music_id",
+        .patch = reinterpret_cast<void *>(music_only_now_get_music_id),
+        .link = nullptr,
+    {
+    },
+        .name = "music_only_now_initialize",
+        .patch = reinterpret_cast<void *>(music_only_now_initialize),
+        .link = nullptr,
+    },
+    */
+    // TODO: all music_record function hooks are broken
+    /*
+    {
+        .name = "music_record_add_clear_count",
+        .patch = reinterpret_cast<void *>(music_record_add_clear_count),
+        .link = nullptr,
+    },
+    {
+        .name = "music_record_add_excellent_count",
+        .patch = reinterpret_cast<void *>(music_record_add_excellent_count),
+        .link = nullptr,
+    },
+    {
+        .name = "music_record_add_full_combo_count",
+        .patch = reinterpret_cast<void *>(music_record_add_full_combo_count),
+        .link = nullptr,
+    },
+    {
+        .name = "music_record_add_play_count",
+        .patch = reinterpret_cast<void *>(music_record_add_play_count),
+        .link = nullptr,
+    },
+    {
+        .name = "music_record_clear_context",
+        .patch = reinterpret_cast<void *>(music_record_clear_context),
+        .link = nullptr,
+    },
+    {
+        .name = "music_record_get_best_music_rate",
+        .patch = reinterpret_cast<void *>(music_record_get_best_music_rate),
+        .link = nullptr,
+    },
+    {
+        .name = "music_record_get_best_score",
+        .patch = reinterpret_cast<void *>(music_record_get_best_score),
+        .link = nullptr,
+    },
+    {
+        .name = "music_record_get_clear_count",
+        .patch = reinterpret_cast<void *>(music_record_get_clear_count),
+        .link = nullptr,
+    },
+    {
+        .name = "music_record_get_clear_flag",
+        .patch = reinterpret_cast<void *>(music_record_get_clear_flag),
+        .link = nullptr,
+    },
+    {
+        .name = "music_record_get_excellent_count",
+        .patch = reinterpret_cast<void *>(music_record_get_excellent_count),
+        .link = nullptr,
+    },
+    {
+        .name = "music_record_get_full_combo_count",
+        .patch = reinterpret_cast<void *>(music_record_get_full_combo_count),
+        .link = nullptr,
+    },
+    {
+        .name = "music_record_get_jubility",
+        .patch = reinterpret_cast<void *>(music_record_get_jubility),
+        .link = nullptr,
+    },
+    {
+        .name = "music_record_get_music_bar",
+        .patch = reinterpret_cast<void *>(music_record_get_music_bar),
+        .link = nullptr,
+    },
+    {
+        .name = "music_record_get_play_count",
+        .patch = reinterpret_cast<void *>(music_record_get_play_count),
+        .link = nullptr,
+    },
+    {
+        .name = "music_record_get_sequence_record_set",
+        .patch = reinterpret_cast<void *>(music_record_get_sequence_record_set),
+        .link = nullptr,
+    },
+    {
+        .name = "music_record_get_total_best_score",
+        .patch = reinterpret_cast<void *>(music_record_get_total_best_score),
+        .link = nullptr,
+    },
+    {
+        .name = "music_record_is_all_played",
+        .patch = reinterpret_cast<void *>(music_record_is_all_played),
+        .link = nullptr,
+    },
+    {
+        .name = "music_record_is_all_yellow",
+        .patch = reinterpret_cast<void *>(music_record_is_all_yellow),
+        .link = nullptr,
+    },
+    {
+        .name = "music_record_is_any_played",
+        .patch = reinterpret_cast<void *>(music_record_is_any_played),
+        .link = nullptr,
+    },
+    {
+        .name = "music_record_is_cleared",
+        .patch = reinterpret_cast<void *>(music_record_is_cleared),
+        .link = nullptr,
+    },
+    {
+        .name = "music_record_is_excellent",
+        .patch = reinterpret_cast<void *>(music_record_is_excellent),
+        .link = nullptr,
+    },
+    {
+        .name = "music_record_is_full_combo",
+        .patch = reinterpret_cast<void *>(music_record_is_full_combo),
+        .link = nullptr,
+    },
+    {
+        .name = "music_record_is_no_gray",
+        .patch = reinterpret_cast<void *>(music_record_is_no_gray),
+        .link = nullptr,
+    },
+    {
+        .name = "?music_record_is_played@@YA_NIEW4MUSIC_RECORD_TYPE@@@Z",
+        .patch = reinterpret_cast<void *>(music_record_is_played),
+        .link = nullptr,
+    },
+    {
+        .name = "music_record_merge_music_bar",
+        .patch = reinterpret_cast<void *>(music_record_merge_music_bar),
+        .link = nullptr,
+    },
+    {
+        .name = "music_record_set_best_music_rate",
+        .patch = reinterpret_cast<void *>(music_record_set_best_music_rate),
+        .link = nullptr,
+    },
+    {
+        .name = "music_record_set_best_score",
+        .patch = reinterpret_cast<void *>(music_record_set_best_score),
+        .link = nullptr,
+    },
+    {
+        .name = "music_record_set_clear_count",
+        .patch = reinterpret_cast<void *>(music_record_set_clear_count),
+        .link = nullptr,
+    },
+    {
+        .name = "music_record_set_clear_flag",
+        .patch = reinterpret_cast<void *>(music_record_set_clear_flag),
+        .link = nullptr,
+    },
+    {
+        .name = "music_record_set_excellent_count",
+        .patch = reinterpret_cast<void *>(music_record_set_excellent_count),
+        .link = nullptr,
+    },
+    {
+        .name = "music_record_set_full_combo_count",
+        .patch = reinterpret_cast<void *>(music_record_set_full_combo_count),
+        .link = nullptr,
+    },
+    {
+        .name = "music_record_set_jubility",
+        .patch = reinterpret_cast<void *>(music_record_set_jubility),
+        .link = nullptr,
+    },
+    {
+        .name = "music_record_set_play_count",
+        .patch = reinterpret_cast<void *>(music_record_set_play_count),
+        .link = nullptr,
+    },
+    {
+        .name = "music_shareable_add_shareable_music",
+        .patch = reinterpret_cast<void *>(music_shareable_add_shareable_music),
+        .link = nullptr,
+    },
+    {
+        .name = "music_shareable_initialize",
+        .patch = reinterpret_cast<void *>(music_shareable_initialize),
+        .link = nullptr,
+    },
+    {
+        .name = "music_shareable_is_shareable_music",
+        .patch = reinterpret_cast<void *>(music_shareable_is_shareable_music),
+        .link = nullptr,
+    },
+    {
+        .name = "music_shareable_set_flag",
+        .patch = reinterpret_cast<void *>(music_shareable_set_flag),
+        .link = nullptr,
+    },
+    */
+    /*
+    {
+        .name = "?GetInstance@BlackJacket@music_texture@@SAAAV12@XZ",
+        .patch = reinterpret_cast<void *>(music_texture_BlackJacket_GetInstance),
+        .link = nullptr,
+    },
+    {
+        .name = "?ReadXmlNode@BlackJacket@music_texture@@QAE_NPAUT_PROPERTY_NODE@@@Z",
+        .patch = reinterpret_cast<void *>(music_texture_BlackJacket_ReadXmlNode),
+        .link = nullptr,
+    },
+    {
+        .name = "?music_bonus_get_target_music_info@music_bonus_weekly@@YAXPBUJBMusicFlag_T@@AA_NAAI@Z",
+        .patch = reinterpret_cast<void *>(music_bonus_weekly_music_bonus_get_target_music_info),
+        .link = nullptr,
+    },
+    {
+        .name = "?clear@music_bonus_weekly@@YAXXZ",
+        .patch = reinterpret_cast<void *>(music_bonus_weekly_clear),
+        .link = nullptr,
+    },
+    {
+        .name = "?music_bonus_weekly_is_target_music@music_bonus_weekly@@YA_NPBUJBMusicFlag_T@@I@Z",
+        .patch = reinterpret_cast<void *>(music_bonus_weekly_music_bonus_weekly_is_target_music),
+        .link = nullptr,
+    },
+    {
+        .name = "?clear@music_new@@YAXXZ",
+        .patch = reinterpret_cast<void *>(music_new_clear),
+        .link = nullptr,
+    },
+    {
+        .name = "?get_list@music_new@@YAHHQAI@Z",
+        .patch = reinterpret_cast<void *>(music_new_get_list),
+        .link = nullptr,
+    },
+    {
+        .name = "?read_xml_node@music_new@@YA_NPAUT_PROPERTY_NODE@@@Z",
+        .patch = reinterpret_cast<void *>(music_new_read_xml_node),
         .link = nullptr,
     },
     */
@@ -930,373 +1229,6 @@ extern "C" DLL_EXPORT bool __cdecl ultimate_dll_entry_init(char *sid_code, void 
         process, jubeat_handle, "music_db.dll", music_db_hooks, std::size(music_db_hooks));
     iat_hook_table_apply(
         process, music_db_handle, "gftools.dll", gftools_hooks, std::size(gftools_hooks));
-
-    /*
-    hook_iat(
-        process,
-        jubeat_handle,
-        "music_db.dll",
-        "music_db_is_random_or_matching_select",
-        reinterpret_cast<void *>(music_db_is_random_or_matching_select));
-    hook_iat(
-        process,
-        jubeat_handle,
-        "music_db.dll",
-        "music_db_is_random_select",
-        reinterpret_cast<void *>(music_db_is_random_select));
-    hook_iat(
-        process,
-        jubeat_handle,
-        "music_db.dll",
-        "music_db_music_bar_to_dot_array",
-        reinterpret_cast<void *>(music_db_music_bar_to_dot_array));
-    hook_iat(
-        process,
-        jubeat_handle,
-        "music_db.dll",
-        "music_db_reset_using_datapackage",
-        reinterpret_cast<void *>(music_db_reset_using_datapackage));
-    hook_iat(
-        process,
-        jubeat_handle,
-        "music_db.dll",
-        "music_db_set_default_add_music_flag",
-        reinterpret_cast<void *>(music_db_set_default_add_music_flag));
-    hook_iat(
-        process,
-        jubeat_handle,
-        "music_db.dll",
-        "music_db_set_flag_equivalent_for_music_id",
-        reinterpret_cast<void *>(music_db_set_flag_equivalent_for_music_id));
-    hook_iat(
-        process,
-        jubeat_handle,
-        "music_db.dll",
-        "music_db_set_permitted_music_flag",
-        reinterpret_cast<void *>(music_db_set_permitted_music_flag));
-    hook_iat(
-        process,
-        jubeat_handle,
-        "music_db.dll",
-        "music_db_set_select_history_list",
-        reinterpret_cast<void *>(music_db_set_select_history_list));
-    */
-
-    /*
-    hook_iat(
-        process,
-        jubeat_handle,
-        "music_db.dll",
-        "music_bonus_get_bonus_music",
-        reinterpret_cast<void *>(music_bonus_get_bonus_music));
-    hook_iat(
-        process,
-        jubeat_handle,
-        "music_db.dll",
-        "music_bonus_is_bonus_music",
-        reinterpret_cast<void *>(music_bonus_is_bonus_music));
-    hook_iat(
-        process,
-        jubeat_handle,
-        "music_db.dll",
-        "music_only_now_get_count",
-        reinterpret_cast<void *>(music_only_now_get_count));
-    hook_iat(
-        process,
-        jubeat_handle,
-        "music_db.dll",
-        "music_only_now_get_etime",
-        reinterpret_cast<void *>(music_only_now_get_etime));
-    hook_iat(
-        process,
-        jubeat_handle,
-        "music_db.dll",
-        "music_only_now_get_music_id",
-        reinterpret_cast<void *>(music_only_now_get_music_id));
-    hook_iat(
-        process,
-        jubeat_handle,
-        "music_db.dll",
-        "music_only_now_initialize",
-        reinterpret_cast<void *>(music_only_now_initialize));
-    */
-
-    /*
-    // TODO: all music_record function hooks are broken
-    hook_iat(
-        process,
-        jubeat_handle,
-        "music_db.dll",
-        "music_record_add_clear_count",
-        reinterpret_cast<void *>(music_record_add_clear_count));
-    hook_iat(
-        process,
-        jubeat_handle,
-        "music_db.dll",
-        "music_record_add_excellent_count",
-        reinterpret_cast<void *>(music_record_add_excellent_count));
-    hook_iat(
-        process,
-        jubeat_handle,
-        "music_db.dll",
-        "music_record_add_full_combo_count",
-        reinterpret_cast<void *>(music_record_add_full_combo_count));
-    hook_iat(
-        process,
-        jubeat_handle,
-        "music_db.dll",
-        "music_record_add_play_count",
-        reinterpret_cast<void *>(music_record_add_play_count));
-    hook_iat(
-        process,
-        jubeat_handle,
-        "music_db.dll",
-        "music_record_clear_context",
-        reinterpret_cast<void *>(music_record_clear_context));
-    hook_iat(
-        process,
-        jubeat_handle,
-        "music_db.dll",
-        "music_record_get_best_music_rate",
-        reinterpret_cast<void *>(music_record_get_best_music_rate));
-    hook_iat(
-        process,
-        jubeat_handle,
-        "music_db.dll",
-        "music_record_get_best_score",
-        reinterpret_cast<void *>(music_record_get_best_score));
-    hook_iat(
-        process,
-        jubeat_handle,
-        "music_db.dll",
-        "music_record_get_clear_count",
-        reinterpret_cast<void *>(music_record_get_clear_count));
-    hook_iat(
-        process,
-        jubeat_handle,
-        "music_db.dll",
-        "music_record_get_clear_flag",
-        reinterpret_cast<void *>(music_record_get_clear_flag));
-    hook_iat(
-        process,
-        jubeat_handle,
-        "music_db.dll",
-        "music_record_get_excellent_count",
-        reinterpret_cast<void *>(music_record_get_excellent_count));
-    hook_iat(
-        process,
-        jubeat_handle,
-        "music_db.dll",
-        "music_record_get_full_combo_count",
-        reinterpret_cast<void *>(music_record_get_full_combo_count));
-    hook_iat(
-        process,
-        jubeat_handle,
-        "music_db.dll",
-        "music_record_get_jubility",
-        reinterpret_cast<void *>(music_record_get_jubility));
-    hook_iat(
-        process,
-        jubeat_handle,
-        "music_db.dll",
-        "music_record_get_music_bar",
-        reinterpret_cast<void *>(music_record_get_music_bar));
-    hook_iat(
-        process,
-        jubeat_handle,
-        "music_db.dll",
-        "music_record_get_play_count",
-        reinterpret_cast<void *>(music_record_get_play_count));
-    hook_iat(
-        process,
-        jubeat_handle,
-        "music_db.dll",
-        "music_record_get_sequence_record_set",
-        reinterpret_cast<void *>(music_record_get_sequence_record_set));
-    hook_iat(
-        process,
-        jubeat_handle,
-        "music_db.dll",
-        "music_record_get_total_best_score",
-        reinterpret_cast<void *>(music_record_get_total_best_score));
-    hook_iat(
-        process,
-        jubeat_handle,
-        "music_db.dll",
-        "music_record_is_all_played",
-        reinterpret_cast<void *>(music_record_is_all_played));
-    hook_iat(
-        process,
-        jubeat_handle,
-        "music_db.dll",
-        "music_record_is_all_yellow",
-        reinterpret_cast<void *>(music_record_is_all_yellow));
-    hook_iat(
-        process,
-        jubeat_handle,
-        "music_db.dll",
-        "music_record_is_any_played",
-        reinterpret_cast<void *>(music_record_is_any_played));
-    hook_iat(
-        process,
-        jubeat_handle,
-        "music_db.dll",
-        "music_record_is_cleared",
-        reinterpret_cast<void *>(music_record_is_cleared));
-    hook_iat(
-        process,
-        jubeat_handle,
-        "music_db.dll",
-        "music_record_is_excellent",
-        reinterpret_cast<void *>(music_record_is_excellent));
-    hook_iat(
-        process,
-        jubeat_handle,
-        "music_db.dll",
-        "music_record_is_full_combo",
-        reinterpret_cast<void *>(music_record_is_full_combo));
-    hook_iat(
-        process,
-        jubeat_handle,
-        "music_db.dll",
-        "music_record_is_no_gray",
-        reinterpret_cast<void *>(music_record_is_no_gray));
-    hook_iat(
-        process,
-        jubeat_handle,
-        "music_db.dll",
-        "?music_record_is_played@@YA_NIEW4MUSIC_RECORD_TYPE@@@Z",
-        reinterpret_cast<void *>(music_record_is_played));
-    hook_iat(
-        process,
-        jubeat_handle,
-        "music_db.dll",
-        "music_record_merge_music_bar",
-        reinterpret_cast<void *>(music_record_merge_music_bar));
-    hook_iat(
-        process,
-        jubeat_handle,
-        "music_db.dll",
-        "music_record_set_best_music_rate",
-        reinterpret_cast<void *>(music_record_set_best_music_rate));
-    hook_iat(
-        process,
-        jubeat_handle,
-        "music_db.dll",
-        "music_record_set_best_score",
-        reinterpret_cast<void *>(music_record_set_best_score));
-    hook_iat(
-        process,
-        jubeat_handle,
-        "music_db.dll",
-        "music_record_set_clear_count",
-        reinterpret_cast<void *>(music_record_set_clear_count));
-    hook_iat(
-        process,
-        jubeat_handle,
-        "music_db.dll",
-        "music_record_set_clear_flag",
-        reinterpret_cast<void *>(music_record_set_clear_flag));
-    hook_iat(
-        process,
-        jubeat_handle,
-        "music_db.dll",
-        "music_record_set_excellent_count",
-        reinterpret_cast<void *>(music_record_set_excellent_count));
-    hook_iat(
-        process,
-        jubeat_handle,
-        "music_db.dll",
-        "music_record_set_full_combo_count",
-        reinterpret_cast<void *>(music_record_set_full_combo_count));
-    hook_iat(
-        process,
-        jubeat_handle,
-        "music_db.dll",
-        "music_record_set_jubility",
-        reinterpret_cast<void *>(music_record_set_jubility));
-    hook_iat(
-        process,
-        jubeat_handle,
-        "music_db.dll",
-        "music_record_set_play_count",
-        reinterpret_cast<void *>(music_record_set_play_count));
-    hook_iat(
-        process,
-        jubeat_handle,
-        "music_db.dll",
-        "music_shareable_add_shareable_music",
-        reinterpret_cast<void *>(music_shareable_add_shareable_music));
-    hook_iat(
-        process,
-        jubeat_handle,
-        "music_db.dll",
-        "music_shareable_initialize",
-        reinterpret_cast<void *>(music_shareable_initialize));
-    hook_iat(
-        process,
-        jubeat_handle,
-        "music_db.dll",
-        "music_shareable_is_shareable_music",
-        reinterpret_cast<void *>(music_shareable_is_shareable_music));
-    hook_iat(
-        process,
-        jubeat_handle,
-        "music_db.dll",
-        "music_shareable_set_flag",
-        reinterpret_cast<void *>(music_shareable_set_flag));
-    */
-
-    /*
-    hook_iat(
-        process,
-        jubeat_handle,
-        "music_db.dll",
-        "?GetInstance@BlackJacket@music_texture@@SAAAV12@XZ",
-        reinterpret_cast<void *>(music_texture_BlackJacket_GetInstance));
-    hook_iat(
-        process,
-        jubeat_handle,
-        "music_db.dll",
-        "?ReadXmlNode@BlackJacket@music_texture@@QAE_NPAUT_PROPERTY_NODE@@@Z",
-        reinterpret_cast<void *>(music_texture_BlackJacket_ReadXmlNode));
-    hook_iat(
-        process,
-        jubeat_handle,
-        "music_db.dll",
-        "?music_bonus_get_target_music_info@music_bonus_weekly@@YAXPBUJBMusicFlag_T@@AA_NAAI@Z",
-        reinterpret_cast<void *>(music_bonus_weekly_music_bonus_get_target_music_info));
-    hook_iat(
-        process,
-        jubeat_handle,
-        "music_db.dll",
-        "?clear@music_bonus_weekly@@YAXXZ",
-        reinterpret_cast<void *>(music_bonus_weekly_clear));
-    hook_iat(
-        process,
-        jubeat_handle,
-        "music_db.dll",
-        "?music_bonus_weekly_is_target_music@music_bonus_weekly@@YA_NPBUJBMusicFlag_T@@I@Z",
-        reinterpret_cast<void *>(music_bonus_weekly_music_bonus_weekly_is_target_music));
-    hook_iat(
-        process,
-        jubeat_handle,
-        "music_db.dll",
-        "?clear@music_new@@YAXXZ",
-        reinterpret_cast<void *>(music_new_clear));
-    hook_iat(
-        process,
-        jubeat_handle,
-        "music_db.dll",
-        "?get_list@music_new@@YAHHQAI@Z",
-        reinterpret_cast<void *>(music_new_get_list));
-    hook_iat(
-        process,
-        jubeat_handle,
-        "music_db.dll",
-        "?read_xml_node@music_new@@YA_NPAUT_PROPERTY_NODE@@@Z",
-        reinterpret_cast<void *>(music_new_read_xml_node));
-    */
 
     hook_pkfs_fs_open(process, pkfs_handle, pkfs_info);
     hook_banner_textures(process, jubeat_info);
