@@ -1,5 +1,5 @@
 LIBRARY jubeat
 
 EXPORTS
-    jb_dll_entry_init=dll_entry_init
-    jb_dll_entry_main=dll_entry_main
+    dll_entry_init
+    dll_entry_main
