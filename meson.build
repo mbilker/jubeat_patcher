@@ -12,7 +12,7 @@ project(
         'c_std=c11',
         'c_winlibs=[]',
         'cpp_eh=s',
-        'cpp_std=c++2a',
+        'cpp_std=c++17',
     ],
 )
 
