@@ -1,7 +1,9 @@
 #define LOG_MODULE "ultimate::music_db"
+
+#include <cstdint>
+#include <cstdlib>
+
 #include <math.h>
-#include <stdint.h>
-#include <stdlib.h>
 #include <string.h>
 
 // clang-format off
@@ -11,17 +13,20 @@
 #include "imports/avs2-core/avs.h"
 #include "imports/gftools.h"
 
+#include "pe/iat.h"
+
 #include "util/robin_hood.h"
+#include "util/log.h"
 
 #include "music_db.h"
 
-#include "util/log.h"
+// default: 2 MB
+// ultimate: 6 MB
+#define MDB_XML_SIZE (6 * 1024 * 1024)
 
 // include this #define to validate every song in the MDB has an associated
 // ifs file in the ifs_pack folder
 #define DEBUG_CHECK_MUSIC_IFS_EXISTS
-
-bool (__cdecl *music_db_initialize_orig)(void);
 
 struct avs_stat {
     uint64_t st_atime;
@@ -35,15 +40,734 @@ struct avs_stat {
 
 int (*avs_fs_lstat)(const char *path, struct avs_stat *st);
 
-// default: 2meg, ultimate: 6meg
-#define MDB_XML_SIZE (6 * 1024 * 1024)
+static bool __cdecl music_db_get_sequence_filename(void *a1, void *a2, int music_id, uint8_t seq);
+static bool __cdecl music_db_get_sound_filename(void *a1, void *a2, int music_id, uint8_t seq);
 
-bool __cdecl music_db_get_sequence_filename(void *a1, void *a2, int music_id, uint8_t seq)
+// bool __cdecl music_db_finalize(void);
+static bool __cdecl music_db_initialize(void);
+static decltype(music_db_initialize) *music_db_initialize_orig = nullptr;
+// bool __cdecl music_db_reset_using_datapackage(int a1);
+// int __cdecl music_db_dbg_get_all_list(void);
+// int __cdecl music_db_dot_array_to_music_bar(void);
+static int __cdecl music_db_get_default_list(int limit, int *results);
+static int __cdecl music_db_get_offline_default_list(int limit, int *results);
+static int __cdecl music_db_get_all_permitted_list(int limit, int *results);
+static int __cdecl music_db_get_possession_list(uint8_t flags[FLAG_LEN], int limit, int *results);
+static int __cdecl music_db_get_card_default_list(int limit, int *results);
+// int __cdecl music_db_get_jukebox_list();
+static float __cdecl music_db_get_bpm(int id);
+static float __cdecl music_db_get_bpm_min(int id);
+// int __cdecl music_db_get_default_id();
+// int __cdecl music_db_get_default_id_by_genre();
+// int __cdecl music_db_get_default_id_by_mode();
+static char *__cdecl music_db_get_genre_list(int id);
+static uint64_t __cdecl music_db_get_grouping_category_list(int id);
+static int __cdecl music_db_get_index_start(int id);
+static uint8_t __cdecl music_db_get_level(int id, uint8_t difficulty);
+// hook this instead if you're having issues
+// uint8_t __cdecl music_db_get_level_logged(int id, uint8_t difficulty);
+static uint8_t __cdecl music_db_get_level_detail(int id, uint8_t difficulty);
+static int __cdecl music_db_get_music_name_head_index(int id);
+static int __cdecl music_db_get_music_name_index(int id);
+static int __cdecl music_db_get_parent_music_id(int id);
+static uint8_t *__cdecl music_db_get_permitted_music_flag();
+static int16_t __cdecl music_db_get_pos_index(int a1);
+// bool __cdecl music_db_is_all_yellow();
+// bool __cdecl music_db_is_displayable_level_detail(void);
+static bool __cdecl music_db_is_exists_table(int id);
+static bool __cdecl music_db_is_exists_version_from_ver1(int id);
+static bool __cdecl music_db_is_exists_version_from_ver2(int id);
+static bool __cdecl music_db_is_exists_version_from_ver3(int id);
+static bool __cdecl music_db_is_exists_version_from_ver4(int id);
+static bool __cdecl music_db_is_exists_version_from_ver5(int id);
+static bool __cdecl music_db_is_exists_version_from_ver5_5(int id);
+static bool __cdecl music_db_is_exists_version_from_ver6(int id);
+static bool __cdecl music_db_is_exists_version_from_ver7(int id);
+static bool __cdecl music_db_is_exists_version_from_ver8(int id);
+static bool __cdecl music_db_is_exists_version_from_ver9(int id);
+static bool __cdecl music_db_is_hold_marker(int id);
+static bool __cdecl music_db_is_matched_select_type(uint8_t type, int id, uint8_t difficulty);
+// bool __cdecl music_db_is_matching_select();
+// bool __cdecl music_db_is_nearly_excellent();
+// bool __cdecl music_db_is_nearly_fullcombo();
+// bool __cdecl music_db_is_new();
+// bool __cdecl music_db_is_no_gray();
+static bool __cdecl music_db_is_permitted(int id);
+static bool __cdecl music_db_is_possession_for_contained_music_list(uint8_t flags[FLAG_LEN], int a2);
+// bool __cdecl music_db_is_random_or_matching_select();
+// bool __cdecl music_db_is_random_select();
+// int __cdecl music_db_music_bar_to_dot_array();
+// int __cdecl music_db_set_default_add_music_flag(uint8_t flags[FLAG_LEN]);
+// int __cdecl music_db_set_flag_equivalent_for_music_id(void *a1, unsigned int flag, int value);
+// int __cdecl music_db_set_permitted_music_flag(uint8_t flags[FLAG_LEN]);
+// int __cdecl music_db_set_select_history_list();
+
+// int __cdecl music_bonus_get_bonus_music();
+// int __cdecl music_bonus_is_bonus_music();
+// int __cdecl music_only_now_get_count();
+// int __cdecl music_only_now_get_etime();
+// int __cdecl music_only_now_get_music_id();
+// bool __cdecl music_only_now_initialize();
+// int __cdecl music_record_add_clear_count();
+// int __cdecl music_record_add_excellent_count();
+// int __cdecl music_record_add_full_combo_count();
+// int __cdecl music_record_add_play_count();
+// int __cdecl music_record_clear_context();
+// int __cdecl music_record_get_best_music_rate();
+// int __cdecl music_record_get_best_score();
+// int __cdecl music_record_get_clear_count();
+// int __cdecl music_record_get_clear_flag();
+// int __cdecl music_record_get_excellent_count();
+// int __cdecl music_record_get_full_combo_count();
+// int __cdecl music_record_get_jubility();
+// int __cdecl music_record_get_music_bar();
+// int __cdecl music_record_get_play_count();
+// int __cdecl music_record_get_sequence_record_set();
+// int __cdecl music_record_get_total_best_score();
+// int __cdecl music_record_is_all_played();
+// int __cdecl music_record_is_all_yellow();
+// int __cdecl music_record_is_any_played();
+// int __cdecl music_record_is_cleared();
+// int __cdecl music_record_is_excellent();
+// int __cdecl music_record_is_full_combo();
+// int __cdecl music_record_is_no_gray();
+// int __cdecl music_record_is_played(int id, uint8_t a2, int a3);
+// int __cdecl music_record_merge_music_bar();
+// int __cdecl music_record_set_best_music_rate();
+// int __cdecl music_record_set_best_score();
+// int __cdecl music_record_set_clear_count();
+// int __cdecl music_record_set_clear_flag();
+// int __cdecl music_record_set_excellent_count();
+// int __cdecl music_record_set_full_combo_count();
+// int __cdecl music_record_set_jubility();
+// int __cdecl music_record_set_play_count();
+// int __cdecl music_shareable_add_shareable_music();
+// bool __cdecl music_shareable_initialize();
+// int __cdecl music_shareable_is_shareable_music();
+// void __cdecl music_shareable_set_flag(uint8_t flags[FLAG_LEN]);
+
+// void *__cdecl music_texture_BlackJacket_GetInstance();
+// int __cdecl music_texture_BlackJacket_ReadXmlNode();
+// int __cdecl music_bonus_weekly_music_bonus_get_target_music_info();
+// int __cdecl music_bonus_weekly_clear();
+// int __cdecl music_bonus_weekly_music_bonus_weekly_is_target_music();
+// int __cdecl music_new_clear();
+// int __cdecl music_new_get_list();
+// int __cdecl music_new_read_xml_node();
+
+static void *__cdecl mem_set(void *s, int c, size_t n);
+
+static void __cdecl GFHashMapRegist(void *map, int key, void *val);
+static void *__cdecl GFHashMapCreate(void *mem, int mem_sz, int max_elems);
+static void *__cdecl GFHashMapKeyToValue(void *map, int key);
+static bool __cdecl GFHashMapGetEntryList(void *map, int *key, void **val);
+static void __cdecl GFHashMapRewindEntryList(void *map);
+
+static const struct hook_symbol music_db_hooks[] = {
+    {
+        .name = "music_db_get_sequence_filename",
+        .patch = reinterpret_cast<void *>(music_db_get_sequence_filename),
+        .link = nullptr,
+    },
+    {
+        .name = "music_db_get_sound_filename",
+        .patch = reinterpret_cast<void *>(music_db_get_sound_filename),
+        .link = nullptr,
+    },
+    /*
+    {
+        .name = "music_db_dbg_get_all_list",
+        .patch = reinterpret_cast<void *>(music_db_dbg_get_all_list),
+        .link = nullptr,
+    },
+    {
+        .name = "music_db_dot_array_to_music_bar",
+        .patch = reinterpret_cast<void *>(music_db_dot_array_to_music_bar),
+        .link = nullptr,
+    },
+    {
+        .name = "music_db_finalize",
+        .patch = reinterpret_cast<void *>(music_db_finalize),
+        .link = nullptr,
+    },
+    */
+    {
+        .name = "music_db_get_bpm",
+        .patch = reinterpret_cast<void *>(music_db_get_bpm),
+        .link = nullptr,
+    },
+    {
+        .name = "music_db_get_bpm_min",
+        .patch = reinterpret_cast<void *>(music_db_get_bpm_min),
+        .link = nullptr,
+    },
+    {
+        .name = "music_db_get_default_list",
+        .patch = reinterpret_cast<void *>(music_db_get_default_list),
+        .link = nullptr,
+    },
+    {
+        .name = "music_db_get_offline_default_list",
+        .patch = reinterpret_cast<void *>(music_db_get_offline_default_list),
+        .link = nullptr,
+    },
+    {
+        .name = "music_db_get_all_permitted_list",
+        .patch = reinterpret_cast<void *>(music_db_get_all_permitted_list),
+        .link = nullptr,
+    },
+    {
+        .name = "music_db_get_possession_list",
+        .patch = reinterpret_cast<void *>(music_db_get_possession_list),
+        .link = nullptr,
+    },
+    {
+        .name = "music_db_get_card_default_list",
+        .patch = reinterpret_cast<void *>(music_db_get_card_default_list),
+        .link = nullptr,
+    },
+    /*
+    {
+        .name = "music_db_get_jukebox_list",
+        .patch = reinterpret_cast<void *>(music_db_get_jukebox_list),
+        .link = nullptr,
+    },
+    {
+        .name = "music_db_get_default_id",
+        .patch = reinterpret_cast<void *>(music_db_get_default_id),
+        .link = nullptr,
+    },
+    {
+        .name = "music_db_get_default_id_by_genre",
+        .patch = reinterpret_cast<void *>(music_db_get_default_id_by_genre),
+        .link = nullptr,
+    },
+    {
+        .name = "music_db_get_default_id_by_mode",
+        .patch = reinterpret_cast<void *>(music_db_get_default_id_by_mode),
+        .link = nullptr,
+    },
+    */
+    {
+        .name = "music_db_get_genre_list",
+        .patch = reinterpret_cast<void *>(music_db_get_genre_list),
+        .link = nullptr,
+    },
+    {
+        .name = "music_db_get_grouping_category_list",
+        .patch = reinterpret_cast<void *>(music_db_get_grouping_category_list),
+        .link = nullptr,
+    },
+    {
+        .name = "music_db_get_index_start",
+        .patch = reinterpret_cast<void *>(music_db_get_index_start),
+        .link = nullptr,
+    },
+    {
+        .name = "music_db_get_level",
+        .patch = reinterpret_cast<void *>(music_db_get_level),
+        .link = nullptr,
+    },
+    {
+        .name = "music_db_get_level_detail",
+        .patch = reinterpret_cast<void *>(music_db_get_level_detail),
+        .link = nullptr,
+    },
+    {
+        .name = "music_db_get_music_name_head_index",
+        .patch = reinterpret_cast<void *>(music_db_get_music_name_head_index),
+        .link = nullptr,
+    },
+    {
+        .name = "music_db_get_music_name_index",
+        .patch = reinterpret_cast<void *>(music_db_get_music_name_index),
+        .link = nullptr,
+    },
+    {
+        .name = "music_db_get_parent_music_id",
+        .patch = reinterpret_cast<void *>(music_db_get_parent_music_id),
+        .link = nullptr,
+    },
+    {
+        .name = "music_db_get_permitted_music_flag",
+        .patch = reinterpret_cast<void *>(music_db_get_permitted_music_flag),
+        .link = nullptr,
+    },
+    {
+        .name = "music_db_get_pos_index",
+        .patch = reinterpret_cast<void *>(music_db_get_pos_index),
+        .link = nullptr,
+    },
+    {
+        .name = "music_db_initialize",
+        .patch = reinterpret_cast<void *>(music_db_initialize),
+        .link = reinterpret_cast<void **>(&music_db_initialize_orig),
+    },
+    /*
+    {
+        .name = "music_db_is_all_yellow",
+        .patch = reinterpret_cast<void *>(music_db_is_all_yellow),
+        .link = nullptr,
+    },
+    {
+        .name = "music_db_is_displayable_level_detail",
+        .patch = reinterpret_cast<void *>(music_db_is_displayable_level_detail),
+        .link = nullptr,
+    },
+    */
+    {
+        .name = "music_db_is_exists_table",
+        .patch = reinterpret_cast<void *>(music_db_is_exists_table),
+        .link = nullptr,
+    },
+    {
+        .name = "music_db_is_exists_version_from_ver1",
+        .patch = reinterpret_cast<void *>(music_db_is_exists_version_from_ver1),
+        .link = nullptr,
+    },
+    {
+        .name = "music_db_is_exists_version_from_ver2",
+        .patch = reinterpret_cast<void *>(music_db_is_exists_version_from_ver2),
+        .link = nullptr,
+    },
+    {
+        .name = "music_db_is_exists_version_from_ver3",
+        .patch = reinterpret_cast<void *>(music_db_is_exists_version_from_ver3),
+        .link = nullptr,
+    },
+    {
+        .name = "music_db_is_exists_version_from_ver4",
+        .patch = reinterpret_cast<void *>(music_db_is_exists_version_from_ver4),
+        .link = nullptr,
+    },
+    {
+        .name = "music_db_is_exists_version_from_ver5",
+        .patch = reinterpret_cast<void *>(music_db_is_exists_version_from_ver5),
+        .link = nullptr,
+    },
+    {
+        .name = "music_db_is_exists_version_from_ver5_5",
+        .patch = reinterpret_cast<void *>(music_db_is_exists_version_from_ver5_5),
+        .link = nullptr,
+    },
+    {
+        .name = "music_db_is_exists_version_from_ver6",
+        .patch = reinterpret_cast<void *>(music_db_is_exists_version_from_ver6),
+        .link = nullptr,
+    },
+    {
+        .name = "music_db_is_exists_version_from_ver7",
+        .patch = reinterpret_cast<void *>(music_db_is_exists_version_from_ver7),
+        .link = nullptr,
+    },
+    {
+        .name = "music_db_is_exists_version_from_ver8",
+        .patch = reinterpret_cast<void *>(music_db_is_exists_version_from_ver8),
+        .link = nullptr,
+    },
+    {
+        .name = "music_db_is_exists_version_from_ver9",
+        .patch = reinterpret_cast<void *>(music_db_is_exists_version_from_ver9),
+        .link = nullptr,
+    },
+    {
+        .name = "music_db_is_hold_marker",
+        .patch = reinterpret_cast<void *>(music_db_is_hold_marker),
+        .link = nullptr,
+    },
+    {
+        .name = "music_db_is_matched_select_type",
+        .patch = reinterpret_cast<void *>(music_db_is_matched_select_type),
+        .link = nullptr,
+    },
+    /*
+    {
+        .name = "music_db_is_matching_select",
+        .patch = reinterpret_cast<void *>(music_db_is_matching_select),
+        .link = nullptr,
+    },
+    {
+        .name = "music_db_is_nearly_excellent",
+        .patch = reinterpret_cast<void *>(music_db_is_nearly_excellent),
+        .link = nullptr,
+    },
+    {
+        .name = "music_db_is_nearly_fullcombo",
+        .patch = reinterpret_cast<void *>(music_db_is_nearly_fullcombo),
+        .link = nullptr,
+    },
+    {
+        .name = "music_db_is_new",
+        .patch = reinterpret_cast<void *>(music_db_is_new),
+        .link = nullptr,
+    },
+    {
+        .name = "music_db_is_no_gray",
+        .patch = reinterpret_cast<void *>(music_db_is_no_gray),
+        .link = nullptr,
+    },
+    */
+    {
+        .name = "music_db_is_permitted",
+        .patch = reinterpret_cast<void *>(music_db_is_permitted),
+        .link = nullptr,
+    },
+    {
+        .name = "music_db_is_possession_for_contained_music_list",
+        .patch = reinterpret_cast<void *>(music_db_is_possession_for_contained_music_list),
+        .link = nullptr,
+    },
+    /*
+    {
+        .name = "music_db_is_random_or_matching_select",
+        .patch = reinterpret_cast<void *>(music_db_is_random_or_matching_select),
+        .link = nullptr,
+    },
+    {
+        .name = "music_db_is_random_select",
+        .patch = reinterpret_cast<void *>(music_db_is_random_select),
+        .link = nullptr,
+    },
+    {
+        .name = "music_db_music_bar_to_dot_array",
+        .patch = reinterpret_cast<void *>(music_db_music_bar_to_dot_array),
+        .link = nullptr,
+    },
+    {
+        .name = "music_db_reset_using_datapackage",
+        .patch = reinterpret_cast<void *>(music_db_reset_using_datapackage),
+        .link = nullptr,
+    },
+    {
+        .name = "music_db_set_default_add_music_flag",
+        .patch = reinterpret_cast<void *>(music_db_set_default_add_music_flag),
+        .link = nullptr,
+    },
+    {
+        .name = "music_db_set_flag_equivalent_for_music_id",
+        .patch = reinterpret_cast<void *>(music_db_set_flag_equivalent_for_music_id),
+        .link = nullptr,
+    },
+    {
+        .name = "music_db_set_permitted_music_flag",
+        .patch = reinterpret_cast<void *>(music_db_set_permitted_music_flag),
+        .link = nullptr,
+    },
+    {
+        .name = "music_db_set_select_history_list",
+        .patch = reinterpret_cast<void *>(music_db_set_select_history_list),
+        .link = nullptr,
+    },
+    */
+    /*
+    {
+        .name = "music_bonus_get_bonus_music",
+        .patch = reinterpret_cast<void *>(music_bonus_get_bonus_music),
+        .link = nullptr,
+    },
+    {
+        .name = "music_bonus_is_bonus_music",
+        .patch = reinterpret_cast<void *>(music_bonus_is_bonus_music),
+        .link = nullptr,
+    },
+    {
+        .name = "music_only_now_get_count",
+        .patch = reinterpret_cast<void *>(music_only_now_get_count),
+        .link = nullptr,
+    },
+    {
+        .name = "music_only_now_get_etime",
+        .patch = reinterpret_cast<void *>(music_only_now_get_etime),
+        .link = nullptr,
+    },
+    {
+        .name = "music_only_now_get_music_id",
+        .patch = reinterpret_cast<void *>(music_only_now_get_music_id),
+        .link = nullptr,
+    {
+    },
+        .name = "music_only_now_initialize",
+        .patch = reinterpret_cast<void *>(music_only_now_initialize),
+        .link = nullptr,
+    },
+    */
+    // TODO: all music_record function hooks are broken
+    /*
+    {
+        .name = "music_record_add_clear_count",
+        .patch = reinterpret_cast<void *>(music_record_add_clear_count),
+        .link = nullptr,
+    },
+    {
+        .name = "music_record_add_excellent_count",
+        .patch = reinterpret_cast<void *>(music_record_add_excellent_count),
+        .link = nullptr,
+    },
+    {
+        .name = "music_record_add_full_combo_count",
+        .patch = reinterpret_cast<void *>(music_record_add_full_combo_count),
+        .link = nullptr,
+    },
+    {
+        .name = "music_record_add_play_count",
+        .patch = reinterpret_cast<void *>(music_record_add_play_count),
+        .link = nullptr,
+    },
+    {
+        .name = "music_record_clear_context",
+        .patch = reinterpret_cast<void *>(music_record_clear_context),
+        .link = nullptr,
+    },
+    {
+        .name = "music_record_get_best_music_rate",
+        .patch = reinterpret_cast<void *>(music_record_get_best_music_rate),
+        .link = nullptr,
+    },
+    {
+        .name = "music_record_get_best_score",
+        .patch = reinterpret_cast<void *>(music_record_get_best_score),
+        .link = nullptr,
+    },
+    {
+        .name = "music_record_get_clear_count",
+        .patch = reinterpret_cast<void *>(music_record_get_clear_count),
+        .link = nullptr,
+    },
+    {
+        .name = "music_record_get_clear_flag",
+        .patch = reinterpret_cast<void *>(music_record_get_clear_flag),
+        .link = nullptr,
+    },
+    {
+        .name = "music_record_get_excellent_count",
+        .patch = reinterpret_cast<void *>(music_record_get_excellent_count),
+        .link = nullptr,
+    },
+    {
+        .name = "music_record_get_full_combo_count",
+        .patch = reinterpret_cast<void *>(music_record_get_full_combo_count),
+        .link = nullptr,
+    },
+    {
+        .name = "music_record_get_jubility",
+        .patch = reinterpret_cast<void *>(music_record_get_jubility),
+        .link = nullptr,
+    },
+    {
+        .name = "music_record_get_music_bar",
+        .patch = reinterpret_cast<void *>(music_record_get_music_bar),
+        .link = nullptr,
+    },
+    {
+        .name = "music_record_get_play_count",
+        .patch = reinterpret_cast<void *>(music_record_get_play_count),
+        .link = nullptr,
+    },
+    {
+        .name = "music_record_get_sequence_record_set",
+        .patch = reinterpret_cast<void *>(music_record_get_sequence_record_set),
+        .link = nullptr,
+    },
+    {
+        .name = "music_record_get_total_best_score",
+        .patch = reinterpret_cast<void *>(music_record_get_total_best_score),
+        .link = nullptr,
+    },
+    {
+        .name = "music_record_is_all_played",
+        .patch = reinterpret_cast<void *>(music_record_is_all_played),
+        .link = nullptr,
+    },
+    {
+        .name = "music_record_is_all_yellow",
+        .patch = reinterpret_cast<void *>(music_record_is_all_yellow),
+        .link = nullptr,
+    },
+    {
+        .name = "music_record_is_any_played",
+        .patch = reinterpret_cast<void *>(music_record_is_any_played),
+        .link = nullptr,
+    },
+    {
+        .name = "music_record_is_cleared",
+        .patch = reinterpret_cast<void *>(music_record_is_cleared),
+        .link = nullptr,
+    },
+    {
+        .name = "music_record_is_excellent",
+        .patch = reinterpret_cast<void *>(music_record_is_excellent),
+        .link = nullptr,
+    },
+    {
+        .name = "music_record_is_full_combo",
+        .patch = reinterpret_cast<void *>(music_record_is_full_combo),
+        .link = nullptr,
+    },
+    {
+        .name = "music_record_is_no_gray",
+        .patch = reinterpret_cast<void *>(music_record_is_no_gray),
+        .link = nullptr,
+    },
+    {
+        .name = "?music_record_is_played@@YA_NIEW4MUSIC_RECORD_TYPE@@@Z",
+        .patch = reinterpret_cast<void *>(music_record_is_played),
+        .link = nullptr,
+    },
+    {
+        .name = "music_record_merge_music_bar",
+        .patch = reinterpret_cast<void *>(music_record_merge_music_bar),
+        .link = nullptr,
+    },
+    {
+        .name = "music_record_set_best_music_rate",
+        .patch = reinterpret_cast<void *>(music_record_set_best_music_rate),
+        .link = nullptr,
+    },
+    {
+        .name = "music_record_set_best_score",
+        .patch = reinterpret_cast<void *>(music_record_set_best_score),
+        .link = nullptr,
+    },
+    {
+        .name = "music_record_set_clear_count",
+        .patch = reinterpret_cast<void *>(music_record_set_clear_count),
+        .link = nullptr,
+    },
+    {
+        .name = "music_record_set_clear_flag",
+        .patch = reinterpret_cast<void *>(music_record_set_clear_flag),
+        .link = nullptr,
+    },
+    {
+        .name = "music_record_set_excellent_count",
+        .patch = reinterpret_cast<void *>(music_record_set_excellent_count),
+        .link = nullptr,
+    },
+    {
+        .name = "music_record_set_full_combo_count",
+        .patch = reinterpret_cast<void *>(music_record_set_full_combo_count),
+        .link = nullptr,
+    },
+    {
+        .name = "music_record_set_jubility",
+        .patch = reinterpret_cast<void *>(music_record_set_jubility),
+        .link = nullptr,
+    },
+    {
+        .name = "music_record_set_play_count",
+        .patch = reinterpret_cast<void *>(music_record_set_play_count),
+        .link = nullptr,
+    },
+    {
+        .name = "music_shareable_add_shareable_music",
+        .patch = reinterpret_cast<void *>(music_shareable_add_shareable_music),
+        .link = nullptr,
+    },
+    {
+        .name = "music_shareable_initialize",
+        .patch = reinterpret_cast<void *>(music_shareable_initialize),
+        .link = nullptr,
+    },
+    {
+        .name = "music_shareable_is_shareable_music",
+        .patch = reinterpret_cast<void *>(music_shareable_is_shareable_music),
+        .link = nullptr,
+    },
+    {
+        .name = "music_shareable_set_flag",
+        .patch = reinterpret_cast<void *>(music_shareable_set_flag),
+        .link = nullptr,
+    },
+    */
+    /*
+    {
+        .name = "?GetInstance@BlackJacket@music_texture@@SAAAV12@XZ",
+        .patch = reinterpret_cast<void *>(music_texture_BlackJacket_GetInstance),
+        .link = nullptr,
+    },
+    {
+        .name = "?ReadXmlNode@BlackJacket@music_texture@@QAE_NPAUT_PROPERTY_NODE@@@Z",
+        .patch = reinterpret_cast<void *>(music_texture_BlackJacket_ReadXmlNode),
+        .link = nullptr,
+    },
+    {
+        .name = "?music_bonus_get_target_music_info@music_bonus_weekly@@YAXPBUJBMusicFlag_T@@AA_NAAI@Z",
+        .patch = reinterpret_cast<void *>(music_bonus_weekly_music_bonus_get_target_music_info),
+        .link = nullptr,
+    },
+    {
+        .name = "?clear@music_bonus_weekly@@YAXXZ",
+        .patch = reinterpret_cast<void *>(music_bonus_weekly_clear),
+        .link = nullptr,
+    },
+    {
+        .name = "?music_bonus_weekly_is_target_music@music_bonus_weekly@@YA_NPBUJBMusicFlag_T@@I@Z",
+        .patch = reinterpret_cast<void *>(music_bonus_weekly_music_bonus_weekly_is_target_music),
+        .link = nullptr,
+    },
+    {
+        .name = "?clear@music_new@@YAXXZ",
+        .patch = reinterpret_cast<void *>(music_new_clear),
+        .link = nullptr,
+    },
+    {
+        .name = "?get_list@music_new@@YAHHQAI@Z",
+        .patch = reinterpret_cast<void *>(music_new_get_list),
+        .link = nullptr,
+    },
+    {
+        .name = "?read_xml_node@music_new@@YA_NPAUT_PROPERTY_NODE@@@Z",
+        .patch = reinterpret_cast<void *>(music_new_read_xml_node),
+        .link = nullptr,
+    },
+    */
+};
+static const struct hook_symbol gftools_hooks[] = {
+    {
+        .name = "GFHashMapRegist",
+        .patch = reinterpret_cast<void *>(GFHashMapRegist),
+        .link = nullptr,
+    },
+    {
+        .name = "GFHashMapCreate",
+        .patch = reinterpret_cast<void *>(GFHashMapCreate),
+        .link = nullptr,
+    },
+    {
+        .name = "GFHashMapKeyToValue",
+        .patch = reinterpret_cast<void *>(GFHashMapKeyToValue),
+        .link = nullptr,
+    },
+    {
+        .name = "GFHashMapGetEntryList",
+        .patch = reinterpret_cast<void *>(GFHashMapGetEntryList),
+        .link = nullptr,
+    },
+    {
+        .name = "GFHashMapRewindEntryList",
+        .patch = reinterpret_cast<void *>(GFHashMapRewindEntryList),
+        .link = nullptr,
+    },
+};
+
+void hook_music_db(HANDLE process, HMODULE jubeat_handle, HMODULE music_db_handle)
 {
-    // log_misc("music_db_get_sequence_filename(%p, %p, %d, %d)", a1, a2,
-    // music_id, seq);
+    // mem_set
+    hook_iat_ordinal(
+        process, jubeat_handle, "avs2-core.dll", 0xF4, reinterpret_cast<void *>(mem_set));
+
+    iat_hook_table_apply(
+        process, jubeat_handle, "music_db.dll", music_db_hooks, std::size(music_db_hooks));
+    iat_hook_table_apply(
+        process, music_db_handle, "gftools.dll", gftools_hooks, std::size(gftools_hooks));
+}
+
+static bool __cdecl music_db_get_sequence_filename(void *a1, void *a2, int music_id, uint8_t seq)
+{
+    // log_misc("music_db_get_sequence_filename(%p, %p, %d, %d)", a1, a2, music_id, seq);
 
     const char *seq_filename;
+
     if (seq == 1) {
         seq_filename = "adv";
     } else if (seq == 2) {
@@ -55,7 +779,7 @@ bool __cdecl music_db_get_sequence_filename(void *a1, void *a2, int music_id, ui
     return GFSLPrintf(a1, a2, "%s/%09d/%s.eve", "data/music", music_id, seq_filename) >= 0;
 }
 
-bool __cdecl music_db_get_sound_filename(void *a1, void *a2, int music_id, uint8_t seq)
+static bool __cdecl music_db_get_sound_filename(void *a1, void *a2, int music_id, uint8_t seq)
 {
     // log_misc("music_db_get_sound_filename(%p, %p, %d, %d)", a1, a2, music_id,
     // seq);
@@ -69,7 +793,7 @@ bool __cdecl music_db_get_sound_filename(void *a1, void *a2, int music_id, uint8
 // d3_initialize calls this at its very end, so we use the lucky uniqueness
 // of the size parameter to overwrite the texture memory + texture limit
 // after it's called
-void *__cdecl mem_set(void *s, int c, size_t n)
+static void *__cdecl mem_set(void *s, int c, size_t n)
 {
     if (n == 1296) {
         log_body_info("ultimate", "hooked d3_initialize");
@@ -126,7 +850,7 @@ static int music_count;
 static music_db_entry_t music_db[MAX_SONGS];
 static robin_hood::unordered_map<int, music_db_entry_t *> music_db_map;
 
-void debug_music_entry(music_db_entry_t *song)
+static void debug_music_entry(music_db_entry_t *song)
 {
     if (!song) {
         log_body_warning("ultimate", "%s: song == nullptr", __func__);
@@ -173,34 +897,35 @@ enum music_load_res {
 static music_db_entry_t *music_from_id(int id)
 {
     auto search = music_db_map.find(id);
+
     return search == music_db_map.end() ? nullptr : search->second;
 }
 
 typedef bool (*music_filter_func)(music_db_entry_t *song);
 
-bool filter_func_all(music_db_entry_t *song)
+static bool filter_func_all(music_db_entry_t *song)
 {
     return true;
 }
 
 // the non-extend stuff falls below the 2048 song limit (about 1300 songs)
 // this is thus a nice easy way to get the arcade tracks into jubility calcs
-bool filter_func_not_extend(music_db_entry_t *song)
+static bool filter_func_not_extend(music_db_entry_t *song)
 {
     return song->pack_id == -1;
 }
 
-bool filter_func_is_default(music_db_entry_t *song)
+static bool filter_func_is_default(music_db_entry_t *song)
 {
     return song->is_default;
 }
 
-bool filter_func_card_default(music_db_entry_t *song)
+static bool filter_func_card_default(music_db_entry_t *song)
 {
     return song->is_card_default;
 }
 
-bool filter_func_is_offline_default(music_db_entry_t *song)
+static bool filter_func_is_offline_default(music_db_entry_t *song)
 {
     return song->is_offline_default;
 }
@@ -235,14 +960,14 @@ music_db_filtered_list(const char *func, int limit, int *results, music_filter_f
     return returned;
 }
 
-int __cdecl music_db_get_default_list(int limit, int *results)
+static int __cdecl music_db_get_default_list(int limit, int *results)
 {
     return music_db_filtered_list(__func__, limit, results, filter_func_not_extend);
     // return music_db_filtered_list(__func__, limit, results,
     // filter_func_is_default);
 }
 
-int __cdecl music_db_get_offline_default_list(int limit, int *results)
+static int __cdecl music_db_get_offline_default_list(int limit, int *results)
 {
     return music_db_filtered_list(__func__, limit, results, filter_func_not_extend);
     // return music_db_filtered_list(__func__, limit, results,
@@ -254,12 +979,12 @@ int __cdecl music_db_get_offline_default_list(int limit, int *results)
 // will errorneously increment jubility locally when played, but reset next
 // login. Patch the initial jubility function's arrays to allow full
 // functionality
-int __cdecl music_db_get_all_permitted_list(int limit, int *results)
+static int __cdecl music_db_get_all_permitted_list(int limit, int *results)
 {
     return music_db_filtered_list(__func__, limit, results, filter_func_all);
 }
 
-int __cdecl music_db_get_possession_list(uint8_t flags[FLAG_LEN], int limit, int *results)
+static int __cdecl music_db_get_possession_list(uint8_t flags[FLAG_LEN], int limit, int *results)
 {
     // log_body_warning("ultimate", "music_db_get_possession_list(%p, %d, %p)",
     // flags, limit, results);
@@ -267,7 +992,7 @@ int __cdecl music_db_get_possession_list(uint8_t flags[FLAG_LEN], int limit, int
     return music_db_filtered_list(__func__, limit, results, filter_func_all);
 }
 
-int __cdecl music_db_get_card_default_list(int limit, int *results)
+static int __cdecl music_db_get_card_default_list(int limit, int *results)
 {
     return music_db_filtered_list(__func__, limit, results, filter_func_card_default);
 }
@@ -402,14 +1127,14 @@ static enum music_load_res music_load_individual(int index, void *node)
     return MUSIC_LOAD_OK;
 }
 
-int music_db_entry_sorter(const void *_a, const void *_b)
+static int music_db_entry_sorter(const void *_a, const void *_b)
 {
     music_db_entry_t *a = *(music_db_entry_t **) _a;
     music_db_entry_t *b = *(music_db_entry_t **) _b;
     return stricmp(a->title_name, b->title_name);
 }
 
-bool __cdecl music_db_initialize(void)
+static bool __cdecl music_db_initialize(void)
 {
     // some features are not worth reimplementing because their results aren't
     // changed by the ultimate songs. This lets us use these functions easily.
@@ -425,7 +1150,7 @@ bool __cdecl music_db_initialize(void)
     if ((avs2_core_handle = GetModuleHandleA("avs2-core.dll")) == nullptr) {
         log_fatal("GetModuleHandle(\"avs2-core.dll\") failed: 0x%08lx", GetLastError());
     }
-    if ((avs_fs_lstat = (int (*)(const char *, struct avs_stat *)) GetProcAddress(
+    if ((avs_fs_lstat = (decltype(avs_fs_lstat)) GetProcAddress(
              avs2_core_handle, "XCgsqzn0000063")) == nullptr)
     {
         log_fatal("GetProcAddress(\"avs_fs_lstat\") failed: 0x%08lx", GetLastError());
@@ -508,13 +1233,13 @@ bool __cdecl music_db_initialize(void)
 //     implemented"); return 0;
 // }
 
-float __cdecl music_db_get_bpm(int id)
+static float __cdecl music_db_get_bpm(int id)
 {
     music_db_entry_t *song = music_from_id(id);
     return song ? song->bpm_max : 0.0;
 }
 
-float __cdecl music_db_get_bpm_min(int id)
+static float __cdecl music_db_get_bpm_min(int id)
 {
     music_db_entry_t *song = music_from_id(id);
     return song ? song->bpm_min : -1.0;
@@ -537,7 +1262,7 @@ float __cdecl music_db_get_bpm_min(int id)
 //     implemented"); return 0;
 // }
 
-char *__cdecl music_db_get_genre_list(int id)
+static char *__cdecl music_db_get_genre_list(int id)
 {
     music_db_entry_t *song = music_from_id(id);
     GFAssert(song != nullptr); // this will crash if it's nullptr anyway, so may as well
@@ -546,19 +1271,19 @@ char *__cdecl music_db_get_genre_list(int id)
     return song->genre_list;
 }
 
-uint64_t __cdecl music_db_get_grouping_category_list(int id)
+static uint64_t __cdecl music_db_get_grouping_category_list(int id)
 {
     music_db_entry_t *song = music_from_id(id);
     return song ? song->grouping_category : 0;
 }
 
-int __cdecl music_db_get_index_start(int id)
+static int __cdecl music_db_get_index_start(int id)
 {
     music_db_entry_t *song = music_from_id(id);
     return song ? song->index_start : -1;
 }
 
-uint8_t __cdecl music_db_get_level(int id, uint8_t difficulty)
+static uint8_t __cdecl music_db_get_level(int id, uint8_t difficulty)
 {
     music_db_entry_t *song = music_from_id(id);
     if (!song) {
@@ -594,7 +1319,7 @@ uint8_t __cdecl music_db_get_level(int id, uint8_t difficulty)
 // }
 
 // returns the fractional part of levels, ie 9.4 -> 4
-uint8_t __cdecl music_db_get_level_detail(int id, uint8_t difficulty)
+static uint8_t __cdecl music_db_get_level_detail(int id, uint8_t difficulty)
 {
     // real code has handling to ignore level < 9, but the extra function
     // music_db_is_displayable_level_detail removes the need for it
@@ -622,7 +1347,7 @@ uint8_t __cdecl music_db_get_level_detail(int id, uint8_t difficulty)
     return ((uint8_t) round(diff * 10.0)) % 10;
 }
 
-int __cdecl music_db_get_music_name_head_index(int id)
+static int __cdecl music_db_get_music_name_head_index(int id)
 {
     music_db_entry_t *song = music_from_id(id);
     // the bottom 12 bits are the sort order inside the category
@@ -645,26 +1370,26 @@ int __cdecl music_db_get_music_name_head_index(int id)
     return song ? song->name_sort_id_j >> 12 : 0;
 }
 
-int __cdecl music_db_get_music_name_index(int id)
+static int __cdecl music_db_get_music_name_index(int id)
 {
     music_db_entry_t *song = music_from_id(id);
     return song ? song->name_sort_id_j : 0;
 }
 
-int __cdecl music_db_get_parent_music_id(int id)
+static int __cdecl music_db_get_parent_music_id(int id)
 {
     music_db_entry_t *song = music_from_id(id);
     return song ? song->parent_id : 0;
 }
 
-uint8_t *__cdecl music_db_get_permitted_music_flag()
+static uint8_t *__cdecl music_db_get_permitted_music_flag()
 {
     static uint8_t flags[FLAG_LEN];
     memset(flags, -1, sizeof(flags));
     return flags;
 }
 
-int16_t __cdecl music_db_get_pos_index(int id)
+static int16_t __cdecl music_db_get_pos_index(int id)
 {
     music_db_entry_t *song = music_from_id(id);
     return song ? song->pos_index : -1;
@@ -680,7 +1405,7 @@ int16_t __cdecl music_db_get_pos_index(int id)
 //     implemented"); return 0;
 // }
 
-bool __cdecl music_db_is_exists_table(int id)
+static bool __cdecl music_db_is_exists_table(int id)
 {
     music_db_entry_t *song = music_from_id(id);
     return song != nullptr;
@@ -703,69 +1428,69 @@ static int version_bit_count(int id)
     return bits;
 }
 
-bool __cdecl music_db_is_exists_version_from_ver1(int id)
+static bool __cdecl music_db_is_exists_version_from_ver1(int id)
 {
     int bits = version_bit_count(id);
     return bits == 0 || bits == 1;
 }
 
-bool __cdecl music_db_is_exists_version_from_ver2(int id)
+static bool __cdecl music_db_is_exists_version_from_ver2(int id)
 {
     int bits = version_bit_count(id);
     return bits == 2 || bits == 3;
 }
 
-bool __cdecl music_db_is_exists_version_from_ver3(int id)
+static bool __cdecl music_db_is_exists_version_from_ver3(int id)
 {
     int bits = version_bit_count(id);
     return bits == 4 || bits == 5;
 }
 
-bool __cdecl music_db_is_exists_version_from_ver4(int id)
+static bool __cdecl music_db_is_exists_version_from_ver4(int id)
 {
     int bits = version_bit_count(id);
     return bits == 6 || bits == 7;
 }
 
-bool __cdecl music_db_is_exists_version_from_ver5(int id)
+static bool __cdecl music_db_is_exists_version_from_ver5(int id)
 {
     int bits = version_bit_count(id);
     return bits == 8 || bits == 9;
 }
 
-bool __cdecl music_db_is_exists_version_from_ver5_5(int id)
+static bool __cdecl music_db_is_exists_version_from_ver5_5(int id)
 {
     return version_bit_count(id) == 9;
 }
 
-bool __cdecl music_db_is_exists_version_from_ver6(int id)
+static bool __cdecl music_db_is_exists_version_from_ver6(int id)
 {
     return version_bit_count(id) == 10;
 }
 
-bool __cdecl music_db_is_exists_version_from_ver7(int id)
+static bool __cdecl music_db_is_exists_version_from_ver7(int id)
 {
     return version_bit_count(id) == 11;
 }
 
-bool __cdecl music_db_is_exists_version_from_ver8(int id)
+static bool __cdecl music_db_is_exists_version_from_ver8(int id)
 {
     return version_bit_count(id) == 12;
 }
 
-bool __cdecl music_db_is_exists_version_from_ver9(int id)
+static bool __cdecl music_db_is_exists_version_from_ver9(int id)
 {
     int bits = version_bit_count(id);
     return bits == 13 || bits == 14;
 }
 
-bool __cdecl music_db_is_hold_marker(int id)
+static bool __cdecl music_db_is_hold_marker(int id)
 {
     music_db_entry_t *song = music_from_id(id);
     return song ? song->is_hold : 0;
 }
 
-bool __cdecl music_db_is_matched_select_type(uint8_t type, int id, uint8_t difficulty)
+static bool __cdecl music_db_is_matched_select_type(uint8_t type, int id, uint8_t difficulty)
 {
     int8_t level = (int8_t) music_db_get_level(id, difficulty);
 
@@ -811,7 +1536,7 @@ bool __cdecl music_db_is_no_gray() {
 }
 */
 
-bool __cdecl music_db_is_permitted(int id)
+static bool __cdecl music_db_is_permitted(int id)
 {
     return music_db_is_exists_table(id);
 }
@@ -823,7 +1548,7 @@ bool __cdecl music_db_is_permitted(int id)
 // hot_music_list THANKFULLY is one of two lists that comes in from .data, every
 // other call uses a stack variable. By detecting this we can only perform
 // filtering when we absolutely have to.
-bool __cdecl music_db_is_possession_for_contained_music_list(uint8_t flags[FLAG_LEN], int id)
+static bool __cdecl music_db_is_possession_for_contained_music_list(uint8_t flags[FLAG_LEN], int id)
 {
     static uint8_t *hot_music = nullptr;
     static uint8_t *data_start = nullptr;
@@ -952,7 +1677,7 @@ static int music_record_count;
 static uint8_t music_records[MAX_SONGS][2112]; // dll says 2112 bytes each
 static robin_hood::unordered_map<int, void *> music_record_map;
 
-void *__cdecl GFHashMapCreate(void *mem, int mem_sz, int max_elems)
+static void *__cdecl GFHashMapCreate(void *mem, int mem_sz, int max_elems)
 {
     log_body_info("ultimate", "hooked GFHashMapCreate");
 
@@ -972,12 +1697,12 @@ void *__cdecl GFHashMapCreate(void *mem, int mem_sz, int max_elems)
     return &music_record_map;
 }
 
-void __cdecl GFHashMapRegist(void *map, int key, void *val)
+static void __cdecl GFHashMapRegist(void *map, int key, void *val)
 {
     log_body_fatal("ultimate", "GFHashMapRegist should not be called if patches worked");
 }
 
-void *__cdecl GFHashMapKeyToValue(void *map, int key)
+static void *__cdecl GFHashMapKeyToValue(void *map, int key)
 {
     if (music_count == 0) {
         log_body_fatal("ultimate", "GFHashMapKeyToValue called before mdb load, cannot continue");
@@ -1001,12 +1726,12 @@ void *__cdecl GFHashMapKeyToValue(void *map, int key)
 // this has potential for failure, but it works for now
 static int music_record_iter;
 
-void __cdecl GFHashMapRewindEntryList(void *map)
+static void __cdecl GFHashMapRewindEntryList(void *map)
 {
     music_record_iter = 0;
 }
 
-bool GFHashMapGetEntryList(void *map, int *key, void **val)
+static bool GFHashMapGetEntryList(void *map, int *key, void **val)
 {
     if (music_record_iter >= music_count) {
         return false;
