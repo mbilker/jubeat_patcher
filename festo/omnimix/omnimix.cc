@@ -23,7 +23,7 @@ struct patch_t {
     const std::vector<uint8_t> pattern;
     // MSVC does not allow the `(const bool[]) { ... }` initializer and `std::vector<bool>` is a
     // specialization, so use `std::vector<uint8_t>` instead
-    const std::vector<uint8_t> pattern_mask;
+    const std::vector<uint8_t> pattern_mask {};
     const std::vector<uint8_t> data;
     ssize_t data_offset;
 };
@@ -233,5 +233,9 @@ extern "C" DLL_EXPORT bool __cdecl omnimix_dll_entry_init(char *sid_code, void *
 
 BOOL WINAPI DllMain(HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpvReserved)
 {
+    (void) hinstDLL;
+    (void) fdwReason;
+    (void) lpvReserved;
+
     return TRUE;
 }
