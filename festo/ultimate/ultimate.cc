@@ -32,7 +32,7 @@ struct patch_t {
     const std::vector<uint8_t> pattern;
     // MSVC does not allow the `(const bool[]) { ... }` initializer and `std::vector<bool>` is a
     // specialization, so use `std::vector<uint8_t>` instead
-    const std::vector<uint8_t> pattern_mask;
+    const std::vector<uint8_t> pattern_mask {};
     const std::vector<uint8_t> data;
     size_t data_offset;
 };
@@ -332,7 +332,7 @@ static void do_patch(HANDLE process, const MODULEINFO &module_info, const struct
     }
 }
 
-static void hook_pkfs_fs_open(HANDLE process, HMODULE pkfs_module, const MODULEINFO &module_info)
+static void hook_pkfs_fs_open(HANDLE process, HMODULE pkfs_module)
 {
     const IMAGE_IMPORT_DESCRIPTOR *avs2_import_descriptor;
     void *avs_strlcpy_entry_ptr, *avs_strlen_entry_ptr, *avs_snprintf_entry_ptr;
@@ -557,7 +557,7 @@ extern "C" DLL_EXPORT bool __cdecl ultimate_dll_entry_init(char *sid_code, void 
     DWORD pid;
     HANDLE process;
     HMODULE avs2_core_handle, jubeat_handle, music_db_handle, pkfs_handle;
-    MODULEINFO jubeat_info, music_db_info, pkfs_info;
+    MODULEINFO jubeat_info, music_db_info;
 
     log_to_external(log_body_misc, log_body_info, log_body_warning, log_body_fatal);
 
@@ -597,9 +597,6 @@ extern "C" DLL_EXPORT bool __cdecl ultimate_dll_entry_init(char *sid_code, void 
     if (!GetModuleInformation(process, music_db_handle, &music_db_info, sizeof(music_db_info))) {
         log_fatal("GetModuleInformation(\"music_db.dll\") failed: 0x%08lx", GetLastError());
     }
-    if (!GetModuleInformation(process, pkfs_handle, &pkfs_info, sizeof(pkfs_info))) {
-        log_fatal("GetModuleInformation(\"pkfs.dll\") failed: 0x%08lx", GetLastError());
-    }
 
     log_info(
         "mdb_arr_patch: 0x%x score_arr_patch: 0x%x end_score_arr_patch: 0x%x",
@@ -634,7 +631,7 @@ extern "C" DLL_EXPORT bool __cdecl ultimate_dll_entry_init(char *sid_code, void 
     */
 
     hook_music_db(process, jubeat_handle, music_db_handle);
-    hook_pkfs_fs_open(process, pkfs_handle, pkfs_info);
+    hook_pkfs_fs_open(process, pkfs_handle);
     hook_banner_textures(process, jubeat_info);
 
     CloseHandle(process);
@@ -653,5 +650,9 @@ extern "C" DLL_EXPORT bool __cdecl ultimate_dll_entry_init(char *sid_code, void 
 
 BOOL WINAPI DllMain(HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpvReserved)
 {
+    (void) hinstDLL;
+    (void) fdwReason;
+    (void) lpvReserved;
+
     return TRUE;
 }

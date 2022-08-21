@@ -100,12 +100,12 @@ void log_set_level(unsigned int new_level)
     log_level = new_level;
 }
 
-void log_writer_debug(void *ctx, const char *chars, size_t nchars)
+void log_writer_debug(void *, const char *chars, size_t)
 {
     OutputDebugStringA(chars);
 }
 
-void log_writer_console(void *ctx, const char *chars, size_t nchars)
+void log_writer_console(void *, const char *chars, size_t)
 {
     printf("%s", chars);
 }
@@ -117,7 +117,7 @@ void log_writer_file(void *ctx, const char *chars, size_t nchars)
 }
 */
 
-void log_writer_null(void *ctx, const char *chars, size_t nchars)
+void log_writer_null(void *, const char *, size_t)
 {
 }
 

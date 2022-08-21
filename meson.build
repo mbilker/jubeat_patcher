@@ -13,6 +13,7 @@ project(
         'c_winlibs=[]',
         'cpp_eh=s',
         'cpp_std=c++20',
+        'warning_level=2',
     ],
 )
 

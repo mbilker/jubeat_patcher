@@ -39,7 +39,9 @@ struct avs_stat {
     struct stat padding;
 };
 
+#ifdef DEBUG_CHECK_MUSIC_IFS_EXISTS
 int (*avs_fs_lstat)(const char *path, struct avs_stat *st);
+#endif
 
 static bool __cdecl music_db_get_sequence_filename(void *a1, void *a2, int music_id, uint8_t seq);
 static bool __cdecl music_db_get_sound_filename(void *a1, void *a2, int music_id, uint8_t seq);
@@ -167,295 +169,352 @@ static void __cdecl GFHashMapRewindEntryList(void *map);
 static const struct hook_symbol music_db_hooks[] = {
     {
         .name = "music_db_get_sequence_filename",
+        .ordinal = 0,
         .patch = reinterpret_cast<void *>(music_db_get_sequence_filename),
         .link = nullptr,
     },
     {
         .name = "music_db_get_sound_filename",
+        .ordinal = 0,
         .patch = reinterpret_cast<void *>(music_db_get_sound_filename),
         .link = nullptr,
     },
     /*
     {
         .name = "music_db_dbg_get_all_list",
+        .ordinal = 0,
         .patch = reinterpret_cast<void *>(music_db_dbg_get_all_list),
         .link = nullptr,
     },
     {
         .name = "music_db_dot_array_to_music_bar",
+        .ordinal = 0,
         .patch = reinterpret_cast<void *>(music_db_dot_array_to_music_bar),
         .link = nullptr,
     },
     {
         .name = "music_db_finalize",
+        .ordinal = 0,
         .patch = reinterpret_cast<void *>(music_db_finalize),
         .link = nullptr,
     },
     */
     {
         .name = "music_db_get_bpm",
+        .ordinal = 0,
         .patch = reinterpret_cast<void *>(music_db_get_bpm),
         .link = nullptr,
     },
     {
         .name = "music_db_get_bpm_min",
+        .ordinal = 0,
         .patch = reinterpret_cast<void *>(music_db_get_bpm_min),
         .link = nullptr,
     },
     {
         .name = "music_db_get_default_list",
+        .ordinal = 0,
         .patch = reinterpret_cast<void *>(music_db_get_default_list),
         .link = nullptr,
     },
     {
         .name = "music_db_get_offline_default_list",
+        .ordinal = 0,
         .patch = reinterpret_cast<void *>(music_db_get_offline_default_list),
         .link = nullptr,
     },
     {
         .name = "music_db_get_all_permitted_list",
+        .ordinal = 0,
         .patch = reinterpret_cast<void *>(music_db_get_all_permitted_list),
         .link = nullptr,
     },
     {
         .name = "music_db_get_possession_list",
+        .ordinal = 0,
         .patch = reinterpret_cast<void *>(music_db_get_possession_list),
         .link = nullptr,
     },
     {
         .name = "music_db_get_card_default_list",
+        .ordinal = 0,
         .patch = reinterpret_cast<void *>(music_db_get_card_default_list),
         .link = nullptr,
     },
     /*
     {
         .name = "music_db_get_jukebox_list",
+        .ordinal = 0,
         .patch = reinterpret_cast<void *>(music_db_get_jukebox_list),
         .link = nullptr,
     },
     {
         .name = "music_db_get_default_id",
+        .ordinal = 0,
         .patch = reinterpret_cast<void *>(music_db_get_default_id),
         .link = nullptr,
     },
     {
         .name = "music_db_get_default_id_by_genre",
+        .ordinal = 0,
         .patch = reinterpret_cast<void *>(music_db_get_default_id_by_genre),
         .link = nullptr,
     },
     {
         .name = "music_db_get_default_id_by_mode",
+        .ordinal = 0,
         .patch = reinterpret_cast<void *>(music_db_get_default_id_by_mode),
         .link = nullptr,
     },
     */
     {
         .name = "music_db_get_genre_list",
+        .ordinal = 0,
         .patch = reinterpret_cast<void *>(music_db_get_genre_list),
         .link = nullptr,
     },
     {
         .name = "music_db_get_grouping_category_list",
+        .ordinal = 0,
         .patch = reinterpret_cast<void *>(music_db_get_grouping_category_list),
         .link = nullptr,
     },
     {
         .name = "music_db_get_index_start",
+        .ordinal = 0,
         .patch = reinterpret_cast<void *>(music_db_get_index_start),
         .link = nullptr,
     },
     {
         .name = "music_db_get_level",
+        .ordinal = 0,
         .patch = reinterpret_cast<void *>(music_db_get_level),
         .link = nullptr,
     },
     {
         .name = "music_db_get_level_detail",
+        .ordinal = 0,
         .patch = reinterpret_cast<void *>(music_db_get_level_detail),
         .link = nullptr,
     },
     {
         .name = "music_db_get_music_name_head_index",
+        .ordinal = 0,
         .patch = reinterpret_cast<void *>(music_db_get_music_name_head_index),
         .link = nullptr,
     },
     {
         .name = "music_db_get_music_name_index",
+        .ordinal = 0,
         .patch = reinterpret_cast<void *>(music_db_get_music_name_index),
         .link = nullptr,
     },
     {
         .name = "music_db_get_parent_music_id",
+        .ordinal = 0,
         .patch = reinterpret_cast<void *>(music_db_get_parent_music_id),
         .link = nullptr,
     },
     {
         .name = "music_db_get_permitted_music_flag",
+        .ordinal = 0,
         .patch = reinterpret_cast<void *>(music_db_get_permitted_music_flag),
         .link = nullptr,
     },
     {
         .name = "music_db_get_pos_index",
+        .ordinal = 0,
         .patch = reinterpret_cast<void *>(music_db_get_pos_index),
         .link = nullptr,
     },
     {
         .name = "music_db_initialize",
+        .ordinal = 0,
         .patch = reinterpret_cast<void *>(music_db_initialize),
         .link = reinterpret_cast<void **>(&music_db_initialize_orig),
     },
     /*
     {
         .name = "music_db_is_all_yellow",
+        .ordinal = 0,
         .patch = reinterpret_cast<void *>(music_db_is_all_yellow),
         .link = nullptr,
     },
     {
         .name = "music_db_is_displayable_level_detail",
+        .ordinal = 0,
         .patch = reinterpret_cast<void *>(music_db_is_displayable_level_detail),
         .link = nullptr,
     },
     */
     {
         .name = "music_db_is_exists_table",
+        .ordinal = 0,
         .patch = reinterpret_cast<void *>(music_db_is_exists_table),
         .link = nullptr,
     },
     {
         .name = "music_db_is_exists_version_from_ver1",
+        .ordinal = 0,
         .patch = reinterpret_cast<void *>(music_db_is_exists_version_from_ver1),
         .link = nullptr,
     },
     {
         .name = "music_db_is_exists_version_from_ver2",
+        .ordinal = 0,
         .patch = reinterpret_cast<void *>(music_db_is_exists_version_from_ver2),
         .link = nullptr,
     },
     {
         .name = "music_db_is_exists_version_from_ver3",
+        .ordinal = 0,
         .patch = reinterpret_cast<void *>(music_db_is_exists_version_from_ver3),
         .link = nullptr,
     },
     {
         .name = "music_db_is_exists_version_from_ver4",
+        .ordinal = 0,
         .patch = reinterpret_cast<void *>(music_db_is_exists_version_from_ver4),
         .link = nullptr,
     },
     {
         .name = "music_db_is_exists_version_from_ver5",
+        .ordinal = 0,
         .patch = reinterpret_cast<void *>(music_db_is_exists_version_from_ver5),
         .link = nullptr,
     },
     {
         .name = "music_db_is_exists_version_from_ver5_5",
+        .ordinal = 0,
         .patch = reinterpret_cast<void *>(music_db_is_exists_version_from_ver5_5),
         .link = nullptr,
     },
     {
         .name = "music_db_is_exists_version_from_ver6",
+        .ordinal = 0,
         .patch = reinterpret_cast<void *>(music_db_is_exists_version_from_ver6),
         .link = nullptr,
     },
     {
         .name = "music_db_is_exists_version_from_ver7",
+        .ordinal = 0,
         .patch = reinterpret_cast<void *>(music_db_is_exists_version_from_ver7),
         .link = nullptr,
     },
     {
         .name = "music_db_is_exists_version_from_ver8",
+        .ordinal = 0,
         .patch = reinterpret_cast<void *>(music_db_is_exists_version_from_ver8),
         .link = nullptr,
     },
     {
         .name = "music_db_is_exists_version_from_ver9",
+        .ordinal = 0,
         .patch = reinterpret_cast<void *>(music_db_is_exists_version_from_ver9),
         .link = nullptr,
     },
     {
         .name = "music_db_is_hold_marker",
+        .ordinal = 0,
         .patch = reinterpret_cast<void *>(music_db_is_hold_marker),
         .link = nullptr,
     },
     {
         .name = "music_db_is_matched_select_type",
+        .ordinal = 0,
         .patch = reinterpret_cast<void *>(music_db_is_matched_select_type),
         .link = nullptr,
     },
     /*
     {
         .name = "music_db_is_matching_select",
+        .ordinal = 0,
         .patch = reinterpret_cast<void *>(music_db_is_matching_select),
         .link = nullptr,
     },
     {
         .name = "music_db_is_nearly_excellent",
+        .ordinal = 0,
         .patch = reinterpret_cast<void *>(music_db_is_nearly_excellent),
         .link = nullptr,
     },
     {
         .name = "music_db_is_nearly_fullcombo",
+        .ordinal = 0,
         .patch = reinterpret_cast<void *>(music_db_is_nearly_fullcombo),
         .link = nullptr,
     },
     {
         .name = "music_db_is_new",
+        .ordinal = 0,
         .patch = reinterpret_cast<void *>(music_db_is_new),
         .link = nullptr,
     },
     {
         .name = "music_db_is_no_gray",
+        .ordinal = 0,
         .patch = reinterpret_cast<void *>(music_db_is_no_gray),
         .link = nullptr,
     },
     */
     {
         .name = "music_db_is_permitted",
+        .ordinal = 0,
         .patch = reinterpret_cast<void *>(music_db_is_permitted),
         .link = nullptr,
     },
     {
         .name = "music_db_is_possession_for_contained_music_list",
+        .ordinal = 0,
         .patch = reinterpret_cast<void *>(music_db_is_possession_for_contained_music_list),
         .link = nullptr,
     },
     /*
     {
         .name = "music_db_is_random_or_matching_select",
+        .ordinal = 0,
         .patch = reinterpret_cast<void *>(music_db_is_random_or_matching_select),
         .link = nullptr,
     },
     {
         .name = "music_db_is_random_select",
+        .ordinal = 0,
         .patch = reinterpret_cast<void *>(music_db_is_random_select),
         .link = nullptr,
     },
     {
         .name = "music_db_music_bar_to_dot_array",
+        .ordinal = 0,
         .patch = reinterpret_cast<void *>(music_db_music_bar_to_dot_array),
         .link = nullptr,
     },
     {
         .name = "music_db_reset_using_datapackage",
+        .ordinal = 0,
         .patch = reinterpret_cast<void *>(music_db_reset_using_datapackage),
         .link = nullptr,
     },
     {
         .name = "music_db_set_default_add_music_flag",
+        .ordinal = 0,
         .patch = reinterpret_cast<void *>(music_db_set_default_add_music_flag),
         .link = nullptr,
     },
     {
         .name = "music_db_set_flag_equivalent_for_music_id",
+        .ordinal = 0,
         .patch = reinterpret_cast<void *>(music_db_set_flag_equivalent_for_music_id),
         .link = nullptr,
     },
     {
         .name = "music_db_set_permitted_music_flag",
+        .ordinal = 0,
         .patch = reinterpret_cast<void *>(music_db_set_permitted_music_flag),
         .link = nullptr,
     },
     {
         .name = "music_db_set_select_history_list",
+        .ordinal = 0,
         .patch = reinterpret_cast<void *>(music_db_set_select_history_list),
         .link = nullptr,
     },
@@ -463,31 +522,37 @@ static const struct hook_symbol music_db_hooks[] = {
     /*
     {
         .name = "music_bonus_get_bonus_music",
+        .ordinal = 0,
         .patch = reinterpret_cast<void *>(music_bonus_get_bonus_music),
         .link = nullptr,
     },
     {
         .name = "music_bonus_is_bonus_music",
+        .ordinal = 0,
         .patch = reinterpret_cast<void *>(music_bonus_is_bonus_music),
         .link = nullptr,
     },
     {
         .name = "music_only_now_get_count",
+        .ordinal = 0,
         .patch = reinterpret_cast<void *>(music_only_now_get_count),
         .link = nullptr,
     },
     {
         .name = "music_only_now_get_etime",
+        .ordinal = 0,
         .patch = reinterpret_cast<void *>(music_only_now_get_etime),
         .link = nullptr,
     },
     {
         .name = "music_only_now_get_music_id",
+        .ordinal = 0,
         .patch = reinterpret_cast<void *>(music_only_now_get_music_id),
         .link = nullptr,
     {
     },
         .name = "music_only_now_initialize",
+        .ordinal = 0,
         .patch = reinterpret_cast<void *>(music_only_now_initialize),
         .link = nullptr,
     },
@@ -496,186 +561,223 @@ static const struct hook_symbol music_db_hooks[] = {
     /*
     {
         .name = "music_record_add_clear_count",
+        .ordinal = 0,
         .patch = reinterpret_cast<void *>(music_record_add_clear_count),
         .link = nullptr,
     },
     {
         .name = "music_record_add_excellent_count",
+        .ordinal = 0,
         .patch = reinterpret_cast<void *>(music_record_add_excellent_count),
         .link = nullptr,
     },
     {
         .name = "music_record_add_full_combo_count",
+        .ordinal = 0,
         .patch = reinterpret_cast<void *>(music_record_add_full_combo_count),
         .link = nullptr,
     },
     {
         .name = "music_record_add_play_count",
+        .ordinal = 0,
         .patch = reinterpret_cast<void *>(music_record_add_play_count),
         .link = nullptr,
     },
     {
         .name = "music_record_clear_context",
+        .ordinal = 0,
         .patch = reinterpret_cast<void *>(music_record_clear_context),
         .link = nullptr,
     },
     {
         .name = "music_record_get_best_music_rate",
+        .ordinal = 0,
         .patch = reinterpret_cast<void *>(music_record_get_best_music_rate),
         .link = nullptr,
     },
     {
         .name = "music_record_get_best_score",
+        .ordinal = 0,
         .patch = reinterpret_cast<void *>(music_record_get_best_score),
         .link = nullptr,
     },
     {
         .name = "music_record_get_clear_count",
+        .ordinal = 0,
         .patch = reinterpret_cast<void *>(music_record_get_clear_count),
         .link = nullptr,
     },
     {
         .name = "music_record_get_clear_flag",
+        .ordinal = 0,
         .patch = reinterpret_cast<void *>(music_record_get_clear_flag),
         .link = nullptr,
     },
     {
         .name = "music_record_get_excellent_count",
+        .ordinal = 0,
         .patch = reinterpret_cast<void *>(music_record_get_excellent_count),
         .link = nullptr,
     },
     {
         .name = "music_record_get_full_combo_count",
+        .ordinal = 0,
         .patch = reinterpret_cast<void *>(music_record_get_full_combo_count),
         .link = nullptr,
     },
     {
         .name = "music_record_get_jubility",
+        .ordinal = 0,
         .patch = reinterpret_cast<void *>(music_record_get_jubility),
         .link = nullptr,
     },
     {
         .name = "music_record_get_music_bar",
+        .ordinal = 0,
         .patch = reinterpret_cast<void *>(music_record_get_music_bar),
         .link = nullptr,
     },
     {
         .name = "music_record_get_play_count",
+        .ordinal = 0,
         .patch = reinterpret_cast<void *>(music_record_get_play_count),
         .link = nullptr,
     },
     {
         .name = "music_record_get_sequence_record_set",
+        .ordinal = 0,
         .patch = reinterpret_cast<void *>(music_record_get_sequence_record_set),
         .link = nullptr,
     },
     {
         .name = "music_record_get_total_best_score",
+        .ordinal = 0,
         .patch = reinterpret_cast<void *>(music_record_get_total_best_score),
         .link = nullptr,
     },
     {
         .name = "music_record_is_all_played",
+        .ordinal = 0,
         .patch = reinterpret_cast<void *>(music_record_is_all_played),
         .link = nullptr,
     },
     {
         .name = "music_record_is_all_yellow",
+        .ordinal = 0,
         .patch = reinterpret_cast<void *>(music_record_is_all_yellow),
         .link = nullptr,
     },
     {
         .name = "music_record_is_any_played",
+        .ordinal = 0,
         .patch = reinterpret_cast<void *>(music_record_is_any_played),
         .link = nullptr,
     },
     {
         .name = "music_record_is_cleared",
+        .ordinal = 0,
         .patch = reinterpret_cast<void *>(music_record_is_cleared),
         .link = nullptr,
     },
     {
         .name = "music_record_is_excellent",
+        .ordinal = 0,
         .patch = reinterpret_cast<void *>(music_record_is_excellent),
         .link = nullptr,
     },
     {
         .name = "music_record_is_full_combo",
+        .ordinal = 0,
         .patch = reinterpret_cast<void *>(music_record_is_full_combo),
         .link = nullptr,
     },
     {
         .name = "music_record_is_no_gray",
+        .ordinal = 0,
         .patch = reinterpret_cast<void *>(music_record_is_no_gray),
         .link = nullptr,
     },
     {
         .name = "?music_record_is_played@@YA_NIEW4MUSIC_RECORD_TYPE@@@Z",
+        .ordinal = 0,
         .patch = reinterpret_cast<void *>(music_record_is_played),
         .link = nullptr,
     },
     {
         .name = "music_record_merge_music_bar",
+        .ordinal = 0,
         .patch = reinterpret_cast<void *>(music_record_merge_music_bar),
         .link = nullptr,
     },
     {
         .name = "music_record_set_best_music_rate",
+        .ordinal = 0,
         .patch = reinterpret_cast<void *>(music_record_set_best_music_rate),
         .link = nullptr,
     },
     {
         .name = "music_record_set_best_score",
+        .ordinal = 0,
         .patch = reinterpret_cast<void *>(music_record_set_best_score),
         .link = nullptr,
     },
     {
         .name = "music_record_set_clear_count",
+        .ordinal = 0,
         .patch = reinterpret_cast<void *>(music_record_set_clear_count),
         .link = nullptr,
     },
     {
         .name = "music_record_set_clear_flag",
+        .ordinal = 0,
         .patch = reinterpret_cast<void *>(music_record_set_clear_flag),
         .link = nullptr,
     },
     {
         .name = "music_record_set_excellent_count",
+        .ordinal = 0,
         .patch = reinterpret_cast<void *>(music_record_set_excellent_count),
         .link = nullptr,
     },
     {
         .name = "music_record_set_full_combo_count",
+        .ordinal = 0,
         .patch = reinterpret_cast<void *>(music_record_set_full_combo_count),
         .link = nullptr,
     },
     {
         .name = "music_record_set_jubility",
+        .ordinal = 0,
         .patch = reinterpret_cast<void *>(music_record_set_jubility),
         .link = nullptr,
     },
     {
         .name = "music_record_set_play_count",
+        .ordinal = 0,
         .patch = reinterpret_cast<void *>(music_record_set_play_count),
         .link = nullptr,
     },
     {
         .name = "music_shareable_add_shareable_music",
+        .ordinal = 0,
         .patch = reinterpret_cast<void *>(music_shareable_add_shareable_music),
         .link = nullptr,
     },
     {
         .name = "music_shareable_initialize",
+        .ordinal = 0,
         .patch = reinterpret_cast<void *>(music_shareable_initialize),
         .link = nullptr,
     },
     {
         .name = "music_shareable_is_shareable_music",
+        .ordinal = 0,
         .patch = reinterpret_cast<void *>(music_shareable_is_shareable_music),
         .link = nullptr,
     },
     {
         .name = "music_shareable_set_flag",
+        .ordinal = 0,
         .patch = reinterpret_cast<void *>(music_shareable_set_flag),
         .link = nullptr,
     },
@@ -683,41 +785,49 @@ static const struct hook_symbol music_db_hooks[] = {
     /*
     {
         .name = "?GetInstance@BlackJacket@music_texture@@SAAAV12@XZ",
+        .ordinal = 0,
         .patch = reinterpret_cast<void *>(music_texture_BlackJacket_GetInstance),
         .link = nullptr,
     },
     {
         .name = "?ReadXmlNode@BlackJacket@music_texture@@QAE_NPAUT_PROPERTY_NODE@@@Z",
+        .ordinal = 0,
         .patch = reinterpret_cast<void *>(music_texture_BlackJacket_ReadXmlNode),
         .link = nullptr,
     },
     {
         .name = "?music_bonus_get_target_music_info@music_bonus_weekly@@YAXPBUJBMusicFlag_T@@AA_NAAI@Z",
+        .ordinal = 0,
         .patch = reinterpret_cast<void *>(music_bonus_weekly_music_bonus_get_target_music_info),
         .link = nullptr,
     },
     {
         .name = "?clear@music_bonus_weekly@@YAXXZ",
+        .ordinal = 0,
         .patch = reinterpret_cast<void *>(music_bonus_weekly_clear),
         .link = nullptr,
     },
     {
         .name = "?music_bonus_weekly_is_target_music@music_bonus_weekly@@YA_NPBUJBMusicFlag_T@@I@Z",
+        .ordinal = 0,
         .patch = reinterpret_cast<void *>(music_bonus_weekly_music_bonus_weekly_is_target_music),
         .link = nullptr,
     },
     {
         .name = "?clear@music_new@@YAXXZ",
+        .ordinal = 0,
         .patch = reinterpret_cast<void *>(music_new_clear),
         .link = nullptr,
     },
     {
         .name = "?get_list@music_new@@YAHHQAI@Z",
+        .ordinal = 0,
         .patch = reinterpret_cast<void *>(music_new_get_list),
         .link = nullptr,
     },
     {
         .name = "?read_xml_node@music_new@@YA_NPAUT_PROPERTY_NODE@@@Z",
+        .ordinal = 0,
         .patch = reinterpret_cast<void *>(music_new_read_xml_node),
         .link = nullptr,
     },
@@ -726,26 +836,31 @@ static const struct hook_symbol music_db_hooks[] = {
 static const struct hook_symbol gftools_hooks[] = {
     {
         .name = "GFHashMapRegist",
+        .ordinal = 0,
         .patch = reinterpret_cast<void *>(GFHashMapRegist),
         .link = nullptr,
     },
     {
         .name = "GFHashMapCreate",
+        .ordinal = 0,
         .patch = reinterpret_cast<void *>(GFHashMapCreate),
         .link = nullptr,
     },
     {
         .name = "GFHashMapKeyToValue",
+        .ordinal = 0,
         .patch = reinterpret_cast<void *>(GFHashMapKeyToValue),
         .link = nullptr,
     },
     {
         .name = "GFHashMapGetEntryList",
+        .ordinal = 0,
         .patch = reinterpret_cast<void *>(GFHashMapGetEntryList),
         .link = nullptr,
     },
     {
         .name = "GFHashMapRewindEntryList",
+        .ordinal = 0,
         .patch = reinterpret_cast<void *>(GFHashMapRewindEntryList),
         .link = nullptr,
     },

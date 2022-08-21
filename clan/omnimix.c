@@ -218,9 +218,6 @@ DLL_EXPORT bool __cdecl omnimix_dll_entry_init(char *sid_code, void *app_config)
     HANDLE process;
     HMODULE jubeat_handle, music_db_handle;
     MODULEINFO jubeat_info, music_db_info;
-#ifdef VERBOSE
-    uint8_t *jubeat, *music_db;
-#endif
 
     log_to_external(log_body_misc, log_body_info, log_body_warning, log_body_fatal);
 
@@ -240,10 +237,8 @@ DLL_EXPORT bool __cdecl omnimix_dll_entry_init(char *sid_code, void *app_config)
     }
 
 #ifdef VERBOSE
-    jubeat = (uint8_t *) jubeat_handle;
-    music_db = (uint8_t *) music_db_handle;
-
-    log_info("jubeat.dll = %p, music_db.dll = %p", jubeat, music_db);
+    log_info("jubeat.dll = %p", (void *) jubeat_handle);
+    log_info("music_db.dll = %p", (void *) music_db_handle);
     log_info("sid_code = %s", sid_code);
 #endif
 
@@ -274,5 +269,9 @@ DLL_EXPORT bool __cdecl omnimix_dll_entry_init(char *sid_code, void *app_config)
 
 BOOL WINAPI DllMain(HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpvReserved)
 {
+    (void) hinstDLL;
+    (void) fdwReason;
+    (void) lpvReserved;
+
     return TRUE;
 }
