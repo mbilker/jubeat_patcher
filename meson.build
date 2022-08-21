@@ -11,7 +11,7 @@ project(
         'b_vscrt=mt',
         'c_std=c11',
         'c_winlibs=[]',
-        'cpp_eh=s',
+        'cpp_eh=none',
         'cpp_std=c++20',
         'warning_level=2',
     ],
