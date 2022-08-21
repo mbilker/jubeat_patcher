@@ -79,16 +79,18 @@ const struct patch_t song_unlock_patch {
 // clang-format on
 
 // dunno how reliable this will be - it's the call to crc32 just near fn start
-const uint8_t d3_load_pattern[] = { 0xC7, 0x45, 0xF4, 0xFF, 0xFF, 0xFF, 0xFF, 0xE8, 0x77, 0x88, 0x00, 0x00, 0x8B };
-const ssize_t d3_load_offset = -0x1D;
-const char *extra_banners[] = {
+static const uint8_t d3_load_pattern[] = {
+    0xC7, 0x45, 0xF4, 0xFF, 0xFF, 0xFF, 0xFF, 0xE8, 0x77, 0x88, 0x00, 0x00, 0x8B,
+};
+static const ssize_t d3_load_offset = -0x1D;
+static const char *extra_banners[] = {
     "L44FO_BNR_J_OM_001",
     "L44FO_BNR_J_OM_002",
 };
 
-int (__fastcall *d3_package_load)(const char *name);
+static int (__fastcall *d3_package_load)(const char *name);
 
-int __fastcall hook_d3_package_load(const char *name)
+static int __fastcall hook_d3_package_load(const char *name)
 {
     // log_info("d3_package_load(\"%s\")", name);
 
