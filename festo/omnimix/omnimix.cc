@@ -81,7 +81,7 @@ const struct patch_t song_unlock_patch {
 // dunno how reliable this will be - it's the call to crc32 just near fn start
 const uint8_t d3_load_pattern[] = { 0xC7, 0x45, 0xF4, 0xFF, 0xFF, 0xFF, 0xFF, 0xE8, 0x77, 0x88, 0x00, 0x00, 0x8B };
 const ssize_t d3_load_offset = -0x1D;
-const std::vector<const char*> extra_banners = {
+const char *extra_banners[] = {
     "L44FO_BNR_J_OM_001",
     "L44FO_BNR_J_OM_002",
 };
@@ -93,9 +93,9 @@ int __fastcall hook_d3_package_load(const char *name)
     // log_info("d3_package_load(\"%s\")", name);
 
     // loading banners, add our own
-    if(strcmp(name, "L44_BNR_BIG_ID99999999") == 0) {
+    if (strcmp(name, "L44_BNR_BIG_ID99999999") == 0) {
         // log_info("Loading extra omni banners");
-        for(auto banner : extra_banners) {
+        for (const char *banner : extra_banners) {
             log_info("... %s", banner);
             d3_package_load(banner);
         }
