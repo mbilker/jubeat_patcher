@@ -163,9 +163,6 @@ extern "C" DLL_EXPORT bool __cdecl omnimix_dll_entry_init(char *sid_code, void *
     HANDLE process;
     HMODULE jubeat_handle, music_db_handle;
     MODULEINFO jubeat_info, music_db_info;
-#ifdef VERBOSE
-    uint8_t *jubeat, *music_db;
-#endif
 
     log_to_external(log_body_misc, log_body_info, log_body_warning, log_body_fatal);
 
@@ -185,10 +182,8 @@ extern "C" DLL_EXPORT bool __cdecl omnimix_dll_entry_init(char *sid_code, void *
     }
 
 #ifdef VERBOSE
-    jubeat = (uint8_t *) jubeat_handle;
-    music_db = (uint8_t *) music_db_handle;
-
-    log_info("jubeat.dll = %p, music_db.dll = %p", jubeat, music_db);
+    log_info("jubeat.dll = %p", reinterpret_cast<void *>(jubeat_handle));
+    log_info("music_db.dll = %p", reinterpret_cast<void *>(music_db_handle));
     log_info("sid_code = %s", sid_code);
 #endif
 
@@ -215,7 +210,10 @@ extern "C" DLL_EXPORT bool __cdecl omnimix_dll_entry_init(char *sid_code, void *
         std::size(d3_load_pattern)) + d3_load_offset;
 
     MH_Initialize();
-    MH_CreateHook(d3_package_load_loc, (void*)hook_d3_package_load, (void**)&d3_package_load);
+    MH_CreateHook(
+        d3_package_load_loc,
+        reinterpret_cast<void *>(hook_d3_package_load),
+        reinterpret_cast<void **>(&d3_package_load));
     MH_EnableHook(MH_ALL_HOOKS);
 
     CloseHandle(process);
