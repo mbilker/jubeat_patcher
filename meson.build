@@ -40,6 +40,12 @@ if cc.get_argument_syntax() != 'msvc'
             'cpp',
         ]
     )
+    add_project_arguments(
+        '-Wold-style-cast',
+        language: [
+            'cpp',
+        ]
+    )
 
     add_project_link_arguments(
         '-Wl,--exclude-all-symbols',

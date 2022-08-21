@@ -106,20 +106,20 @@ const struct patch_t song_unlock_patch {
 // clang-format on
 
 static int stack_replacer[MAX_SONGS];
-const size_t mdb_arr_patch = (size_t) stack_replacer;
+static const uintptr_t mdb_arr_patch = reinterpret_cast<uintptr_t>(stack_replacer);
 
 static uint8_t score_stack_replacer[MAX_SONGS][20];
-const size_t score_arr_patch = (size_t) score_stack_replacer;
+static const uintptr_t score_arr_patch = reinterpret_cast<uintptr_t>(score_stack_replacer);
 // the asm to replace needs the end of the array
-const size_t end_score_arr_patch = (size_t)(&score_stack_replacer[MAX_SONGS]);
+static const uintptr_t end_score_arr_patch = reinterpret_cast<uintptr_t>(&score_stack_replacer[MAX_SONGS]);
 
 // clang-format off
 
 #define U32_TO_CONST_BYTES_LE(x) \
-    (uint8_t) ((x) & 0xff), \
-    (uint8_t) (((x) >> 8) & 0xff), \
-    (uint8_t) (((x) >> 16) & 0xff), \
-    (uint8_t) (((x) >> 24) & 0xff)
+    static_cast<uint8_t>((x) & 0xff), \
+    static_cast<uint8_t>(((x) >> 8) & 0xff), \
+    static_cast<uint8_t>(((x) >> 16) & 0xff), \
+    static_cast<uint8_t>(((x) >> 24) & 0xff)
 
 const struct patch_t mdb_array_1_0 {
     .name = "mdb 1.0",

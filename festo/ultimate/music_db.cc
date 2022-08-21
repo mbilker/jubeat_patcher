@@ -21,6 +21,13 @@
 
 #include "music_db.h"
 
+// There is a lot in flux here so let's make this easier
+#ifdef __GNUC__
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunused-function"
+#pragma GCC diagnostic ignored "-Wunused-parameter"
+#endif
+
 // default: 2 MB
 // ultimate: 6 MB
 #define MDB_XML_SIZE (6 * 1024 * 1024)
@@ -914,8 +921,9 @@ static void *__cdecl mem_set(void *s, int c, size_t n)
     if (n == 1296) {
         log_body_info("ultimate", "hooked d3_initialize");
 
-        uint16_t *limit = (uint16_t *) ((DWORD) s + 0xAEE8);
-        void **buf = (void **) ((DWORD) s - 0x6F3598);
+        auto s_ptr = reinterpret_cast<uintptr_t>(s);
+        auto limit = reinterpret_cast<uint16_t *>(s_ptr + 0xAEE8);
+        auto buf = reinterpret_cast<void **>(s_ptr - 0x6F3598);
 
         const size_t new_sz = 8192 * 28 * 4;
         size_t new_limit = new_sz / 28;
@@ -976,9 +984,9 @@ static void debug_music_entry(music_db_entry_t *song)
     log_body_misc("ultimate", "parent_id = %d", song->parent_id);
     log_body_misc("ultimate", "name_sort_id_j = %x", song->name_sort_id_j);
     log_body_misc("ultimate", "name_string = %s", song->name_string);
-    log_body_misc("ultimate", "level_bsc = %d", (int) song->level_bsc);
-    log_body_misc("ultimate", "level_adv = %d", (int) song->level_adv);
-    log_body_misc("ultimate", "level_ext = %d", (int) song->level_ext);
+    log_body_misc("ultimate", "level_bsc = %d", static_cast<int>(song->level_bsc));
+    log_body_misc("ultimate", "level_adv = %d", static_cast<int>(song->level_adv));
+    log_body_misc("ultimate", "level_ext = %d", static_cast<int>(song->level_ext));
     log_body_misc("ultimate", "detail_level_bsc = %f", song->detail_level_bsc);
     log_body_misc("ultimate", "detail_level_adv = %f", song->detail_level_adv);
     log_body_misc("ultimate", "detail_level_ext = %f", song->detail_level_ext);
@@ -986,7 +994,7 @@ static void debug_music_entry(music_db_entry_t *song)
     log_body_misc("ultimate", "bpm_min = %f", song->bpm_min);
     log_body_misc("ultimate", "music_type = %d", song->music_type);
     log_body_misc("ultimate", "version = %x", song->version);
-    log_body_misc("ultimate", "pos_index = %d", (int) song->pos_index);
+    log_body_misc("ultimate", "pos_index = %d", static_cast<int>(song->pos_index));
     log_body_misc("ultimate", "index_start = %d", song->index_start);
     log_body_misc("ultimate", "is_default = %d", song->is_default);
     log_body_misc("ultimate", "is_card_default = %d", song->is_card_default);
@@ -1000,7 +1008,7 @@ static void debug_music_entry(music_db_entry_t *song)
     log_body_misc("ultimate", "genre_list_classical = %d", song->genre_list[4]);
     log_body_misc("ultimate", "genre_list_original = %d", song->genre_list[5]);
     log_body_misc("ultimate", "genre_list_toho = %d", song->genre_list[6]);
-    log_body_misc("ultimate", "grouping_category = %lX", (long int) song->grouping_category);
+    log_body_misc("ultimate", "grouping_category = %lX", static_cast<long int>(song->grouping_category));
     log_body_misc("ultimate", "pack_id = %d", song->pack_id);
 }
 
@@ -1173,13 +1181,13 @@ static enum music_load_res music_load_individual(int index, void *node)
     property_node_refer(nullptr, node, "/level_ext", PROP_TYPE_u8, &song->level_ext, 1);
     if (property_node_refer(
             nullptr, node, "/detail_level_bsc", PROP_TYPE_float, &song->detail_level_bsc, 4) < 0)
-        song->detail_level_bsc = (float) song->level_bsc;
+        song->detail_level_bsc = static_cast<float>(song->level_bsc);
     if (property_node_refer(
             nullptr, node, "/detail_level_adv", PROP_TYPE_float, &song->detail_level_adv, 4) < 0)
-        song->detail_level_adv = (float) song->level_adv;
+        song->detail_level_adv = static_cast<float>(song->level_adv);
     if (property_node_refer(
             nullptr, node, "/detail_level_ext", PROP_TYPE_float, &song->detail_level_ext, 4) < 0)
-        song->detail_level_ext = (float) song->level_ext;
+        song->detail_level_ext = static_cast<float>(song->level_ext);
     property_node_refer(nullptr, node, "/pos_index", PROP_TYPE_s16, &song->pos_index, 2);
     property_node_refer(nullptr, node, "/is_default", PROP_TYPE_s32, &song->is_default, 4);
     property_node_refer(
@@ -1245,8 +1253,9 @@ static enum music_load_res music_load_individual(int index, void *node)
 
 static int music_db_entry_sorter(const void *_a, const void *_b)
 {
-    music_db_entry_t *a = *(music_db_entry_t **) _a;
-    music_db_entry_t *b = *(music_db_entry_t **) _b;
+    auto a = *reinterpret_cast<const music_db_entry_t *const *>(_a);
+    auto b = *reinterpret_cast<const music_db_entry_t *const *>(_b);
+
     return stricmp(a->title_name, b->title_name);
 }
 
@@ -1460,7 +1469,7 @@ static uint8_t __cdecl music_db_get_level_detail(int id, uint8_t difficulty)
             return 0;
     }
 
-    return ((uint8_t) round(diff * 10.0)) % 10;
+    return static_cast<uint8_t>(round(diff * 10.0)) % 10;
 }
 
 static int __cdecl music_db_get_music_name_head_index(int id)
@@ -1608,7 +1617,7 @@ static bool __cdecl music_db_is_hold_marker(int id)
 
 static bool __cdecl music_db_is_matched_select_type(uint8_t type, int id, uint8_t difficulty)
 {
-    int8_t level = (int8_t) music_db_get_level(id, difficulty);
+    int8_t level = static_cast<int8_t>(music_db_get_level(id, difficulty));
 
     switch (type) {
         case 1:
@@ -1666,28 +1675,35 @@ static bool __cdecl music_db_is_permitted(int id)
 // filtering when we absolutely have to.
 static bool __cdecl music_db_is_possession_for_contained_music_list(uint8_t flags[FLAG_LEN], int id)
 {
-    static uint8_t *hot_music = nullptr;
     static uint8_t *data_start = nullptr;
     static uint8_t *data_end = nullptr;
 
+    static uint8_t *hot_music = nullptr;
+
     if (data_start == nullptr) {
-        auto dll_dos = (PIMAGE_DOS_HEADER) GetModuleHandle("jubeat.dll");
+        auto dll_dos = reinterpret_cast<PIMAGE_DOS_HEADER>(GetModuleHandle("jubeat.dll"));
         GFAssert(dll_dos->e_magic == IMAGE_DOS_SIGNATURE);
 
-        auto nt_headers = (PIMAGE_NT_HEADERS)((uint8_t *) dll_dos + dll_dos->e_lfanew);
+        auto nt_headers = reinterpret_cast<PIMAGE_NT_HEADERS>(
+                reinterpret_cast<uint8_t *>(dll_dos) + dll_dos->e_lfanew);
+        auto section_count = nt_headers->FileHeader.NumberOfSections;
 
         // iterate sections
-        auto section_count = nt_headers->FileHeader.NumberOfSections;
         PIMAGE_SECTION_HEADER section_header = IMAGE_FIRST_SECTION(nt_headers);
         for (size_t i = 0; i < section_count; section_header++, i++) {
-            if (strcmp(".data", (char *) section_header->Name) != 0) {
+            auto name = reinterpret_cast<const char *>(section_header->Name);
+
+            if (strcmp(".data", name) != 0) {
                 continue;
             }
 
-            data_start = (uint8_t *) ((DWORD) dll_dos + section_header->VirtualAddress);
+            data_start = reinterpret_cast<uint8_t *>(
+                    reinterpret_cast<uintptr_t>(dll_dos) + section_header->VirtualAddress);
             data_end = data_start + section_header->Misc.VirtualSize;
 
             log_body_misc("ultimate", ".data found from %p to %p", data_start, data_end);
+
+            break;
         }
 
         GFAssert(data_start != nullptr);
@@ -2074,3 +2090,7 @@ int __cdecl music_new_read_xml_node() {
 
 // intentionally ignored:
 // music_db_is_tutorial
+
+#ifdef __GNUC__
+#pragma GCC diagnostic pop
+#endif
