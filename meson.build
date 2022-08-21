@@ -58,6 +58,10 @@ psapi_lib = cc.find_library('psapi')
 inc = include_directories('.')
 capnhook = subproject('capnhook')
 
+cmake = import('cmake')
+minhook_sub = cmake.subproject('minhook')
+minhook = minhook_sub.dependency('minhook')
+
 subdir('imports')
 
 subdir('util')

@@ -3,6 +3,7 @@
 # Build directories
 /_build32
 /_build
+/build
 
 # External dependencies
 subprojects/capnhook

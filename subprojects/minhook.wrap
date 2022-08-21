@@ -1,0 +1,4 @@
+[wrap-git]
+directory = minhook
+url = https://github.com/TsudaKageyu/minhook
+revision = 4a455528f61b5a375b1f9d44e7d296d47f18bb18
