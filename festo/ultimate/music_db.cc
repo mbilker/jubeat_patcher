@@ -15,9 +15,9 @@
 
 #include "pe/iat.h"
 
-#include "util/robin_hood.h"
 #include "util/lib.h"
 #include "util/log.h"
+#include "util/robin_hood.h"
 
 #include "music_db.h"
 
@@ -103,7 +103,8 @@ static bool __cdecl music_db_is_matched_select_type(uint8_t type, int id, uint8_
 // bool __cdecl music_db_is_new();
 // bool __cdecl music_db_is_no_gray();
 static bool __cdecl music_db_is_permitted(int id);
-static bool __cdecl music_db_is_possession_for_contained_music_list(uint8_t flags[FLAG_LEN], int a2);
+static bool __cdecl music_db_is_possession_for_contained_music_list(
+    uint8_t flags[FLAG_LEN], int a2);
 // bool __cdecl music_db_is_random_or_matching_select();
 // bool __cdecl music_db_is_random_select();
 // int __cdecl music_db_music_bar_to_dot_array();
@@ -1008,7 +1009,8 @@ static void debug_music_entry(music_db_entry_t *song)
     log_body_misc("ultimate", "genre_list_classical = %d", song->genre_list[4]);
     log_body_misc("ultimate", "genre_list_original = %d", song->genre_list[5]);
     log_body_misc("ultimate", "genre_list_toho = %d", song->genre_list[6]);
-    log_body_misc("ultimate", "grouping_category = %lX", static_cast<long int>(song->grouping_category));
+    log_body_misc(
+        "ultimate", "grouping_category = %lX", static_cast<long int>(song->grouping_category));
     log_body_misc("ultimate", "pack_id = %d", song->pack_id);
 }
 
@@ -1276,7 +1278,7 @@ static bool __cdecl music_db_initialize(void)
         log_fatal("GetModuleHandle(\"avs2-core.dll\") failed: 0x%08lx", GetLastError());
     }
     if ((avs_fs_lstat = get_proc_address<decltype(avs_fs_lstat)>(
-            avs2_core_handle, "XCgsqzn0000063")) == nullptr)
+             avs2_core_handle, "XCgsqzn0000063")) == nullptr)
     {
         log_fatal("GetProcAddress(\"avs_fs_lstat\") failed: 0x%08lx", GetLastError());
     }
@@ -1685,7 +1687,7 @@ static bool __cdecl music_db_is_possession_for_contained_music_list(uint8_t flag
         GFAssert(dll_dos->e_magic == IMAGE_DOS_SIGNATURE);
 
         auto nt_headers = reinterpret_cast<PIMAGE_NT_HEADERS>(
-                reinterpret_cast<uint8_t *>(dll_dos) + dll_dos->e_lfanew);
+            reinterpret_cast<uint8_t *>(dll_dos) + dll_dos->e_lfanew);
         auto section_count = nt_headers->FileHeader.NumberOfSections;
 
         // iterate sections
@@ -1698,7 +1700,7 @@ static bool __cdecl music_db_is_possession_for_contained_music_list(uint8_t flag
             }
 
             data_start = reinterpret_cast<uint8_t *>(
-                    reinterpret_cast<uintptr_t>(dll_dos) + section_header->VirtualAddress);
+                reinterpret_cast<uintptr_t>(dll_dos) + section_header->VirtualAddress);
             data_end = data_start + section_header->Misc.VirtualSize;
 
             log_body_misc("ultimate", ".data found from %p to %p", data_start, data_end);

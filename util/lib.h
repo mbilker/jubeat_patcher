@@ -9,7 +9,7 @@
 #pragma GCC diagnostic ignored "-Wcast-function-type"
 #endif
 
-template<typename T>
+template <typename T>
 inline T get_proc_address(HMODULE module, const char *proc_name)
 {
     return reinterpret_cast<T>(GetProcAddress(module, proc_name));

@@ -7,8 +7,8 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-#include "hook/table.h"
 #include "hook/pe.h"
+#include "hook/table.h"
 
 #include "util/log.h"
 #include "util/mem.h"

@@ -111,7 +111,8 @@ static const uintptr_t mdb_arr_patch = reinterpret_cast<uintptr_t>(stack_replace
 static uint8_t score_stack_replacer[MAX_SONGS][20];
 static const uintptr_t score_arr_patch = reinterpret_cast<uintptr_t>(score_stack_replacer);
 // the asm to replace needs the end of the array
-static const uintptr_t end_score_arr_patch = reinterpret_cast<uintptr_t>(&score_stack_replacer[MAX_SONGS]);
+static const uintptr_t end_score_arr_patch =
+    reinterpret_cast<uintptr_t>(&score_stack_replacer[MAX_SONGS]);
 
 // clang-format off
 
