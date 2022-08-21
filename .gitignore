@@ -7,3 +7,4 @@
 
 # External dependencies
 subprojects/capnhook
+subprojects/minhook
