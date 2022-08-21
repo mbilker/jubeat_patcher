@@ -5,6 +5,7 @@ util_lib = static_library(
     sources: [
         'defs.h',
         'glue.h',
+        'lib.h',
         'log.c',
         'log.h',
         'mem.c',

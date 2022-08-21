@@ -16,6 +16,7 @@
 #include "pe/iat.h"
 
 #include "util/robin_hood.h"
+#include "util/lib.h"
 #include "util/log.h"
 
 #include "music_db.h"
@@ -1150,8 +1151,8 @@ static bool __cdecl music_db_initialize(void)
     if ((avs2_core_handle = GetModuleHandleA("avs2-core.dll")) == nullptr) {
         log_fatal("GetModuleHandle(\"avs2-core.dll\") failed: 0x%08lx", GetLastError());
     }
-    if ((avs_fs_lstat = (decltype(avs_fs_lstat)) GetProcAddress(
-             avs2_core_handle, "XCgsqzn0000063")) == nullptr)
+    if ((avs_fs_lstat = get_proc_address<decltype(avs_fs_lstat)>(
+            avs2_core_handle, "XCgsqzn0000063")) == nullptr)
     {
         log_fatal("GetProcAddress(\"avs_fs_lstat\") failed: 0x%08lx", GetLastError());
     }
