@@ -1,0 +1,33 @@
+name: Build DLLs
+
+on: [push, pull_request]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3
+    - uses: actions/setup-python@v4
+      with:
+        python-version: '3.10'
+
+    - name: Set up MinGW
+      uses: egor-tensin/setup-mingw@v2
+      with:
+        platform: x86
+        cc: 0
+
+    - name: Setup meson/ninja
+      run: pip install meson ninja
+
+    - name: Build
+      run: |
+        meson build --cross-file cross-mingw-32.txt
+        ninja -C build
+
+    - name: Save artifacts
+      uses: actions/upload-artifact@v3
+      with:
+        name: jubeat-patcher
+        path: build/**/*.dll
