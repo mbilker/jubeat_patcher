@@ -14,6 +14,6 @@ shared_library(
         util_lib,
     ],
     sources: [
-        'omnimix.c',
+        'omnimix.cc',
     ],
 )

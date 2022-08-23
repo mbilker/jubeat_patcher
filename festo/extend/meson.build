@@ -15,6 +15,7 @@ shared_library(
         pattern_lib,
         pe_lib,
         util_lib,
+        festo_common_lib,
     ],
     sources: [
         'extend.cc',

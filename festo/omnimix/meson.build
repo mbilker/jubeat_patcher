@@ -13,6 +13,7 @@ shared_library(
         jubeat_lib,
         pattern_lib,
         util_lib,
+        festo_common_lib,
     ],
     sources: [
         'omnimix.cc',

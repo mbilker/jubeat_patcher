@@ -15,12 +15,11 @@ shared_library(
         pattern_lib,
         pe_lib,
         util_lib,
+        festo_common_lib,
     ],
     sources: [
         'ultimate.cc',
         'music_db.cc',
-        'music_db.h',
         'pkfs.c',
-        'pkfs.h',
     ],
 )
