@@ -4,7 +4,6 @@
 #include <cstdlib>
 
 #include <math.h>
-#include <string.h>
 
 // clang-format off
 #include <windows.h>
@@ -18,6 +17,7 @@
 #include "util/lib.h"
 #include "util/log.h"
 #include "util/robin_hood.h"
+#include "util/str.h"
 
 #include "music_db.h"
 
@@ -1664,7 +1664,7 @@ static bool __cdecl music_db_is_possession_for_contained_music_list(uint8_t flag
         for (size_t i = 0; i < section_count; section_header++, i++) {
             auto name = reinterpret_cast<const char *>(section_header->Name);
 
-            if (strcmp(".data", name) != 0) {
+            if (!str_eq(".data", name)) {
                 continue;
             }
 

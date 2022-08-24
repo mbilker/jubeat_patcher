@@ -3,11 +3,11 @@
 #include <stdarg.h>
 #include <stdint.h>
 #include <stdio.h>
-#include <string.h>
 
 #include "imports/avs2-core/avs.h"
 
 //#include "util/log.h"
+#include "util/str.h"
 
 size_t __cdecl pkfs_avs_strlcpy(char *dst, const char *src, size_t dst_size)
 {
@@ -48,7 +48,7 @@ int __cdecl pkfs_avs_snprintf(char *dst, size_t dst_size, const char *fmt, ...)
     va_list args;
     va_start(args, fmt);
 
-    if (strcmp(fmt, "/data/imagefs/msc/%s/%s") == 0) {
+    if (str_eq(fmt, "/data/imagefs/msc/%s/%s")) {
         music_id = va_arg(args, const char *);
         str2 = va_arg(args, const char *);
         va_end(args);
@@ -62,7 +62,7 @@ int __cdecl pkfs_avs_snprintf(char *dst, size_t dst_size, const char *fmt, ...)
         } else {
             return snprintf(dst, dst_size, fmt, music_id, str2);
         }
-    } else if (strcmp(fmt, "%s/d%c%c%c%c%c%c%c/%s_%s.ifs") == 0) {
+    } else if (str_eq(fmt, "%s/d%c%c%c%c%c%c%c/%s_%s.ifs")) {
         dir = va_arg(args, const char *);
         for (size_t i = 0; i < 7; i++) {
             music_dir[i] = (char) va_arg(args, int);
@@ -120,7 +120,7 @@ int __cdecl pkfs_avs_snprintf(char *dst, size_t dst_size, const char *fmt, ...)
                 music_id,
                 msc);
         }
-    } else if (strcmp(fmt, "/data/imagefs/%s/%s") == 0) {
+    } else if (str_eq(fmt, "/data/imagefs/%s/%s")) {
         music_id = va_arg(args, const char *);
         str2 = va_arg(args, const char *);
         va_end(args);
