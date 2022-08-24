@@ -10,8 +10,6 @@
 #include "imports/avs2-core/avs.h"
 #include "imports/jubeat.h"
 
-#include "pattern/pattern.h"
-
 #include "util/defs.h"
 #include "util/log.h"
 #include "util/mem.h"

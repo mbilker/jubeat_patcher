@@ -10,12 +10,12 @@ shared_library(
     ],
     link_with: [
         avs_1703_lib,
+        festo_common_lib,
         gftools_lib,
         jubeat_lib,
         pattern_lib,
         pe_lib,
         util_lib,
-        festo_common_lib,
     ],
     sources: [
         'extend.cc',
