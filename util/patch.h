@@ -1,5 +1,6 @@
-#ifndef UTIL_PATCH_H
-#define UTIL_PATCH_H
+#pragma once
+
+#ifdef __cplusplus
 
 // clang-format off
 #include <windows.h>
@@ -24,4 +25,4 @@ struct patch_t {
 
 void do_patch(HANDLE process, const MODULEINFO &module_info, const struct patch_t &patch);
 
-#endif // UTIL_PATCH_H
+#endif
