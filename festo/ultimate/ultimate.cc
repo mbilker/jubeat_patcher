@@ -204,7 +204,7 @@ const struct patch_t mdb_array_3_6 {
     .data_offset = 2,
 };
 
-static std::vector<const char*> BNR_TEXTURES = {
+static const char *BNR_TEXTURES[] = {
     "L44FO_BNR_J_OM_001",
     "L44FO_BNR_J_OM_002",
     "L44FO_BNR_J_EX_001",
@@ -378,7 +378,7 @@ extern "C" DLL_EXPORT bool __cdecl ultimate_dll_entry_init(char *sid_code, void 
 
     hook_music_db(process, jubeat_handle, music_db_handle);
     hook_pkfs_fs_open(process, pkfs_handle);
-    bnr_hook_init(&jubeat_info, BNR_TEXTURES);
+    bnr_hook_init(jubeat_info, BNR_TEXTURES);
     festo_apply_common_patches(process, jubeat_handle, music_db_info);
 
     CloseHandle(process);

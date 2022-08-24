@@ -1,7 +1,5 @@
 #define LOG_MODULE "extend"
 
-#include <vector>
-
 // clang-format off
 #include <windows.h>
 #include <psapi.h>
@@ -74,7 +72,7 @@ const struct patch_t music_plus_patch {
     .data_offset = 6,
 };
 
-static std::vector<const char*> BNR_TEXTURES = {
+static const char *BNR_TEXTURES[] = {
     "L44FO_BNR_J_EX_001",
     "L44FO_BNR_J_EX_002",
     "L44FO_BNR_J_EX_003",
@@ -221,7 +219,7 @@ extern "C" DLL_EXPORT bool __cdecl extend_dll_entry_init(char *sid_code, void *a
 
     hook_music_db(process, jubeat_handle);
     hook_pkfs_fs_open(process, pkfs_handle);
-    bnr_hook_init(&jubeat_info, BNR_TEXTURES);
+    bnr_hook_init(jubeat_info, BNR_TEXTURES);
 
     CloseHandle(process);
 

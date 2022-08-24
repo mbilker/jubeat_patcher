@@ -1,13 +1,13 @@
 #define LOG_MODULE "bnr-hook"
 
-#include "bnr_hook.h"
-#include "festo.h"
-
 #include "pattern/pattern.h"
 
 #include "util/log.h"
 
 #include "MinHook.h"
+
+#include "bnr_hook.h"
+#include "festo.h"
 
 // dunno how reliable this will be - it's the call to crc32 just near fn start
 static const uint8_t d3_load_pattern[] = {
@@ -15,8 +15,7 @@ static const uint8_t d3_load_pattern[] = {
 };
 static const ssize_t d3_load_offset = -0x1D;
 
-
-static std::vector<const char*> extra_paths;
+static std::span<const char *> EXTRA_PATHS;
 
 static int (__fastcall *d3_package_load)(const char *name);
 
@@ -27,7 +26,7 @@ static int __fastcall hook_d3_package_load(const char *name)
     // loading banners, add our own
     if (strcmp(name, "L44_BNR_BIG_ID99999999") == 0) {
         // log_info("Loading extra omni banners");
-        for (const char *banner : extra_paths) {
+        for (const char *banner : EXTRA_PATHS) {
             log_info("... %s", banner);
             d3_package_load(banner);
         }
@@ -36,16 +35,17 @@ static int __fastcall hook_d3_package_load(const char *name)
     return d3_package_load(name);
 }
 
-void bnr_hook_init(LPMODULEINFO jubeat_info, std::vector<const char*> _extra_paths)
+void bnr_hook_init(const MODULEINFO &jubeat_info, std::span<const char *> extra_paths)
 {
-    extra_paths = _extra_paths;
+    EXTRA_PATHS = std::move(extra_paths);
 
     void *d3_package_load_loc = find_pattern(
-        reinterpret_cast<uint8_t *>(jubeat_info->lpBaseOfDll),
-        jubeat_info->SizeOfImage,
+        reinterpret_cast<uint8_t *>(jubeat_info.lpBaseOfDll),
+        jubeat_info.SizeOfImage,
         d3_load_pattern,
         nullptr,
-        std::size(d3_load_pattern)) + d3_load_offset;
+        std::size(d3_load_pattern)) +
+        d3_load_offset;
 
     MH_Initialize();
     MH_CreateHook(

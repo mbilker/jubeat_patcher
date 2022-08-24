@@ -1,8 +1,10 @@
+#pragma once
+
 // clang-format off
 #include <windows.h>
 #include <psapi.h>
 // clang-format on
 
-#include <vector>
+#include <span>
 
-void bnr_hook_init(LPMODULEINFO jubeat_info, std::vector<const char*> _extra_paths);
+void bnr_hook_init(const MODULEINFO &jubeat_info, std::span<const char *> extra_paths);

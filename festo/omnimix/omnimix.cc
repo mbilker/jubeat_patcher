@@ -60,12 +60,12 @@ const struct patch_t music_omni_patch {
     .data_offset = 6,
 };
 
-// clang-format on
-
-static std::vector<const char*> extra_banners = {
+static const char *EXTRA_BANNERS[] = {
     "L44FO_BNR_J_OM_001",
     "L44FO_BNR_J_OM_002",
 };
+
+// clang-format on
 
 extern "C" DLL_EXPORT bool __cdecl omnimix_dll_entry_init(char *sid_code, void *app_config)
 {
@@ -113,7 +113,7 @@ extern "C" DLL_EXPORT bool __cdecl omnimix_dll_entry_init(char *sid_code, void *
     do_patch(process, music_db_info, music_db_limit_4);
     do_patch(process, music_db_info, music_omni_patch);
 
-    bnr_hook_init(&jubeat_info, extra_banners);
+    bnr_hook_init(jubeat_info, EXTRA_BANNERS);
 
     CloseHandle(process);
 
