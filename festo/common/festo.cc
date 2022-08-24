@@ -25,6 +25,23 @@ const struct patch_t song_unlock_patch {
 // after it's called
 static void *__cdecl mem_set(void *s, int c, size_t n)
 {
+    // Hey so you think these offsets need changing? well here's how to find
+    // 'em. First find d3_initialize which is super easy - the function that
+    // calls it prints a message, naming it. Next up are the buffer address and
+    // buffer size variables. The initialisation inlines a lot of copies into
+    // xmmwords which makes it irritating, but here's an example decompilation
+    // with the two key variables labelled - keep in mind that 'limit' was
+    // initially mis-identified as an xmmword and I had to turn it into 4 DWORDs
+    // to fix the decompile.
+    //   buf = dword_102C0B38 + 0x200000;
+    //   dword_109C3334 = 28 * limit + dword_102C0B38 + 0x200000;
+    //   dword_109B88D4 = dword_102C0B38 + 0x200000 + 28 * limit + 4 * dword_109C3200;
+    //   dword_109B88D8 = dword_109B88D4;
+    //   dword_109B88DC = dword_109B88D4;
+    //   dword_109B88E8 = dword_109B88D4 - dword_109B88CC;
+    //   mem_set(&s, 0, 1296);
+
+
     if (n == 1296) {
         log_body_info("ultimate", "hooked d3_initialize");
 
