@@ -1,5 +1,7 @@
 #define LOG_MODULE "extend"
 
+#include <vector>
+
 // clang-format off
 #include <windows.h>
 #include <psapi.h>
@@ -72,7 +74,7 @@ const struct patch_t music_plus_patch {
     .data_offset = 6,
 };
 
-static const char *BNR_TEXTURES[] = {
+static std::vector<const char *> BNR_TEXTURES {
     "L44FO_BNR_J_EX_001",
     "L44FO_BNR_J_EX_002",
     "L44FO_BNR_J_EX_003",

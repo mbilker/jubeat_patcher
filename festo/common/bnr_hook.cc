@@ -1,5 +1,7 @@
 #define LOG_MODULE "bnr-hook"
 
+#include <vector>
+
 #include "pattern/pattern.h"
 
 #include "util/log.h"
@@ -15,7 +17,7 @@ static const uint8_t d3_load_pattern[] = {
 };
 static const ssize_t d3_load_offset = -0x1D;
 
-static std::span<const char *> EXTRA_PATHS;
+static std::vector<const char *> EXTRA_PATHS;
 
 static int (__fastcall *d3_package_load)(const char *name);
 
@@ -35,7 +37,7 @@ static int __fastcall hook_d3_package_load(const char *name)
     return d3_package_load(name);
 }
 
-void bnr_hook_init(const MODULEINFO &jubeat_info, std::span<const char *> extra_paths)
+void bnr_hook_init(const MODULEINFO &jubeat_info, std::vector<const char *> extra_paths)
 {
     EXTRA_PATHS = std::move(extra_paths);
 

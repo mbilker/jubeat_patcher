@@ -1,5 +1,7 @@
 #define LOG_MODULE "omnimix"
 
+#include <vector>
+
 // clang-format off
 #include <windows.h>
 #include <psapi.h>
@@ -58,7 +60,7 @@ const struct patch_t music_omni_patch {
     .data_offset = 6,
 };
 
-static const char *EXTRA_BANNERS[] = {
+static std::vector<const char *> EXTRA_BANNERS {
     "L44FO_BNR_J_OM_001",
     "L44FO_BNR_J_OM_002",
 };

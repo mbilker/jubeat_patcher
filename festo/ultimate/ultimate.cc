@@ -204,7 +204,7 @@ const struct patch_t mdb_array_3_6 {
     .data_offset = 2,
 };
 
-static const char *BNR_TEXTURES[] = {
+static std::vector<const char *> BNR_TEXTURES {
     "L44FO_BNR_J_OM_001",
     "L44FO_BNR_J_OM_002",
     "L44FO_BNR_J_EX_001",
