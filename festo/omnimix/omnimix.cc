@@ -74,7 +74,8 @@ extern "C" DLL_EXPORT bool __cdecl omnimix_dll_entry_init(char *sid_code, void *
 
     log_to_external(log_body_misc, log_body_info, log_body_warning, log_body_fatal);
 
-    log_info("jubeat omnimix hook by Felix, Cannu & mon v" OMNIMIX_VERSION " (Build " __DATE__ " " __TIME__ ")");
+    log_info("jubeat omnimix hook by Felix, Cannu & mon v" OMNIMIX_VERSION " (Build " __DATE__
+             " " __TIME__ ")");
 
     pid = GetCurrentProcessId();
     process = OpenProcess(
