@@ -104,7 +104,7 @@ extern "C" DLL_EXPORT bool __cdecl omnimix_dll_entry_init(char *sid_code, void *
         log_fatal("GetModuleInformation(\"music_db.dll\") failed: %08lx", GetLastError());
     }
 
-    festo_apply_common_patches(process, jubeat_info, music_db_info);
+    festo_apply_common_patches(process, jubeat_handle, music_db_info);
 
     do_patch(process, jubeat_info, packlist);
     do_patch(process, music_db_info, music_db_limit_1);

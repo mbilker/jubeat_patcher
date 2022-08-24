@@ -166,8 +166,6 @@ static bool __cdecl music_db_is_possession_for_contained_music_list(
 // int __cdecl music_new_get_list();
 // int __cdecl music_new_read_xml_node();
 
-static void *__cdecl mem_set(void *s, int c, size_t n);
-
 static void __cdecl GFHashMapRegist(void *map, int key, void *val);
 static void *__cdecl GFHashMapCreate(void *mem, int mem_sz, int max_elems);
 static void *__cdecl GFHashMapKeyToValue(void *map, int key);
@@ -876,10 +874,6 @@ static const struct hook_symbol gftools_hooks[] = {
 
 void hook_music_db(HANDLE process, HMODULE jubeat_handle, HMODULE music_db_handle)
 {
-    // mem_set
-    hook_iat_ordinal(
-        process, jubeat_handle, "avs2-core.dll", 0xF4, reinterpret_cast<void *>(mem_set));
-
     iat_hook_table_apply(
         process, jubeat_handle, "music_db.dll", music_db_hooks, std::size(music_db_hooks));
     iat_hook_table_apply(
@@ -912,31 +906,6 @@ static bool __cdecl music_db_get_sound_filename(void *a1, void *a2, int music_id
 
     return GFSLPrintf(a1, a2, "%s/%09d/%s.bin", "data/music", music_id, use_idx ? "idx" : "bgm") >=
            0;
-}
-
-// d3_initialize calls this at its very end, so we use the lucky uniqueness
-// of the size parameter to overwrite the texture memory + texture limit
-// after it's called
-static void *__cdecl mem_set(void *s, int c, size_t n)
-{
-    if (n == 1296) {
-        log_body_info("ultimate", "hooked d3_initialize");
-
-        auto s_ptr = reinterpret_cast<uintptr_t>(s);
-        auto limit = reinterpret_cast<uint16_t *>(s_ptr + 0xAEE8);
-        auto buf = reinterpret_cast<void **>(s_ptr - 0x6F3598);
-
-        const size_t new_sz = 8192 * 28 * 4;
-        size_t new_limit = new_sz / 28;
-        void *new_buf = malloc(new_sz);
-
-        log_body_info("ultimate", "d3 limit %d->%d buf %p->%p", *limit, new_limit, *buf, new_buf);
-
-        *buf = new_buf;
-        *limit = new_limit;
-    }
-
-    return memset(s, c, n);
 }
 
 struct music_db_entry_t {
