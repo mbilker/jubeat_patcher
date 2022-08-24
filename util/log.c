@@ -119,6 +119,9 @@ void log_writer_file(void *ctx, const char *chars, size_t nchars)
 
 void log_writer_null(void *ctx, const char *chars, size_t nchars)
 {
+    (void) ctx;
+    (void) chars;
+    (void) nchars;
 }
 
 log_formatter_t log_impl_misc = log_builtin_misc;
