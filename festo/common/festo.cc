@@ -18,6 +18,46 @@ const struct patch_t song_unlock_patch {
     .data_offset = 0,
 };
 
+// force unlock markers "theme"
+const struct patch_t marker_unlock_patch_1 {
+    .name = "marker unlock patch 1",
+    .pattern = { 0x75, 0x47, 0x0F },
+    .data = { 0xEB },
+    .data_offset = 0,
+};
+const struct patch_t marker_unlock_patch_2 {
+    .name = "marker unlock patch 2",
+    .pattern = { 0x75, 0x2B, 0x0F, 0x28, 0x44, 0x24, 0x40, 0x0F, 0x29, 0x05, 0xD0 },
+    .data = { 0xEB },
+    .data_offset = 0,
+};
+const struct patch_t marker_unlock_patch_3 {
+    .name = "marker unlock patch 3",
+    .pattern = { 0x0F, 0xB7, 0x45, 0xB0, 0x89, 0x41 },
+    .data = { 0x31, 0xC0, 0x90, 0x90 },
+    .data_offset = 0,
+};
+
+// force unlock backgrounds
+const struct patch_t background_unlock_patch_1 {
+    .name = "background unlock patch 1",
+    .pattern = { 0x75, 0x43, 0x0F },
+    .data = { 0xEB },
+    .data_offset = 0,
+};
+const struct patch_t background_unlock_patch_2 {
+    .name = "background unlock patch 2",
+    .pattern = { 0x75, 0x2B, 0x0F, 0x28, 0x44, 0x24, 0x40, 0x0F, 0x29, 0x05, 0xF0 },
+    .data = { 0xEB },
+    .data_offset = 0,
+};
+const struct patch_t background_unlock_patch_3 {
+    .name = "background unlock patch 3",
+    .pattern = { 0x0F, 0xB7, 0x45, 0xB0, 0x89, 0x04 },
+    .data = { 0x31, 0xC0, 0x90, 0x90 },
+    .data_offset = 0,
+};
+
 // clang-format on
 
 // d3_initialize calls this at its very end, so we use the lucky uniqueness
@@ -66,6 +106,12 @@ void festo_apply_common_patches(
     HANDLE process, HMODULE jubeat_handle, const MODULEINFO &music_db_info)
 {
     do_patch(process, music_db_info, song_unlock_patch);
+    do_patch(process, jubeat_handle, marker_unlock_patch_1);
+    do_patch(process, jubeat_handle, marker_unlock_patch_2);
+    do_patch(process, jubeat_handle, marker_unlock_patch_3);
+    do_patch(process, jubeat_handle, background_unlock_patch_1);
+    do_patch(process, jubeat_handle, background_unlock_patch_2);
+    do_patch(process, jubeat_handle, background_unlock_patch_3);
 
     // increase d3 texture memory so all our added banners don't crash the game
     hook_iat_ordinal(
