@@ -913,9 +913,6 @@ struct music_db_entry_t {
     int parent_id;
     int name_sort_id_j;
     char name_string[64];
-    uint8_t level_bsc;
-    uint8_t level_adv;
-    uint8_t level_ext;
     float detail_level_bsc;
     float detail_level_adv;
     float detail_level_ext;
@@ -954,9 +951,6 @@ static void debug_music_entry(music_db_entry_t *song)
     log_body_misc("ultimate", "parent_id = %d", song->parent_id);
     log_body_misc("ultimate", "name_sort_id_j = %x", song->name_sort_id_j);
     log_body_misc("ultimate", "name_string = %s", song->name_string);
-    log_body_misc("ultimate", "level_bsc = %d", static_cast<int>(song->level_bsc));
-    log_body_misc("ultimate", "level_adv = %d", static_cast<int>(song->level_adv));
-    log_body_misc("ultimate", "level_ext = %d", static_cast<int>(song->level_ext));
     log_body_misc("ultimate", "detail_level_bsc = %f", song->detail_level_bsc);
     log_body_misc("ultimate", "detail_level_adv = %f", song->detail_level_adv);
     log_body_misc("ultimate", "detail_level_ext = %f", song->detail_level_ext);
@@ -1121,9 +1115,6 @@ static enum music_load_res music_load_individual(int index, void *node)
     song->music_id = -1;
     song->parent_id = -1;
     song->name_sort_id_j = -1;
-    song->level_bsc = 0;
-    song->level_adv = 0;
-    song->level_ext = 0;
     song->detail_level_bsc = 0;
     song->detail_level_adv = 0;
     song->detail_level_ext = 0;
@@ -1147,18 +1138,12 @@ static enum music_load_res music_load_individual(int index, void *node)
     property_node_refer(nullptr, node, "/name_sort_id_j", PROP_TYPE_str, tmp, sizeof(tmp));
     song->name_sort_id_j = strtoul(tmp, nullptr, 16);
     property_node_refer(nullptr, node, "/music_type", PROP_TYPE_s32, &song->music_type, 4);
-    property_node_refer(nullptr, node, "/level_bsc", PROP_TYPE_u8, &song->level_bsc, 1);
-    property_node_refer(nullptr, node, "/level_adv", PROP_TYPE_u8, &song->level_adv, 1);
-    property_node_refer(nullptr, node, "/level_ext", PROP_TYPE_u8, &song->level_ext, 1);
-    if (property_node_refer(
-            nullptr, node, "/detail_level_bsc", PROP_TYPE_float, &song->detail_level_bsc, 4) < 0)
-        song->detail_level_bsc = static_cast<float>(song->level_bsc);
-    if (property_node_refer(
-            nullptr, node, "/detail_level_adv", PROP_TYPE_float, &song->detail_level_adv, 4) < 0)
-        song->detail_level_adv = static_cast<float>(song->level_adv);
-    if (property_node_refer(
-            nullptr, node, "/detail_level_ext", PROP_TYPE_float, &song->detail_level_ext, 4) < 0)
-        song->detail_level_ext = static_cast<float>(song->level_ext);
+
+    // ultimate music db only has detail_level
+    property_node_refer(nullptr, node, "/detail_level_bsc", PROP_TYPE_float, &song->detail_level_bsc, 4);
+    property_node_refer(nullptr, node, "/detail_level_adv", PROP_TYPE_float, &song->detail_level_adv, 4);
+    property_node_refer(nullptr, node, "/detail_level_ext", PROP_TYPE_float, &song->detail_level_ext, 4);
+
     property_node_refer(nullptr, node, "/pos_index", PROP_TYPE_s16, &song->pos_index, 2);
     property_node_refer(nullptr, node, "/is_default", PROP_TYPE_s32, &song->is_default, 4);
     property_node_refer(
@@ -1386,13 +1371,14 @@ static uint8_t __cdecl music_db_get_level(int id, uint8_t difficulty)
         return 1;
     }
 
+    // ultimate music db only has detail_level
     switch (difficulty) {
         case 0:
-            return song->level_bsc;
+            return static_cast<uint8_t>(song->detail_level_bsc);
         case 1:
-            return song->level_adv;
+            return static_cast<uint8_t>(song->detail_level_adv);
         case 2:
-            return song->level_ext;
+            return static_cast<uint8_t>(song->detail_level_ext);
         default:
             return 1;
     }
