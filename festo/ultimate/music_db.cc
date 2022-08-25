@@ -1091,6 +1091,8 @@ static int __cdecl music_db_get_card_default_list(int limit, int *results)
 
 static enum music_load_res music_load_individual(int index, void *node)
 {
+    char tmp[256];
+
     if (index >= MAX_SONGS) {
         return MUSIC_LOAD_FULL;
     }
