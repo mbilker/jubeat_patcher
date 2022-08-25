@@ -23,7 +23,7 @@ static int (__fastcall *d3_package_load)(const char *name);
 
 static int __fastcall hook_d3_package_load(const char *name)
 {
-    // log_info("d3_package_load(\"%s\")", name);
+    log_info("d3_package_load(\"%s\")", name);
 
     // loading banners, add our own
     if (strcmp(name, "L44_BNR_BIG_ID99999999") == 0) {
@@ -32,6 +32,15 @@ static int __fastcall hook_d3_package_load(const char *name)
             log_info("... %s", banner);
             d3_package_load(banner);
         }
+    }
+    // play background textures
+    if (strcmp(name, "L44FO_PLAY_BACKGROUND") == 0) {
+        log_info("... %s", "L44FO_OMNI_BACKGROUND");
+        d3_package_load("L44FO_OMNI_BACKGROUND");
+    }
+    if (strcmp(name, "L44FO_STG_BG_CHANGE") == 0) {
+        log_info("... %s", "L44FO_STG_BG_CHANGE");
+        d3_package_load("L44FO_OMNI_BACKGROUND");
     }
 
     return d3_package_load(name);
