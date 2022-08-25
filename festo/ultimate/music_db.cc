@@ -912,7 +912,6 @@ struct music_db_entry_t {
     int music_id;
     int parent_id;
     int name_sort_id_j;
-    char name_string[64];
     float detail_level_bsc;
     float detail_level_adv;
     float detail_level_ext;
@@ -950,7 +949,6 @@ static void debug_music_entry(music_db_entry_t *song)
     log_body_misc("ultimate", "music_id = %d", song->music_id);
     log_body_misc("ultimate", "parent_id = %d", song->parent_id);
     log_body_misc("ultimate", "name_sort_id_j = %x", song->name_sort_id_j);
-    log_body_misc("ultimate", "name_string = %s", song->name_string);
     log_body_misc("ultimate", "detail_level_bsc = %f", song->detail_level_bsc);
     log_body_misc("ultimate", "detail_level_adv = %f", song->detail_level_adv);
     log_body_misc("ultimate", "detail_level_ext = %f", song->detail_level_ext);
@@ -1093,9 +1091,6 @@ static int __cdecl music_db_get_card_default_list(int limit, int *results)
 
 static enum music_load_res music_load_individual(int index, void *node)
 {
-    // big enough for the hex name
-    char tmp[256];
-
     if (index >= MAX_SONGS) {
         return MUSIC_LOAD_FULL;
     }
@@ -1110,7 +1105,6 @@ static enum music_load_res music_load_individual(int index, void *node)
     }
 
     // sane defaults
-    memset(song->name_string, 0, sizeof(song->name_string));
     memset(song->genre_list, 0, sizeof(song->genre_list));
     song->music_id = -1;
     song->parent_id = -1;
@@ -1169,21 +1163,6 @@ static enum music_load_res music_load_individual(int index, void *node)
     if (song->music_id == 70000154 && !song->grouping_category) {
         song->grouping_category = 4736;
     }
-
-    // YOU HAVE A SHIFT-JIS XML FORMAT YOU IDIOTS
-    property_node_refer(nullptr, node, "/name_string", PROP_TYPE_str, tmp, sizeof(tmp));
-    // clamp the 256 hex/128 real byte input to the 64 byte output
-    tmp[(sizeof(song->name_string) - 1) * 2] = '\0';
-
-    int i;
-    for (i = 0; tmp[i]; i += 2) {
-        char blah[3];
-        blah[0] = tmp[i];
-        blah[1] = tmp[i + 1];
-        blah[2] = '\0';
-        song->name_string[i / 2] = strtoul(blah, nullptr, 16);
-    }
-    song->name_string[i / 2] = '\0';
 
     music_db_map[song->music_id] = song;
 
