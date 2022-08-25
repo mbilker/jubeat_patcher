@@ -379,7 +379,7 @@ extern "C" DLL_EXPORT bool __cdecl ultimate_dll_entry_init(char *sid_code, void 
     hook_music_db(process, jubeat_handle, music_db_handle);
     hook_pkfs_fs_open(process, pkfs_handle);
     bnr_hook_init(jubeat_info, BNR_TEXTURES);
-    festo_apply_common_patches(process, jubeat_handle, music_db_info);
+    festo_apply_common_patches(process, jubeat_handle, jubeat_info, music_db_info);
 
     CloseHandle(process);
 

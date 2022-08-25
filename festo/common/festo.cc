@@ -103,15 +103,21 @@ static void *__cdecl mem_set(void *s, int c, size_t n)
 }
 
 void festo_apply_common_patches(
-    HANDLE process, HMODULE jubeat_handle, const MODULEINFO &music_db_info)
+    HANDLE process,
+    HMODULE jubeat_handle,
+    const MODULEINFO &jubeat_info,
+    const MODULEINFO &music_db_info)
 {
+    // jubeat.dll
+    do_patch(process, jubeat_info, marker_unlock_patch_1);
+    do_patch(process, jubeat_info, marker_unlock_patch_2);
+    do_patch(process, jubeat_info, marker_unlock_patch_3);
+    do_patch(process, jubeat_info, background_unlock_patch_1);
+    do_patch(process, jubeat_info, background_unlock_patch_2);
+    do_patch(process, jubeat_info, background_unlock_patch_3);
+
+    // music_db.dll
     do_patch(process, music_db_info, song_unlock_patch);
-    do_patch(process, jubeat_handle, marker_unlock_patch_1);
-    do_patch(process, jubeat_handle, marker_unlock_patch_2);
-    do_patch(process, jubeat_handle, marker_unlock_patch_3);
-    do_patch(process, jubeat_handle, background_unlock_patch_1);
-    do_patch(process, jubeat_handle, background_unlock_patch_2);
-    do_patch(process, jubeat_handle, background_unlock_patch_3);
 
     // increase d3 texture memory so all our added banners don't crash the game
     hook_iat_ordinal(
