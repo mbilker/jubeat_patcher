@@ -23,7 +23,7 @@ static int (__fastcall *d3_package_load)(const char *name);
 
 static int __fastcall hook_d3_package_load(const char *name)
 {
-    log_info("d3_package_load(\"%s\")", name);
+    // log_info("d3_package_load(\"%s\")", name);
 
     // loading banners, add our own
     if (strcmp(name, "L44_BNR_BIG_ID99999999") == 0) {
@@ -35,16 +35,19 @@ static int __fastcall hook_d3_package_load(const char *name)
     }
     // play marker textures
     if (strcmp(name, "L44_TM_BANNER") == 0) {
-        log_info("... %s", "Loading extra marker textures");
+        // log_info("... %s", "Loading extra marker textures");
+        log_info("... %s", "L44_TM_BANNER_OM");
         d3_package_load("L44_TM_BANNER_OM");
     }
     // play background textures (let's load explcit unique rather than bundled)
     if (strcmp(name, "L44FO_PLAY_BACKGROUND") == 0) {
-        log_info("... %s", "Loading extra bg textures");
+        // log_info("... %s", "Loading extra bg textures");
+        log_info("... %s", "L44FO_PLAY_BACKGROUND_OM");
         d3_package_load("L44FO_PLAY_BACKGROUND_OM");
     }
     if (strcmp(name, "L44FO_STG_BG_CHANGE") == 0) {
-        log_info("... %s", "Loading extra bg textures");
+        // log_info("... %s", "Loading extra bg textures");
+        log_info("... %s", "L44FO_STG_BG_CHANGE_OM");
         d3_package_load("L44FO_STG_BG_CHANGE_OM");
     }
 
