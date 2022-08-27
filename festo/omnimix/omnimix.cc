@@ -65,6 +65,16 @@ static std::vector<const char *> EXTRA_BANNERS {
     "L44FO_BNR_J_OM_002",
 };
 
+static std::vector<const char *> EXTRA_MARKERS {
+    "L44_TM_BANNER_OM"
+};
+static std::vector<const char *> EXTRA_BACKGROUNDS {
+    "L44FO_PLAY_BACKGROUND_OM"
+};
+static std::vector<const char *> EXTRA_BG_CHANGES {
+    "L44FO_STG_BG_CHANGE_OM"
+};
+
 // clang-format on
 
 extern "C" DLL_EXPORT bool __cdecl omnimix_dll_entry_init(char *sid_code, void *app_config)
@@ -114,7 +124,10 @@ extern "C" DLL_EXPORT bool __cdecl omnimix_dll_entry_init(char *sid_code, void *
     do_patch(process, music_db_info, music_db_limit_4);
     do_patch(process, music_db_info, music_omni_patch);
 
-    bnr_hook_init(jubeat_info, EXTRA_BANNERS);
+    bnr_hook_init(jubeat_info, "L44_BNR_BIG_ID99999999", EXTRA_BANNERS);
+    bnr_hook_init(jubeat_info, "L44_TM_BANNER", EXTRA_MARKERS);
+    bnr_hook_init(jubeat_info, "L44FO_PLAY_BACKGROUND", EXTRA_BACKGROUNDS);
+    bnr_hook_init(jubeat_info, "L44FO_STG_BG_CHANGE", EXTRA_BG_CHANGES);
 
     CloseHandle(process);
 
