@@ -26,7 +26,7 @@ static int __fastcall hook_d3_package_load(const char target, const char *name)
     // log_info("d3_package_load(\"%s\")", name);
 
     // loading banners, add our own
-    if (strcmp(name, target) == 0) {
+    if (strcmp(name, *target) == 0) {
         log_info("loading %s", *target)
         // log_info("Loading extra omni banners");
         for (const char *banner : EXTRA_PATHS) {
