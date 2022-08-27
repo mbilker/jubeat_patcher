@@ -217,6 +217,20 @@ static std::vector<const char *> BNR_TEXTURES {
     "L44_BNR_BIG_ID99999999",
 };
 
+static std::vector<const char *> EXTRA_MARKERS {
+    "L44_TM_BANNER_OM"
+};
+static std::vector<const char *> EXTRA_BACKGROUNDS {
+    "L44FO_PLAY_BACKGROUND_OM",
+    "L44FO_PLAY_BACKGROUND_UL_01",
+    "L44FO_PLAY_BACKGROUND_UL_02"
+};
+static std::vector<const char *> EXTRA_BG_CHANGES {
+    "L44FO_STG_BG_CHANGE_OM",
+    "L44FO_STG_BG_CHANGE_UL_01",
+    "L44FO_STG_BG_CHANGE_UL_02"
+};
+
 // clang-format on
 
 static void hook_pkfs_fs_open(HANDLE process, HMODULE pkfs_module)
@@ -384,6 +398,9 @@ extern "C" DLL_EXPORT bool __cdecl ultimate_dll_entry_init(char *sid_code, void 
     hook_pkfs_fs_open(process, pkfs_handle);
     bnr_hook_init(jubeat_info);
     bnr_hook_add_paths("L44_BNR_BIG_ID99999999", BNR_TEXTURES);
+    bnr_hook_add_paths("L44_TM_BANNER", EXTRA_MARKERS);
+    bnr_hook_add_paths("L44FO_PLAY_BACKGROUND", EXTRA_BACKGROUNDS);
+    bnr_hook_add_paths("L44FO_STG_BG_CHANGE", EXTRA_BG_CHANGES);
     festo_apply_common_patches(process, jubeat_handle, jubeat_info, music_db_info);
 
     MH_EnableHook(MH_ALL_HOOKS);
