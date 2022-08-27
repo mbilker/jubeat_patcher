@@ -1,6 +1,7 @@
 #define LOG_MODULE "bnr-hook"
 
 #include <vector>
+#include <unordered_map>
 
 #include "pattern/pattern.h"
 
@@ -17,31 +18,31 @@ static const uint8_t d3_load_pattern[] = {
 };
 static const ssize_t d3_load_offset = -0x1D;
 
-static std::vector<const char *> EXTRA_PATHS;
+static std::unordered_map<const char*, std::vector<const char*>> extra_banners;
 
 static int (__fastcall *d3_package_load)(const char *name);
 
-static int __fastcall hook_d3_package_load(const char target, const char *name)
+static int __fastcall hook_d3_package_load(const char *name)
 {
     // log_info("d3_package_load(\"%s\")", name);
 
-    // loading banners, add our own
-    if (strcmp(name, *target) == 0) {
-        log_info("loading %s", *target)
-        // log_info("Loading extra omni banners");
-        for (const char *banner : EXTRA_PATHS) {
-            log_info("... %s", banner);
-            d3_package_load(banner);
+    // todo: custom hashing function for marginally faster lookup?
+    for(auto &entry : extra_banners) {
+        if(strcmp(name, entry.first) == 0) {
+            log_info("loading %s", name);
+
+            for (auto banner : entry.second) {
+                log_info("... %s", banner);
+                d3_package_load(banner);
+            }
         }
     }
 
     return d3_package_load(name);
 }
 
-void bnr_hook_init(const MODULEINFO &jubeat_info, std::vector<const char *> extra_paths)
+void bnr_hook_init(const MODULEINFO &jubeat_info)
 {
-    EXTRA_PATHS = std::move(extra_paths);
-
     void *d3_package_load_loc = find_pattern(
         reinterpret_cast<uint8_t *>(jubeat_info.lpBaseOfDll),
         jubeat_info.SizeOfImage,
@@ -50,10 +51,13 @@ void bnr_hook_init(const MODULEINFO &jubeat_info, std::vector<const char *> extr
         std::size(d3_load_pattern)) +
         d3_load_offset;
 
-    MH_Initialize();
     MH_CreateHook(
         d3_package_load_loc,
         reinterpret_cast<void *>(hook_d3_package_load),
         reinterpret_cast<void **>(&d3_package_load));
-    MH_EnableHook(MH_ALL_HOOKS);
+}
+
+void bnr_hook_add_paths(const char * trigger_file, std::vector<const char*> extra_paths)
+{
+    extra_banners[trigger_file] = extra_paths;
 }

@@ -7,6 +7,7 @@ shared_library(
     dependencies: [
         capnhook.get_variable('hook_dep'),
         psapi_lib,
+        minhook,
     ],
     link_with: [
         avs_1703_lib,

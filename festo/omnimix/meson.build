@@ -6,6 +6,7 @@ shared_library(
     vs_module_defs: 'omnimix.def',
     dependencies: [
         psapi_lib,
+        minhook,
     ],
     link_with: [
         avs_1703_lib,

@@ -30,6 +30,8 @@
 #include "../common/bnr_hook.h"
 #include "../common/festo.h"
 
+#include "MinHook.h"
+
 // clang-format off
 
 const struct patch_t packlist_pluslist {
@@ -376,10 +378,15 @@ extern "C" DLL_EXPORT bool __cdecl ultimate_dll_entry_init(char *sid_code, void 
     do_patch(process, jubeat_info, smc_mm_hierarchy_ko);
     */
 
+    MH_Initialize();
+
     hook_music_db(process, jubeat_handle, music_db_handle);
     hook_pkfs_fs_open(process, pkfs_handle);
-    bnr_hook_init(jubeat_info, BNR_TEXTURES);
+    bnr_hook_init(jubeat_info);
+    bnr_hook_add_paths("L44_BNR_BIG_ID99999999", BNR_TEXTURES);
     festo_apply_common_patches(process, jubeat_handle, jubeat_info, music_db_info);
+
+    MH_EnableHook(MH_ALL_HOOKS);
 
     CloseHandle(process);
 

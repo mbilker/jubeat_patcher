@@ -19,6 +19,8 @@
 #include "../common/bnr_hook.h"
 #include "../common/festo.h"
 
+#include "MinHook.h"
+
 // clang-format off
 
 const struct patch_t packlist {
@@ -124,10 +126,16 @@ extern "C" DLL_EXPORT bool __cdecl omnimix_dll_entry_init(char *sid_code, void *
     do_patch(process, music_db_info, music_db_limit_4);
     do_patch(process, music_db_info, music_omni_patch);
 
-    bnr_hook_init(jubeat_info, "L44_BNR_BIG_ID99999999", EXTRA_BANNERS);
-    bnr_hook_init(jubeat_info, "L44_TM_BANNER", EXTRA_MARKERS);
-    bnr_hook_init(jubeat_info, "L44FO_PLAY_BACKGROUND", EXTRA_BACKGROUNDS);
-    bnr_hook_init(jubeat_info, "L44FO_STG_BG_CHANGE", EXTRA_BG_CHANGES);
+    MH_Initialize();
+
+    bnr_hook_init(jubeat_info);
+
+    bnr_hook_add_paths("L44_BNR_BIG_ID99999999", EXTRA_BANNERS);
+    bnr_hook_add_paths("L44_TM_BANNER", EXTRA_MARKERS);
+    bnr_hook_add_paths("L44FO_PLAY_BACKGROUND", EXTRA_BACKGROUNDS);
+    bnr_hook_add_paths("L44FO_STG_BG_CHANGE", EXTRA_BG_CHANGES);
+
+    MH_EnableHook(MH_ALL_HOOKS);
 
     CloseHandle(process);
 
