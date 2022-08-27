@@ -208,21 +208,18 @@ static std::vector<const char *> BNR_TEXTURES {
     "L44FO_BNR_J_EX_003",
     "L44FO_BNR_J_EX_004",
     "L44FO_BNR_J_99_999",
-    "L44_BNR_BIG_ID99999999",
 };
 
 static std::vector<const char *> EXTRA_MARKERS {
-    "L44_TM_BANNER_OM"
+    "L44_TM_BANNER_OM",
 };
 static std::vector<const char *> EXTRA_BACKGROUNDS {
     "L44FO_PLAY_BACKGROUND_OM",
-    "L44FO_PLAY_BACKGROUND_UL_01",
-    "L44FO_PLAY_BACKGROUND_UL_02"
+    "L44FO_PLAY_BACKGROUND_UL",
 };
 static std::vector<const char *> EXTRA_BG_CHANGES {
     "L44FO_STG_BG_CHANGE_OM",
-    "L44FO_STG_BG_CHANGE_UL_01",
-    "L44FO_STG_BG_CHANGE_UL_02"
+    "L44FO_STG_BG_CHANGE_UL",
 };
 
 // clang-format on
