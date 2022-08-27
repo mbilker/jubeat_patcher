@@ -82,12 +82,6 @@ static const uintptr_t end_score_arr_patch =
 
 // clang-format off
 
-#define U32_TO_CONST_BYTES_LE(x) \
-    static_cast<uint8_t>((x) & 0xff), \
-    static_cast<uint8_t>(((x) >> 8) & 0xff), \
-    static_cast<uint8_t>(((x) >> 16) & 0xff), \
-    static_cast<uint8_t>(((x) >> 24) & 0xff)
-
 const struct patch_t mdb_array_1_0 {
     .name = "mdb 1.0",
     .pattern = { 0x00, 0x68, 0x00, 0x08, 0x00, 0x00, 0x50 },
