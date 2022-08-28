@@ -8,6 +8,8 @@
     static_cast<uint8_t>(((x) >> 16) & 0xff), \
     static_cast<uint8_t>(((x) >> 24) & 0xff)
 
+uint8_t *find_pattern_checked(const char *name, const MODULEINFO &module_info, const std::vector<uint8_t> &data, const std::vector<char> &_mask);
+
 void festo_apply_common_patches(
     HANDLE process,
     HMODULE jubeat_handle,
