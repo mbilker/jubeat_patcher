@@ -135,7 +135,7 @@ static void *__cdecl mem_set(void *s, int c, size_t n)
         auto buf = reinterpret_cast<void **>(s_ptr - 0x6F3598);
         auto buf2 = reinterpret_cast<void **>(s_ptr + 0x5c4);
 
-        const size_t new_sz = 16384 * 28 * 4;
+        const size_t new_sz = 8192 * 28 * 4;
         size_t new_limit = new_sz / 28;
         void *new_buf = malloc(new_sz);
         void *new_buf2 = malloc(BUF2_NEW_SIZE);
