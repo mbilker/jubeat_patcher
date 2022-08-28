@@ -16,6 +16,37 @@ extern "C" {
 
 void hook_music_db(HANDLE process, HMODULE jubeat_handle, HMODULE music_db_handle);
 
+struct music_db_entry_t {
+    int music_id;
+    int parent_id;
+    int name_sort_id_j;
+    float detail_level_bsc;
+    float detail_level_adv;
+    float detail_level_ext;
+    float bpm_max;
+    float bpm_min;
+    int music_type;
+    int version;
+    int16_t pos_index;
+    int index_start;
+    int is_default;         // was: char
+    int is_card_default;    // was: char
+    int is_offline_default; // was: char
+    int is_hold;            // was: char
+    int step;
+    // must be contiguous as it's used as an array
+    // pops/anime/socialmusic/game/classical/original/toho
+    char genre_list[7];
+    uint64_t grouping_category;
+    int32_t pack_id; // custom! Extend pack ID from Jubeat mobile versions
+    // custom! real, human-readable name. Max seen was 64 bytes, 256 for massive
+    // overkill in case of weird songs. Used to auto-generate sort IDs
+    char title_name[256];
+};
+
+// useful when creating custom sort functions
+music_db_entry_t *music_from_id(int id);
+
 #ifdef __cplusplus
 };
 #endif

@@ -908,34 +908,6 @@ static bool __cdecl music_db_get_sound_filename(void *a1, void *a2, int music_id
            0;
 }
 
-struct music_db_entry_t {
-    int music_id;
-    int parent_id;
-    int name_sort_id_j;
-    float detail_level_bsc;
-    float detail_level_adv;
-    float detail_level_ext;
-    float bpm_max;
-    float bpm_min;
-    int music_type;
-    int version;
-    int16_t pos_index;
-    int index_start;
-    int is_default;         // was: char
-    int is_card_default;    // was: char
-    int is_offline_default; // was: char
-    int is_hold;            // was: char
-    int step;
-    // must be contiguous as it's used as an array
-    // pops/anime/socialmusic/game/classical/original/toho
-    char genre_list[7];
-    uint64_t grouping_category;
-    int32_t pack_id; // custom! Extend pack ID from Jubeat mobile versions
-    // custom! real, human-readable name. Max seen was 64 bytes, 256 for massive
-    // overkill in case of weird songs. Used to auto-generate sort IDs
-    char title_name[256];
-};
-
 static int music_count;
 static music_db_entry_t music_db[MAX_SONGS];
 static robin_hood::unordered_map<int, music_db_entry_t *> music_db_map;
@@ -981,7 +953,7 @@ enum music_load_res {
     MUSIC_LOAD_FULL = 3,
 };
 
-static music_db_entry_t *music_from_id(int id)
+music_db_entry_t *music_from_id(int id)
 {
     auto search = music_db_map.find(id);
 
