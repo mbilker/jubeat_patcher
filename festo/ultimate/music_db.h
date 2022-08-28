@@ -38,6 +38,8 @@ struct music_db_entry_t {
     // pops/anime/socialmusic/game/classical/original/toho
     char genre_list[7];
     uint64_t grouping_category;
+    // omnimix/jubeat_plus/jubeat_2020/jukebeat
+    char ultimate_list[4]; // custom: ultimate categories!
     int32_t pack_id; // custom! Extend pack ID from Jubeat mobile versions
     // custom! real, human-readable name. Max seen was 64 bytes, 256 for massive
     // overkill in case of weird songs. Used to auto-generate sort IDs
