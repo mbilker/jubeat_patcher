@@ -248,8 +248,7 @@ static bool __cdecl custom_filter_omnimix(unsigned music_id, int diff, uint8_t l
 
     music_db_entry_t *music = music_from_id(music_id);
 
-    // TODO
-    return false;
+    return music->ultimate_list_omnimix;
 }
 
 static bool __cdecl custom_filter_jubeat_plus(unsigned music_id, int diff, uint8_t level) {
@@ -258,8 +257,7 @@ static bool __cdecl custom_filter_jubeat_plus(unsigned music_id, int diff, uint8
 
     music_db_entry_t *music = music_from_id(music_id);
 
-    // TODO
-    return false;
+    return music->ultimate_list_jubeat_plus;
 }
 
 static bool __cdecl custom_filter_jubeat_2020(unsigned music_id, int diff, uint8_t level) {
@@ -268,8 +266,7 @@ static bool __cdecl custom_filter_jubeat_2020(unsigned music_id, int diff, uint8
 
     music_db_entry_t *music = music_from_id(music_id);
 
-    // TODO
-    return false;
+    return music->ultimate_list_jubeat_2020;
 }
 
 static bool __cdecl custom_filter_jukebeat(unsigned music_id, int diff, uint8_t level) {
@@ -278,8 +275,7 @@ static bool __cdecl custom_filter_jukebeat(unsigned music_id, int diff, uint8_t 
 
     music_db_entry_t *music = music_from_id(music_id);
 
-    // TODO
-    return false;
+    return music->ultimate_list_jukebeat;
 }
 
 static const std::vector<category_hierarchy_t> extra_category_hierarchy = {

@@ -945,10 +945,10 @@ static void debug_music_entry(music_db_entry_t *song)
     log_body_misc(
         "ultimate", "grouping_category = %lX", static_cast<long int>(song->grouping_category));
     log_body_misc("ultimate", "pack_id = %d", song->pack_id);
-    log_body_misc("ultimate", "ultimate_list_omnimix = %d", song->ultimate_list[0]);
-    log_body_misc("ultimate", "ultimate_list_jubeat_plus = %d", song->ultimate_list[1]);
-    log_body_misc("ultimate", "ultimate_list_jubeat_2020 = %d", song->ultimate_list[2]);
-    log_body_misc("ultimate", "ultimate_list_jukebeat = %d", song->ultimate_list[3]);
+    log_body_misc("ultimate", "ultimate_list_omnimix = %d", song->ultimate_list_omnimix);
+    log_body_misc("ultimate", "ultimate_list_jubeat_plus = %d", song->ultimate_list_jubeat_plus);
+    log_body_misc("ultimate", "ultimate_list_jubeat_2020 = %d", song->ultimate_list_jubeat_2020);
+    log_body_misc("ultimate", "ultimate_list_jukebeat = %d", song->ultimate_list_jukebeat);
 }
 
 enum music_load_res {
@@ -1084,7 +1084,6 @@ static enum music_load_res music_load_individual(int index, void *node)
 
     // sane defaults
     memset(song->genre_list, 0, sizeof(song->genre_list));
-    memset(song->ultimate_list, 0, sizeof(song->ultimate_list));
     song->music_id = -1;
     song->parent_id = -1;
     song->name_sort_id_j = -1;
@@ -1103,6 +1102,10 @@ static enum music_load_res music_load_individual(int index, void *node)
     song->pack_id = -1;
     song->step = -1;
     song->grouping_category = -1;
+    song->ultimate_list_omnimix = 0;
+    song->ultimate_list_jubeat_plus = 0;
+    song->ultimate_list_jubeat_2020 = 0;
+    song->ultimate_list_jukebeat = 0;
 
     property_node_refer(nullptr, node, "/music_id", PROP_TYPE_s32, &song->music_id, 4);
     property_node_refer(nullptr, node, "/parent_id", PROP_TYPE_s32, &song->parent_id, 4);
@@ -1135,10 +1138,10 @@ static enum music_load_res music_load_individual(int index, void *node)
     property_node_refer(nullptr, node, "genre/toho", PROP_TYPE_u8, &song->genre_list[6], 1);
     property_node_refer(nullptr, node, "/grouping_category", PROP_TYPE_str, tmp, sizeof(tmp));
     property_node_refer(nullptr, node, "/pack_id", PROP_TYPE_s32, &song->pack_id, 4);
-    property_node_refer(nullptr, node, "ultimate/omnimix", PROP_TYPE_u8, &song->ultimate_list[0], 1);
-    property_node_refer( nullptr, node, "ultimate/jubeat_plus", PROP_TYPE_u8, &song->ultimate_list[1], 1);
-    property_node_refer( nullptr, node, "ultimate/jubeat_2020", PROP_TYPE_u8, &song->ultimate_list[2], 1);
-    property_node_refer(nullptr, node, "ultimate/jukebeat", PROP_TYPE_u8, &song->ultimate_list[3], 1);
+    property_node_refer(nullptr, node, "ultimate/omnimix", PROP_TYPE_u8, &song->ultimate_list_omnimix, 1);
+    property_node_refer( nullptr, node, "ultimate/jubeat_plus", PROP_TYPE_u8, &song->ultimate_list_jubeat_plus, 1);
+    property_node_refer( nullptr, node, "ultimate/jubeat_2020", PROP_TYPE_u8, &song->ultimate_list_jubeat_2020, 1);
+    property_node_refer(nullptr, node, "ultimate/jukebeat", PROP_TYPE_u8, &song->ultimate_list_jukebeat, 1);
     song->grouping_category = strtoul(tmp, nullptr, 16);
     property_node_refer(
         nullptr, node, "/title_name", PROP_TYPE_str, song->title_name, sizeof(song->title_name));
