@@ -188,14 +188,14 @@ void category_hooks_init(HANDLE process, const MODULEINFO &jubeat_info) {
     do_patch(process, jubeat_info, category_array_patch_2);
     do_patch(process, jubeat_info, category_count_patch);
 
-    // log_info("Hooked categories:");
-    // for(auto &cat: hook_category_listing) {
-    //     log_info("  %d %d", cat.id, cat.column_count);
-    //     auto cols = cat.columns;
-    //     for(size_t j = 0; j < 16; j++) {
-    //         log_info("    %d %d %d", cols[j][0],cols[j][1],cols[j][2]);
-    //     }
-    // }
+    log_info("Hooked categories:");
+    for(auto &cat: hook_category_listing) {
+        log_info("  %d %d", cat.id, cat.column_count);
+        auto cols = cat.columns;
+        for(size_t j = 0; j < 16; j++) {
+            log_info("    %d %d %d", cols[j][0],cols[j][1],cols[j][2]);
+        }
+    }
 
     init_done = true;
 }

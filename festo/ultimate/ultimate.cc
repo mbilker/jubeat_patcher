@@ -24,6 +24,7 @@
 #include "util/mem.h"
 #include "util/x86.h"
 
+#include "categories.h"
 #include "music_db.h"
 #include "pkfs.h"
 
@@ -216,11 +217,85 @@ static std::vector<const char *> EXTRA_MARKERS {
 };
 static std::vector<const char *> EXTRA_BACKGROUNDS {
     "L44FO_PLAY_BACKGROUND_OM",
-    "L44FO_PLAY_BACKGROUND_UL",
+    // "L44FO_PLAY_BACKGROUND_UL_01",
+    // "L44FO_PLAY_BACKGROUND_UL_02",
+    // "L44FO_PLAY_BACKGROUND_UL_03",
 };
 static std::vector<const char *> EXTRA_BG_CHANGES {
     "L44FO_STG_BG_CHANGE_OM",
-    "L44FO_STG_BG_CHANGE_UL",
+    // "L44FO_STG_BG_CHANGE_UL_01",
+    // "L44FO_STG_BG_CHANGE_UL_02",
+};
+
+// ultimate categories/folders
+static std::vector<const char *> EXTRA_CATEGORIES {
+    "L44FO_SMC_MM_TEXT_UL",
+};
+
+
+// category hook stuff
+enum custom_sort_id: uint32_t {
+    SORT_CUSTOM_ULTIMATE = SORT_DEFAULT_MAX_ID,
+    SORT_CUSTOM_OMNIMIX,
+    SORT_CUSTOM_JUBEAT_PLUS,
+    SORT_CUSTOM_JUBEAT_2020,
+    SORT_CUSTOM_JUKEBEAT,
+};
+
+static bool __cdecl custom_filter_omnimix(unsigned music_id, int diff, uint8_t level) {
+    (void) diff;
+    (void) level;
+
+    music_db_entry_t *music = music_from_id(music_id);
+
+    // TODO
+    return false;
+}
+
+static bool __cdecl custom_filter_jubeat_plus(unsigned music_id, int diff, uint8_t level) {
+    (void) diff;
+    (void) level;
+
+    music_db_entry_t *music = music_from_id(music_id);
+
+    // TODO
+    return false;
+}
+
+static bool __cdecl custom_filter_jubeat_2020(unsigned music_id, int diff, uint8_t level) {
+    (void) diff;
+    (void) level;
+
+    music_db_entry_t *music = music_from_id(music_id);
+
+    // TODO
+    return false;
+}
+
+static bool __cdecl custom_filter_jukebeat(unsigned music_id, int diff, uint8_t level) {
+    (void) diff;
+    (void) level;
+
+    music_db_entry_t *music = music_from_id(music_id);
+
+    // TODO
+    return false;
+}
+
+static const std::vector<category_hierarchy_t> extra_category_hierarchy = {
+    {SORT_CUSTOM_ULTIMATE,    SORT_ROOT,            NULL,                      "SMM_T0950_JA.png", NULL, NULL},
+    {SORT_CUSTOM_OMNIMIX,     SORT_CUSTOM_ULTIMATE, custom_filter_omnimix,     "SMM_T0960_JA.png", NULL, NULL},
+    {SORT_CUSTOM_JUBEAT_PLUS, SORT_CUSTOM_ULTIMATE, custom_filter_jubeat_plus, "SMM_T0961_JA.png", NULL, NULL},
+    {SORT_CUSTOM_JUBEAT_2020, SORT_CUSTOM_ULTIMATE, custom_filter_jubeat_2020, "SMM_T0962_JA.png", NULL, NULL},
+    {SORT_CUSTOM_JUKEBEAT,    SORT_CUSTOM_ULTIMATE, custom_filter_jukebeat,    "SMM_T0963_JA.png", NULL, NULL},
+};
+
+static const std::vector<category_listing_t> extra_category_layout = {
+    {SORT_CUSTOM_ULTIMATE, 3, {
+        {}, // leave first column blank
+        {SORT_CUSTOM_OMNIMIX, SORT_CUSTOM_JUBEAT_PLUS, SORT_CUSTOM_JUBEAT_2020},
+        {SORT_CUSTOM_JUKEBEAT},
+    }},
 };
 
 // clang-format on
@@ -393,7 +468,17 @@ extern "C" DLL_EXPORT bool __cdecl ultimate_dll_entry_init(char *sid_code, void 
     bnr_hook_add_paths("L44_TM_BANNER", EXTRA_MARKERS);
     bnr_hook_add_paths("L44FO_PLAY_BACKGROUND", EXTRA_BACKGROUNDS);
     bnr_hook_add_paths("L44FO_STG_BG_CHANGE", EXTRA_BG_CHANGES);
+    bnr_hook_add_paths("L44FO_SMC_MM_TEXT_JA", EXTRA_CATEGORIES);
     festo_apply_common_patches(process, jubeat_handle, jubeat_info, music_db_info);
+
+    // category stuff
+    category_hooks_add_category_definitions(extra_category_hierarchy);
+    category_hooks_add_category_layouts(extra_category_layout);
+    category_hooks_init(process, jubeat_info);
+    auto root = category_hooks_get_listing(SORT_ROOT);
+    // add our extension category to the root folder, it has 7 columns by default
+    root->column_count++;
+    root->columns[7][0] = SORT_CUSTOM_ULTIMATE;
 
     MH_EnableHook(MH_ALL_HOOKS);
 
