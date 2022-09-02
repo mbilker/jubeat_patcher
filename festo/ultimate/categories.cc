@@ -17,6 +17,7 @@
 #include "util/log.h"
 #include "util/defs.h"
 #include "util/patch.h"
+#include "util/robin_hood.h"
 #include "util/mem.h"
 #include "util/x86.h"
 
@@ -34,8 +35,8 @@ enum env_lang {
 
 static bool init_done;
 
-static std::unordered_map<uint32_t, uint32_t> extend_category_hierarchy;
-static std::unordered_map<uint32_t, music_sort_function> music_sorters;
+static robin_hood::unordered_map<uint32_t, uint32_t> extend_category_hierarchy;
+static robin_hood::unordered_map<uint32_t, music_sort_function> music_sorters;
 
 typedef struct {
     uint32_t category_id;
