@@ -44,8 +44,10 @@ struct music_db_entry_t {
     uint8_t ultimate_list_jukebeat;
     int32_t pack_id; // custom! Extend pack ID from Jubeat mobile versions
     // custom! real, human-readable name. Max seen was 64 bytes, 256 for massive
-    // overkill in case of weird songs. Used to auto-generate sort IDs
+    // overkill in case of weird songs. Used to auto-generate sort IDs and sort
+    // by name
     char title_name[256];
+    char title_yomigana[256];
 };
 
 // useful when creating custom sort functions

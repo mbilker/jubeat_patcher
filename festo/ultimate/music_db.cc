@@ -1145,6 +1145,8 @@ static enum music_load_res music_load_individual(int index, void *node)
     song->grouping_category = strtoul(tmp, nullptr, 16);
     property_node_refer(
         nullptr, node, "/title_name", PROP_TYPE_str, song->title_name, sizeof(song->title_name));
+    property_node_refer(
+        nullptr, node, "/title_yomigana", PROP_TYPE_str, song->title_yomigana, sizeof(song->title_yomigana));
 
     if (song->music_id == 70000154 && !song->grouping_category) {
         song->grouping_category = 4736;
@@ -1394,6 +1396,27 @@ static uint8_t __cdecl music_db_get_level_detail(int id, uint8_t difficulty)
     return static_cast<uint8_t>(round(diff * 10.0)) % 10;
 }
 
+// take advantage of the unicode order being alphabetical
+// https://en.wikipedia.org/wiki/Katakana_(Unicode_block)
+typedef struct {
+    const char *start;
+    const char *end;
+    int result;
+} kata_lookup_t;
+
+static const std::vector<kata_lookup_t> kata_lookup = {
+    {"ァ","オ", 0},
+    {"カ","ゴ", 1},
+    {"サ","ゾ", 2},
+    {"タ","ド", 3},
+    {"ナ","ノ", 4},
+    {"ハ","ポ", 5},
+    {"マ","モ", 6},
+    {"ャ","ヨ", 7},
+    {"ラ","ロ", 8},
+    {"ヮ","ヺ", 9},
+};
+
 static int __cdecl music_db_get_music_name_head_index(int id)
 {
     music_db_entry_t *song = music_from_id(id);
@@ -1414,7 +1437,23 @@ static int __cdecl music_db_get_music_name_head_index(int id)
     // 'ラ': 8, 'リ': 8, 'ル': 8, 'レ': 8, 'ロ': 8,
     // 'ワ': 9,
 
-    return song ? song->name_sort_id_j >> 12 : 0;
+    // .... but replaced it with title_yomigana, go us
+
+    for(auto &lookup : kata_lookup) {
+        // unicode values of kana are 3 bytes each, this is an efficiency boost
+        // instead of strlen-ing both strings
+        if(strnlen(song->title_yomigana, 3) < 3) {
+            break;
+        }
+        int start = strncmp(song->title_yomigana, lookup.start, 3);
+        int end = strncmp(song->title_yomigana, lookup.end, 3);
+        if(start == 0 || end == 0 || (start > 0 && end < 0)) {
+            // it's a bit flag
+            return 1 << lookup.result;
+        }
+    }
+
+    return 0;
 }
 
 static int __cdecl music_db_get_music_name_index(int id)
