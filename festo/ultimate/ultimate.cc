@@ -287,6 +287,16 @@ static const std::vector<category_hierarchy_t> extra_category_hierarchy = {
 };
 
 static const std::vector<category_listing_t> extra_category_layout = {
+    // Ultimate invalidates a lot of existing categories and adds our own.
+    // Custom categories are prepended to the list, so we can totally replace
+    // the root by fully specifying it here
+    {SORT_ROOT, 4, {
+        // SORT_ROOT in SORT_ROOT is the "Select a category" icon
+        {SORT_ROOT, SORT_CUSTOM_ULTIMATE, SORT_ALL},
+        {SORT_CATEGORY_VERSION, SORT_CATEGORY_GENRE, SORT_CATEGORY_LEVEL},
+        {SORT_CATEGORY_NAME, SORT_CATEGORY_ARTIST, SORT_HOLD},
+        {SORT_TUNE_RUN, SORT_THIS_WEEK_RECOMMENDED, SORT_TARGET_MUSIC},
+    }},
     {SORT_CUSTOM_ULTIMATE, 3, {
         {}, // leave first column blank
         {SORT_CUSTOM_OMNIMIX, SORT_CUSTOM_JUBEAT_PLUS, SORT_CUSTOM_JUBEAT_2020},
@@ -471,10 +481,6 @@ extern "C" DLL_EXPORT bool __cdecl ultimate_dll_entry_init(char *sid_code, void 
     category_hooks_add_category_definitions(extra_category_hierarchy);
     category_hooks_add_category_layouts(extra_category_layout);
     category_hooks_init(process, jubeat_info);
-    auto root = category_hooks_get_listing(SORT_ROOT);
-    // add our extension category to the root folder, it has 7 columns by default
-    root->column_count++;
-    root->columns[7][0] = SORT_CUSTOM_ULTIMATE;
 
     MH_EnableHook(MH_ALL_HOOKS);
 
