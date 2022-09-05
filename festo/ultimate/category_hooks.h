@@ -1,3 +1,10 @@
+#pragma once
+
+// clang-format off
+#include <windows.h>
+#include <psapi.h>
+// clang-format on
+
 #include <stdint.h>
 #include <vector>
 
