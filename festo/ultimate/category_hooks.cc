@@ -1,7 +1,7 @@
 // #include <stdbool.h>
 // #include <stdint.h>
 
-#define LOG_MODULE "ultimate::categories"
+#define LOG_MODULE "ultimate::category_hooks"
 
 // clang-format off
 #include <windows.h>
@@ -10,7 +10,7 @@
 
 #include <unordered_map>
 
-#include "categories.h"
+#include "category_hooks.h"
 
 #include "pattern/pattern.h"
 

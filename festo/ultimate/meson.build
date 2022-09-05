@@ -19,7 +19,7 @@ shared_library(
         festo_common_lib,
     ],
     sources: [
-        'categories.cc',
+        'category_hooks.cc',
         'ultimate.cc',
         'music_db.cc',
         'pkfs.c',

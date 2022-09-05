@@ -24,7 +24,7 @@
 #include "util/mem.h"
 #include "util/x86.h"
 
-#include "categories.h"
+#include "category_hooks.h"
 #include "music_db.h"
 #include "pkfs.h"
 
