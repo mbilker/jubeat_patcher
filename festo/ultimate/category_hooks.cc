@@ -51,6 +51,10 @@ static std::vector<scroll_category_map_t> category_textures = {
     #include "category_textures_default.h"
 };
 
+static std::vector<scroll_category_map_t> group_textures = {
+    #include "group_textures_default.h"
+};
+
 static uint32_t (__fastcall *orig_category_select_list_get_parent_type)(uint32_t category);
 static uint32_t __fastcall category_select_list_get_parent_type(uint32_t category) {
     // log_info("category_select_list_get_parent_type(%d)", category);
@@ -70,6 +74,22 @@ static music_sort_function __fastcall get_music_filter_func(uint32_t sort_id) {
     } else {
         return sorter->second;
     }
+}
+
+static std::vector<category_group_hook_fn_t> group_hooks;
+static category_group_hook_fn_t orig_get_group_id_for_music_display;
+static uint32_t __fastcall get_group_id_for_music_display(enum group_type group_type, const int * const music_id) {
+    uint32_t ret;
+    for(auto fn : group_hooks) {
+        ret = fn(group_type, music_id);
+        if(ret != GROUP_INVALID) {
+            // log_info("get_group_id_for_music_display(%d, %d) returning %d", group_type, music_id ? *music_id : -1, ret);
+            return ret;
+        }
+    }
+
+    // log_info("get_group_id_for_music_display returning default impl");
+    return orig_get_group_id_for_music_display(group_type, music_id);
 }
 
 // required to correctly populate the array
@@ -94,6 +114,23 @@ void category_hooks_add_category_definitions(std::vector<category_hierarchy_t> c
         category_textures.push_back({cat.id, ENV_LANG_K, tex_k});
         category_textures.push_back({cat.id, ENV_LANG_A, tex_a});
     }
+}
+
+void category_hooks_add_group_textures(std::vector<grouping_textures_t> groups)
+{
+    log_assert(init_done == false);
+
+    for(auto &group : groups) {
+        auto tex_k = group.tex_name_lang_k ? group.tex_name_lang_k : group.tex_name_lang_j;
+        auto tex_a = group.tex_name_lang_a ? group.tex_name_lang_a : group.tex_name_lang_j;
+        group_textures.push_back({group.id, ENV_LANG_J, group.tex_name_lang_j});
+        group_textures.push_back({group.id, ENV_LANG_K, tex_k});
+        group_textures.push_back({group.id, ENV_LANG_A, tex_a});
+    }
+}
+
+void category_hooks_add_grouping_hook_fn(category_group_hook_fn_t hook) {
+    group_hooks.push_back(hook);
 }
 
 void category_hooks_add_category_layouts(std::vector<category_listing_t> listings)
@@ -181,6 +218,8 @@ void category_hooks_init(HANDLE process, const MODULEINFO &jubeat_info) {
 
     const struct patch_t category_count_patch {
         .name = "category array size",
+        // add    eax,12
+        // cmp    ecx,339
         .pattern = {0x83, 0xC0, 0x0C, 0x81, 0xF9, 0x53, 0x01, 0x00, 0x00},
         .data = {U32_TO_CONST_BYTES_LE(category_textures.size())},
         .data_offset = 5,
@@ -197,6 +236,53 @@ void category_hooks_init(HANDLE process, const MODULEINFO &jubeat_info) {
             log_info("    %d %d %d", cols[j][0],cols[j][1],cols[j][2]);
         }
     }
+
+    // group hooks
+
+    auto group_id_func = find_pattern_checked(
+        "get_group_id_for_music_display", jubeat_info,
+        {0x55, 0x8B, 0xEC, 0x83, 0xEC, 0x08, 0x56, 0x8B, 0xF2, 0x85, 0xF6, 0x75, 0x07},
+        {}
+    );
+    MH_CreateHook(group_id_func,
+        reinterpret_cast<void *>(get_group_id_for_music_display),
+        reinterpret_cast<void **>(&orig_get_group_id_for_music_display));
+
+    // hook: the texture name array in ScrollPanelIndexSetup - very similar to category hooks
+    // original code accesses the lang element
+    const uintptr_t group_textures_patch = reinterpret_cast<uintptr_t>(&group_textures[0].lang);
+    const uintptr_t group_textures_patch2 = reinterpret_cast<uintptr_t>(&group_textures[0].tex_name);
+
+    const struct patch_t group_array_patch {
+        .name = "group array",
+        // lea    eax,[ebp-0x804]
+        .pattern = { 0x8D, 0x85, 0xFC, 0xF7, 0xFF, 0xFF },
+        // mov    eax, group_textures_patch
+        .data = { 0xB8, U32_TO_CONST_BYTES_LE(group_textures_patch), 0x90 },
+        .data_offset = 0,
+    };
+
+    const struct patch_t group_array_patch_2 {
+        .name = "group array 2",
+        // note: esi here, not eax like category function
+        // mov    esi,DWORD PTR [ebp+eax*4-0x800]
+        .pattern = { 0x8B, 0xB4, 0x85, 0x00, 0xF8, 0xFF, 0xFF },
+        // mov    esi,DWORD PTR [eax*4+group_textures_patch2]
+        .data = { 0x8B, 0x34, 0x85, U32_TO_CONST_BYTES_LE(group_textures_patch2) },
+        .data_offset = 0,
+    };
+
+    const struct patch_t group_count_patch {
+        .name = "group array size",
+        // add    eax,12
+        // cmp    ecx,171
+        .pattern = {0x83, 0xC0, 0x0C, 0x81, 0xF9, 0xAB, 0x00, 0x00, 0x00},
+        .data = {U32_TO_CONST_BYTES_LE(group_textures.size())},
+        .data_offset = 5,
+    };
+    do_patch(process, jubeat_info, group_array_patch);
+    do_patch(process, jubeat_info, group_array_patch_2);
+    do_patch(process, jubeat_info, group_count_patch);
 
     init_done = true;
 }

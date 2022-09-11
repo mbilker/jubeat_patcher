@@ -1,3 +1,5 @@
+#define LOG_MODULE "ultimate::categories"
+
 #include "categories.h"
 #include "music_db.h"
 
@@ -166,3 +168,75 @@ const std::vector<category_listing_t> extra_category_layout = {
         {SORT_JP_RA, SORT_JP_WA},
     }}
 };
+
+enum custom_group_id: uint32_t {
+    GROUP_CUSTOM_A = GROUP_DEFAULT_MAX_ID,
+    GROUP_CUSTOM_B,
+    GROUP_CUSTOM_C,
+    GROUP_CUSTOM_D,
+    GROUP_CUSTOM_E,
+    GROUP_CUSTOM_F,
+    GROUP_CUSTOM_G,
+    GROUP_CUSTOM_H,
+    GROUP_CUSTOM_I,
+    GROUP_CUSTOM_J,
+    GROUP_CUSTOM_K,
+    GROUP_CUSTOM_L,
+    GROUP_CUSTOM_M,
+    GROUP_CUSTOM_N,
+    GROUP_CUSTOM_O,
+    GROUP_CUSTOM_P,
+    GROUP_CUSTOM_Q,
+    GROUP_CUSTOM_R,
+    GROUP_CUSTOM_S,
+    GROUP_CUSTOM_T,
+    GROUP_CUSTOM_U,
+    GROUP_CUSTOM_V,
+    GROUP_CUSTOM_W,
+    GROUP_CUSTOM_X,
+    GROUP_CUSTOM_Y,
+    GROUP_CUSTOM_Z,
+};
+
+// Grouping in song select
+const std::vector<grouping_textures_t> extra_group_textures = {
+    {GROUP_CUSTOM_A, "SMM_T2711_JA.png", NULL, NULL},
+    {GROUP_CUSTOM_B, "SMM_T2712_JA.png", NULL, NULL},
+    {GROUP_CUSTOM_C, "SMM_T2713_JA.png", NULL, NULL},
+    {GROUP_CUSTOM_D, "SMM_T2714_JA.png", NULL, NULL},
+    {GROUP_CUSTOM_E, "SMM_T2715_JA.png", NULL, NULL},
+    {GROUP_CUSTOM_F, "SMM_T2716_JA.png", NULL, NULL},
+    {GROUP_CUSTOM_G, "SMM_T2717_JA.png", NULL, NULL},
+    {GROUP_CUSTOM_H, "SMM_T2718_JA.png", NULL, NULL},
+    {GROUP_CUSTOM_I, "SMM_T2719_JA.png", NULL, NULL},
+    {GROUP_CUSTOM_J, "SMM_T2720_JA.png", NULL, NULL},
+    {GROUP_CUSTOM_K, "SMM_T2721_JA.png", NULL, NULL},
+    {GROUP_CUSTOM_L, "SMM_T2722_JA.png", NULL, NULL},
+    {GROUP_CUSTOM_M, "SMM_T2723_JA.png", NULL, NULL},
+    {GROUP_CUSTOM_N, "SMM_T2724_JA.png", NULL, NULL},
+    {GROUP_CUSTOM_O, "SMM_T2725_JA.png", NULL, NULL},
+    {GROUP_CUSTOM_P, "SMM_T2726_JA.png", NULL, NULL},
+    {GROUP_CUSTOM_Q, "SMM_T2727_JA.png", NULL, NULL},
+    {GROUP_CUSTOM_R, "SMM_T2728_JA.png", NULL, NULL},
+    {GROUP_CUSTOM_S, "SMM_T2729_JA.png", NULL, NULL},
+    {GROUP_CUSTOM_T, "SMM_T2730_JA.png", NULL, NULL},
+    {GROUP_CUSTOM_U, "SMM_T2731_JA.png", NULL, NULL},
+    {GROUP_CUSTOM_V, "SMM_T2732_JA.png", NULL, NULL},
+    {GROUP_CUSTOM_W, "SMM_T2733_JA.png", NULL, NULL},
+    {GROUP_CUSTOM_X, "SMM_T2734_JA.png", NULL, NULL},
+    {GROUP_CUSTOM_Y, "SMM_T2735_JA.png", NULL, NULL},
+    {GROUP_CUSTOM_Z, "SMM_T2736_JA.png", NULL, NULL},
+};
+
+uint32_t __fastcall category_group_fn_alphabet(enum group_type group_type, const int * const music_id) {
+    if(group_type != GROUP_TYPE_NAME || !music_id) {
+        return GROUP_INVALID;
+    }
+    auto song = music_from_id(*music_id);
+    auto first = tolower(song->title_name[0]);
+    if(first >= 'a' && first <= 'z') {
+        return GROUP_CUSTOM_A + (first - 'a');
+    }
+
+    return GROUP_INVALID;
+}

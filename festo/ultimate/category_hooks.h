@@ -53,6 +53,7 @@ void init() {
 }
 */
 
+// selecting a category
 enum folder_sort_id: uint32_t {
     SORT_NULL = 0, // empty tile with nothing to click on
     SORT_ROOT = 1,
@@ -172,6 +173,88 @@ enum folder_sort_id: uint32_t {
     SORT_DEFAULT_MAX_ID,
 };
 
+// sorting by a specific category inside a filter
+// used in get_group_id_for_music_display
+enum group_type {
+    // actually treated as the default case in a switch()
+    GROUP_TYPE_NAME = 0,
+    GROUP_TYPE_VERSION = 1,
+    GROUP_TYPE_LEVEL = 2,
+    GROUP_TYPE_RANK = 3,
+    // todo: what are these exactly
+    GROUP_TYPE_RIVALSORT_1 = 4,
+    GROUP_TYPE_RIVALSORT_2 = 5,
+    GROUP_TYPE_RIVALSORT_3 = 6,
+    GROUP_TYPE_GENRE = 7,
+    GROUP_TYPE_COMMON_OR_PICK_UP = 8,
+};
+
+// grouping within a category for faster navigation
+enum song_group_id {
+    GROUP_INVALID = 0, // not used ingame that I can see,
+    GROUP_JP_A = 1,
+    GROUP_JP_KA = 2,
+    GROUP_JP_SA = 3,
+    GROUP_JP_TA = 4,
+    GROUP_JP_NA = 5,
+    GROUP_JP_HA = 6,
+    GROUP_JP_MA = 7,
+    GROUP_JP_YA = 8,
+    GROUP_JP_RA = 9,
+    GROUP_JP_WA = 10,
+    GROUP_LEVEL1 = 11,
+    GROUP_LEVEL2 = 12,
+    GROUP_LEVEL3 = 13,
+    GROUP_LEVEL4 = 14,
+    GROUP_LEVEL5 = 15,
+    GROUP_LEVEL6 = 16,
+    GROUP_LEVEL7 = 17,
+    GROUP_LEVEL8 = 18,
+    GROUP_LEVEL9 = 19,
+    GROUP_LEVEL10 = 20,
+    GROUP_VER_jubeat = 21,
+    GROUP_VER_ripples = 22,
+    GROUP_VER_knit = 23,
+    GROUP_VER_copious = 24,
+    GROUP_VER_saucer = 25,
+    GROUP_VER_saucer_fulfill = 26,
+    GROUP_VER_prop = 27,
+    GROUP_VER_Qubell = 28,
+    GROUP_VER_clan = 29,
+    GROUP_VER_festo = 30,
+    GROUP_UNPLAYED = 31,
+    GROUP_RANK_E = 32,
+    GROUP_RANK_D = 33,
+    GROUP_RANK_C = 34,
+    GROUP_RANK_B = 35,
+    GROUP_RANK_A = 36,
+    GROUP_RANK_S = 37,
+    GROUP_RANK_SS = 38,
+    GROUP_RANK_SSS = 39,
+    GROUP_RANK_EXC = 40,
+    GROUP_UNPLAYED_2 = 41, // ??
+    GROUP_PLAYER_BETTER_THAN_RIVAL = 42,
+    GROUP_PLAYER_MATCHING_RIVAL = 43,
+    GROUP_PLAYER_WORSE_THAN_RIVAL = 44,
+    GROUP_RANDOM = 45,
+    GROUP_RANDOM_AND_MATCHING = 46,
+    GROUP_TUTORIAL = 47,
+    GROUP_FULLCOMBO_CHALLENGE = 48,
+    // note: different ordering than categories, it seems
+    // todo: double check you got the categories right
+    GROUP_POPS = 49,
+    GROUP_ANIME = 50,
+    GROUP_SOCIAL_MUSIC = 51,
+    GROUP_GAME = 52,
+    GROUP_CLASSIC = 53,
+    GROUP_ORIGINAL = 54,
+    GROUP_TOUHOU_ARRANGE = 55,
+    GROUP_PICK_UP = 56,
+    GROUP_COMMON = 57,
+
+    GROUP_DEFAULT_MAX_ID,
+};
+
 typedef bool (__cdecl *music_sort_function)(unsigned music_id, int diff, uint8_t level);
 
 typedef struct {
@@ -193,12 +276,27 @@ typedef struct {
 // must match game's expectation
 static_assert(sizeof(category_listing_t) == 200);
 
+typedef struct {
+    // not enum song_group_id as the extra casts for custom values suck
+    uint32_t id;
+    const char *tex_name_lang_j;
+    const char *tex_name_lang_k; // can be NULL, J will be used
+    const char *tex_name_lang_a; // can be NULL, J will be used
+} grouping_textures_t;
+
 // must be called before category_hooks_init
 void category_hooks_add_category_definitions(std::vector<category_hierarchy_t> categories);
 void category_hooks_add_category_layouts(std::vector<category_listing_t> listings);
 
+void category_hooks_add_group_textures(std::vector<grouping_textures_t> groups);
+
+// no custom group_type for now, so use the actual enum. Return GROUP_INVALID if
+// you want a later hook or the default game function to handle it.
+typedef uint32_t (__fastcall *category_group_hook_fn_t)(enum group_type group_type, const int * const music_id);
+void category_hooks_add_grouping_hook_fn(category_group_hook_fn_t hook);
+
 void category_hooks_init(HANDLE process, const MODULEINFO &jubeat_info);
 
 // must be called after category_hooks_init
-// used to add your custom categories to the root folder
+// useful to add your custom categories to the root folder
 category_listing_t *category_hooks_get_listing(uint32_t id);
