@@ -1,0 +1,4 @@
+LIBRARY config
+
+EXPORTS
+    config_game_get_area_code

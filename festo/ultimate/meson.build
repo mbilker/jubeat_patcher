@@ -11,6 +11,7 @@ shared_library(
     ],
     link_with: [
         avs_1703_lib,
+        config_lib,
         gftools_lib,
         jubeat_lib,
         pattern_lib,

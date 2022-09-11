@@ -10,6 +10,7 @@
 // clang-format on
 
 #include "imports/avs2-core/avs.h"
+#include "imports/config.h"
 #include "imports/gftools.h"
 
 #include "pe/iat.h"
@@ -999,10 +1000,25 @@ music_db_filtered_list(const char *func, int limit, int *results, music_filter_f
     int returned = 0;
     int found = 0;
 
+    // special handler for the "one for every region" やんややんやNight
+    const char* area_code = config_game_get_area_code();
+    int allowed_yanyan = 80000300; // "Japan" instead of a specific area
+    // avoid misconfigured/other region
+    if(area_code && strncmp(area_code, "JP-", 3) == 0) {
+        int code = atoi(&area_code[3]); // returns 0 on failure, which is convenient
+        if(code >= 0 && code <= 47) {
+            allowed_yanyan = 80000300 + code;
+        }
+    }
+
     for (int i = 0; i < music_count; i++) {
         music_db_entry_t *song = &music_db[i];
 
         if (!filter(song)) {
+            continue;
+        }
+
+        if(song->music_id >= 80000300 && song->music_id <= 80000347 && song->music_id != allowed_yanyan) {
             continue;
         }
 
