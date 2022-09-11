@@ -284,6 +284,23 @@ typedef struct {
     const char *tex_name_lang_a; // can be NULL, J will be used
 } grouping_textures_t;
 
+typedef struct {
+    int id;
+    uint8_t difficulty;
+    uint8_t level;
+    uint8_t level_detail;
+    uint8_t _unk0;
+    const char* _unk1;
+    const char* LabDBSeqName;
+    int _unk2;
+    int LabDBNo;
+    uint8_t _unk3;
+    bool has_rival; // unsure
+    uint8_t _unk4;
+    uint8_t _unk5;
+    void* sequence_record_set;
+} music_info_for_grouping_t;
+
 // must be called before category_hooks_init
 void category_hooks_add_category_definitions(std::vector<category_hierarchy_t> categories);
 void category_hooks_add_category_layouts(std::vector<category_listing_t> listings);
@@ -292,7 +309,7 @@ void category_hooks_add_group_textures(std::vector<grouping_textures_t> groups);
 
 // no custom group_type for now, so use the actual enum. Return GROUP_INVALID if
 // you want a later hook or the default game function to handle it.
-typedef uint32_t (__fastcall *category_group_hook_fn_t)(enum group_type group_type, const int * const music_id);
+typedef uint32_t (__fastcall *category_group_hook_fn_t)(enum group_type group_type, const music_info_for_grouping_t *info);
 void category_hooks_add_grouping_hook_fn(category_group_hook_fn_t hook);
 
 void category_hooks_init(HANDLE process, const MODULEINFO &jubeat_info);

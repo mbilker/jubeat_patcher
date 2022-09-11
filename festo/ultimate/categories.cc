@@ -228,11 +228,11 @@ const std::vector<grouping_textures_t> extra_group_textures = {
     {GROUP_CUSTOM_Z, "SMM_T2736_JA.png", NULL, NULL},
 };
 
-uint32_t __fastcall category_group_fn_alphabet(enum group_type group_type, const int * const music_id) {
-    if(group_type != GROUP_TYPE_NAME || !music_id) {
+uint32_t __fastcall category_group_fn_alphabet(enum group_type group_type, const music_info_for_grouping_t *info) {
+    if(group_type != GROUP_TYPE_NAME || !info) {
         return GROUP_INVALID;
     }
-    auto song = music_from_id(*music_id);
+    auto song = music_from_id(info->id);
     auto first = tolower(song->title_name[0]);
     if(first >= 'a' && first <= 'z') {
         return GROUP_CUSTOM_A + (first - 'a');

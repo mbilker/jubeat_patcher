@@ -78,18 +78,16 @@ static music_sort_function __fastcall get_music_filter_func(uint32_t sort_id) {
 
 static std::vector<category_group_hook_fn_t> group_hooks;
 static category_group_hook_fn_t orig_get_group_id_for_music_display;
-static uint32_t __fastcall get_group_id_for_music_display(enum group_type group_type, const int * const music_id) {
+static uint32_t __fastcall get_group_id_for_music_display(enum group_type group_type, const music_info_for_grouping_t *info) {
     uint32_t ret;
     for(auto fn : group_hooks) {
-        ret = fn(group_type, music_id);
+        ret = fn(group_type, info);
         if(ret != GROUP_INVALID) {
-            // log_info("get_group_id_for_music_display(%d, %d) returning %d", group_type, music_id ? *music_id : -1, ret);
             return ret;
         }
     }
 
-    // log_info("get_group_id_for_music_display returning default impl");
-    return orig_get_group_id_for_music_display(group_type, music_id);
+    return orig_get_group_id_for_music_display(group_type, info);
 }
 
 // required to correctly populate the array
