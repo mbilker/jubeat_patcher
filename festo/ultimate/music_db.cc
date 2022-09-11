@@ -1146,7 +1146,7 @@ static enum music_load_res music_load_individual(int index, void *node)
     property_node_refer(
         nullptr, node, "/title_name", PROP_TYPE_str, song->title_name, sizeof(song->title_name));
     property_node_refer(
-        nullptr, node, "/title_yomigana", PROP_TYPE_str, song->title_yomigana, sizeof(song->title_yomigana));
+        nullptr, node, "/sort_name", PROP_TYPE_str, song->sort_name, sizeof(song->sort_name));
 
     if (song->music_id == 70000154 && !song->grouping_category) {
         song->grouping_category = 4736;
@@ -1179,7 +1179,7 @@ static int music_db_entry_sorter(const void *_a, const void *_b)
     auto a = *reinterpret_cast<const music_db_entry_t *const *>(_a);
     auto b = *reinterpret_cast<const music_db_entry_t *const *>(_b);
 
-    return stricmp(a->title_name, b->title_name);
+    return stricmp(a->sort_name, b->sort_name);
 }
 
 static bool __cdecl music_db_initialize(void)
@@ -1437,16 +1437,17 @@ static int __cdecl music_db_get_music_name_head_index(int id)
     // 'ラ': 8, 'リ': 8, 'ル': 8, 'レ': 8, 'ロ': 8,
     // 'ワ': 9,
 
-    // .... but replaced it with title_yomigana, go us
+    // .... but replaced it with sort_name, go us
+
+    // unicode values of kana are 3 bytes each, this is an efficiency boost
+    // instead of strlen-ing both strings
+    if(strnlen(song->sort_name, 3) < 3) {
+        return 0;
+    }
 
     for(auto &lookup : kata_lookup) {
-        // unicode values of kana are 3 bytes each, this is an efficiency boost
-        // instead of strlen-ing both strings
-        if(strnlen(song->title_yomigana, 3) < 3) {
-            break;
-        }
-        int start = strncmp(song->title_yomigana, lookup.start, 3);
-        int end = strncmp(song->title_yomigana, lookup.end, 3);
+        int start = strncmp(song->sort_name, lookup.start, 3);
+        int end = strncmp(song->sort_name, lookup.end, 3);
         if(start == 0 || end == 0 || (start > 0 && end < 0)) {
             // it's a bit flag
             return 1 << lookup.result;

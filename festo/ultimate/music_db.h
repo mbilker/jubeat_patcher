@@ -47,7 +47,7 @@ struct music_db_entry_t {
     // overkill in case of weird songs. Used to auto-generate sort IDs and sort
     // by name
     char title_name[256];
-    char title_yomigana[256];
+    char sort_name[256];
 };
 
 // useful when creating custom sort functions

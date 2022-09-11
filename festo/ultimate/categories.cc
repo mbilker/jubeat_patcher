@@ -70,7 +70,7 @@ static bool __cdecl custom_filter_jukebeat(unsigned music_id, int diff, uint8_t 
 #define MAKE_ALPHABET_SORTER(letter, chr) \
     static bool __cdecl custom_filter_ ## letter(unsigned music_id, int diff, uint8_t level) { \
         music_db_entry_t *music = music_from_id(music_id); \
-        return tolower(music->title_name[0]) == chr; \
+        return music->sort_name[0] == chr; \
     }
 
 MAKE_ALPHABET_SORTER(a, 'a')
@@ -170,7 +170,8 @@ const std::vector<category_listing_t> extra_category_layout = {
 };
 
 enum custom_group_id: uint32_t {
-    GROUP_CUSTOM_A = GROUP_DEFAULT_MAX_ID,
+    GROUP_CUSTOM_0_9 = GROUP_DEFAULT_MAX_ID,
+    GROUP_CUSTOM_A,
     GROUP_CUSTOM_B,
     GROUP_CUSTOM_C,
     GROUP_CUSTOM_D,
@@ -200,6 +201,7 @@ enum custom_group_id: uint32_t {
 
 // Grouping in song select
 const std::vector<grouping_textures_t> extra_group_textures = {
+    {GROUP_CUSTOM_0_9, "SMM_T2710_JA.png", NULL, NULL},
     {GROUP_CUSTOM_A, "SMM_T2711_JA.png", NULL, NULL},
     {GROUP_CUSTOM_B, "SMM_T2712_JA.png", NULL, NULL},
     {GROUP_CUSTOM_C, "SMM_T2713_JA.png", NULL, NULL},
@@ -233,7 +235,12 @@ uint32_t __fastcall category_group_fn_alphabet(enum group_type group_type, const
         return GROUP_INVALID;
     }
     auto song = music_from_id(info->id);
-    auto first = tolower(song->title_name[0]);
+    auto first = song->sort_name[0];
+
+    if(first >= '0' && first <= '9') {
+        return GROUP_CUSTOM_0_9;
+    }
+
     if(first >= 'a' && first <= 'z') {
         return GROUP_CUSTOM_A + (first - 'a');
     }
