@@ -16,7 +16,7 @@ size_t str_vformat(char *buf, size_t nchars, const char *fmt, va_list ap);
 };
 #endif
 
-inline bool str_eq(const char *lhs, const char *rhs)
+static inline bool str_eq(const char *lhs, const char *rhs)
 {
     if (lhs == NULL || rhs == NULL) {
         return lhs == rhs;
@@ -25,7 +25,7 @@ inline bool str_eq(const char *lhs, const char *rhs)
     return strcmp(lhs, rhs) == 0;
 }
 
-inline bool str_ieq(const char *lhs, const char *rhs)
+static inline bool str_ieq(const char *lhs, const char *rhs)
 {
     if (lhs == NULL || rhs == NULL) {
         return lhs == rhs;
