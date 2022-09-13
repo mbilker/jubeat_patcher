@@ -30,8 +30,8 @@
 #endif
 
 // default: 2 MB
-// ultimate: 6 MB
-#define MDB_XML_SIZE (6 * 1024 * 1024)
+// ultimate: 8 MB
+#define MDB_XML_SIZE (8 * 1024 * 1024)
 
 // include this #define to validate every song in the MDB has an associated
 // ifs file in the ifs_pack folder
@@ -1127,8 +1127,6 @@ static enum music_load_res music_load_individual(int index, void *node)
     property_node_refer(nullptr, node, "/parent_id", PROP_TYPE_s32, &song->parent_id, 4);
     property_node_refer(nullptr, node, "/bpm_max", PROP_TYPE_float, &song->bpm_max, 4);
     property_node_refer(nullptr, node, "/bpm_min", PROP_TYPE_float, &song->bpm_min, 4);
-    property_node_refer(nullptr, node, "/name_sort_id_j", PROP_TYPE_str, tmp, sizeof(tmp));
-    song->name_sort_id_j = strtoul(tmp, nullptr, 16);
     property_node_refer(nullptr, node, "/music_type", PROP_TYPE_s32, &song->music_type, 4);
 
     // ultimate music db only has detail_level
