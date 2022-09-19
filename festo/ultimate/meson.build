@@ -24,6 +24,7 @@ shared_library(
         'category_hooks.cc',
         'ultimate.cc',
         'music_db.cc',
+        'sound.cc',
         'pkfs.c',
     ],
 )

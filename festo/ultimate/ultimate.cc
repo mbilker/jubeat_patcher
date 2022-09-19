@@ -27,6 +27,7 @@
 #include "categories.h"
 #include "category_hooks.h"
 #include "music_db.h"
+#include "sound.h"
 #include "pkfs.h"
 
 #include "../common/bnr_hook.h"
@@ -401,6 +402,7 @@ extern "C" DLL_EXPORT bool __cdecl ultimate_dll_entry_init(char *sid_code, void 
 
     MH_Initialize();
 
+    hook_sound(process);
     hook_music_db(process, jubeat_handle, music_db_handle);
     hook_pkfs_fs_open(process, pkfs_handle);
     bnr_hook_init(jubeat_info);
