@@ -13,10 +13,10 @@
 
 #include "imports/avs2-core/avs.h"
 #include "imports/gftools.h"
-#include "imports/jubeat.h"
 
 #include "pattern/pattern.h"
 
+#include "pe/apphook.h"
 #include "pe/iat.h"
 
 #include "util/defs.h"
@@ -327,17 +327,14 @@ static void hook_pkfs_fs_open(HANDLE process, HMODULE pkfs_module)
     }
 }
 
-extern "C" DLL_EXPORT bool __cdecl ultimate_dll_entry_init(char *sid_code, void *app_config)
+bool __cdecl ultimate_dll_entry_init(char *sid_code, void *app_config)
 {
     DWORD pid;
     HANDLE process;
     HMODULE avs2_core_handle, jubeat_handle, music_db_handle, pkfs_handle;
     MODULEINFO jubeat_info, music_db_info;
 
-    log_to_external(log_body_misc, log_body_info, log_body_warning, log_body_fatal);
-
-    log_info("jubeat ultimate hook by Felix, Cannu & mon v" OMNIMIX_VERSION " (Build " __DATE__
-             " " __TIME__ ")");
+    log_info("--- Begin ultimix dll_entry_init ---");
 
     pid = GetCurrentProcessId();
     process = OpenProcess(
@@ -348,8 +345,8 @@ extern "C" DLL_EXPORT bool __cdecl ultimate_dll_entry_init(char *sid_code, void 
     if ((avs2_core_handle = GetModuleHandleA("avs2-core.dll")) == nullptr) {
         log_fatal("GetModuleHandle(\"avs2-core.dll\") failed: 0x%08lx", GetLastError());
     }
-    if ((jubeat_handle = GetModuleHandleA("jubeat.dll")) == nullptr) {
-        log_fatal("GetModuleHandle(\"jubeat.dll\") failed: 0x%08lx", GetLastError());
+    if ((jubeat_handle = app_hook_get_dll_handle()) == nullptr) {
+        log_fatal("\"jubeat.dll\" handle is NULL");
     }
     if ((music_db_handle = GetModuleHandleA("music_db.dll")) == nullptr) {
         log_fatal("GetModuleHandle(\"music_db.dll\") failed: 0x%08lx", GetLastError());
@@ -400,8 +397,6 @@ extern "C" DLL_EXPORT bool __cdecl ultimate_dll_entry_init(char *sid_code, void 
     do_patch(process, jubeat_info, smc_mm_hierarchy_ko);
     */
 
-    MH_Initialize();
-
     hook_sound(process);
     hook_music_db(process, jubeat_handle, music_db_handle);
     hook_pkfs_fs_open(process, pkfs_handle);
@@ -428,10 +423,12 @@ extern "C" DLL_EXPORT bool __cdecl ultimate_dll_entry_init(char *sid_code, void 
     SetEnvironmentVariableA("MB_MODEL", "----");
 
     // Call original
-    bool ret = dll_entry_init(sid_code, app_config);
+    bool ret = app_hook_invoke_init(sid_code, app_config);
 
     // Set `rev` to indicate ultimate
     sid_code[5] = 'U';
+
+    log_info("---  End  ultimix dll_entry_init ---");
 
     return ret;
 }
@@ -439,8 +436,20 @@ extern "C" DLL_EXPORT bool __cdecl ultimate_dll_entry_init(char *sid_code, void 
 BOOL WINAPI DllMain(HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpvReserved)
 {
     (void) hinstDLL;
-    (void) fdwReason;
     (void) lpvReserved;
+
+    if (fdwReason != DLL_PROCESS_ATTACH) {
+        return TRUE;
+    }
+
+    log_to_external(log_body_misc, log_body_info, log_body_warning, log_body_fatal);
+
+    log_info("jubeat ultimate hook by Felix, Cannu & mon v" OMNIMIX_VERSION " (Build " __DATE__
+             " " __TIME__ ")");
+
+    MH_Initialize();
+    app_hook_init(ultimate_dll_entry_init, NULL);
+    MH_EnableHook(MH_ALL_HOOKS);
 
     return TRUE;
 }

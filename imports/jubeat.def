@@ -1,5 +1,0 @@
-LIBRARY jubeat
-
-EXPORTS
-    dll_entry_init
-    dll_entry_main

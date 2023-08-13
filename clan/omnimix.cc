@@ -10,14 +10,17 @@
 #include <stdlib.h>
 
 #include "imports/avs2-core/avs.h"
-#include "imports/jubeat.h"
 
 #include "pattern/pattern.h"
+
+#include "pe/apphook.h"
 
 #include "util/defs.h"
 #include "util/log.h"
 #include "util/mem.h"
 #include "util/patch.h"
+
+#include "MinHook.h"
 
 // clang-format off
 
@@ -86,16 +89,14 @@ const struct patch_t song_unlock_patch = {
 
 // clang-format on
 
-extern "C" DLL_EXPORT bool __cdecl omnimix_dll_entry_init(char *sid_code, void *app_config)
+bool __cdecl omnimix_dll_entry_init(char *sid_code, void *app_config)
 {
     DWORD pid;
     HANDLE process;
     HMODULE jubeat_handle, music_db_handle;
     MODULEINFO jubeat_info, music_db_info;
 
-    log_to_external(log_body_misc, log_body_info, log_body_warning, log_body_fatal);
-
-    log_info("jubeat omnimix hook by Felix v" OMNIMIX_VERSION " (Build " __DATE__ " " __TIME__ ")");
+    log_info("--- Begin omnimix dll_entry_init ---");
 
     pid = GetCurrentProcessId();
     process = OpenProcess(
@@ -103,8 +104,8 @@ extern "C" DLL_EXPORT bool __cdecl omnimix_dll_entry_init(char *sid_code, void *
         FALSE,
         pid);
 
-    if ((jubeat_handle = GetModuleHandle("jubeat.dll")) == NULL) {
-        log_fatal("GetModuleHandle(\"jubeat.dll\") failed: %08lx", GetLastError());
+    if ((jubeat_handle = app_hook_get_dll_handle()) == NULL) {
+        log_fatal("\"jubeat.dll\" handle is NULL");
     }
     if ((music_db_handle = GetModuleHandle("music_db.dll")) == NULL) {
         log_fatal("GetModuleHandle(\"music_db.dll\") failed: %08lx", GetLastError());
@@ -136,14 +137,29 @@ extern "C" DLL_EXPORT bool __cdecl omnimix_dll_entry_init(char *sid_code, void *
 
     sid_code[5] = 'X';
 
-    return dll_entry_init(sid_code, app_config);
+    bool ret = app_hook_invoke_init(sid_code, app_config);
+
+    log_info("---  End  omnimix dll_entry_init ---");
+
+    return ret;
 }
 
 BOOL WINAPI DllMain(HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpvReserved)
 {
     (void) hinstDLL;
-    (void) fdwReason;
     (void) lpvReserved;
+
+    if (fdwReason != DLL_PROCESS_ATTACH) {
+        return TRUE;
+    }
+
+    log_to_external(log_body_misc, log_body_info, log_body_warning, log_body_fatal);
+
+    log_info("jubeat omnimix hook by Felix v" OMNIMIX_VERSION " (Build " __DATE__ " " __TIME__ ")");
+
+    MH_Initialize();
+    app_hook_init(omnimix_dll_entry_init, NULL);
+    MH_EnableHook(MH_ALL_HOOKS);
 
     return TRUE;
 }

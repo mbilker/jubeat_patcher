@@ -3,7 +3,6 @@ shared_library(
     name_prefix: '',
     include_directories: inc,
     implicit_include_directories: false,
-    vs_module_defs: 'ultimate.def',
     dependencies: [
         capnhook.get_variable('hook_dep'),
         psapi_lib,
@@ -13,7 +12,6 @@ shared_library(
         avs_1703_lib,
         config_lib,
         gftools_lib,
-        jubeat_lib,
         pattern_lib,
         pe_lib,
         util_lib,

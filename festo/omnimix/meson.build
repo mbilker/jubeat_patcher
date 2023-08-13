@@ -3,7 +3,6 @@ shared_library(
     name_prefix: '',
     include_directories: inc,
     implicit_include_directories: false,
-    vs_module_defs: 'omnimix.def',
     dependencies: [
         psapi_lib,
         minhook,
@@ -11,7 +10,7 @@ shared_library(
     link_with: [
         avs_1703_lib,
         festo_common_lib,
-        jubeat_lib,
+        pe_lib,
         util_lib,
     ],
     sources: [

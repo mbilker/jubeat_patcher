@@ -4,9 +4,10 @@ pe_lib = static_library(
     implicit_include_directories: false,
     dependencies: [
         capnhook.get_variable('hook_dep'),
+        minhook,
     ],
     sources: [
+        'apphook.c',
         'iat.c',
-        'iat.h',
     ],
 )

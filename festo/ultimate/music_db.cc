@@ -13,6 +13,7 @@
 #include "imports/config.h"
 #include "imports/gftools.h"
 
+#include "pe/apphook.h"
 #include "pe/iat.h"
 
 #include "util/lib.h"
@@ -1657,7 +1658,7 @@ static bool __cdecl music_db_is_possession_for_contained_music_list(uint8_t flag
     static uint8_t *hot_music = nullptr;
 
     if (data_start == nullptr) {
-        auto dll_dos = reinterpret_cast<PIMAGE_DOS_HEADER>(GetModuleHandle("jubeat.dll"));
+        auto dll_dos = reinterpret_cast<PIMAGE_DOS_HEADER>(app_hook_get_dll_handle());
         GFAssert(dll_dos->e_magic == IMAGE_DOS_SIGNATURE);
 
         auto nt_headers = reinterpret_cast<PIMAGE_NT_HEADERS>(
