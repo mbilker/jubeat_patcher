@@ -72,7 +72,7 @@ static float __cdecl music_db_get_bpm_min(int id);
 // int __cdecl music_db_get_default_id();
 // int __cdecl music_db_get_default_id_by_genre();
 // int __cdecl music_db_get_default_id_by_mode();
-static char *__cdecl music_db_get_genre_list(int id);
+static uint8_t *__cdecl music_db_get_genre_list(int id);
 static uint64_t __cdecl music_db_get_grouping_category_list(int id);
 static int __cdecl music_db_get_index_start(int id);
 static uint8_t __cdecl music_db_get_level(int id, uint8_t difficulty);
@@ -87,16 +87,17 @@ static int16_t __cdecl music_db_get_pos_index(int a1);
 // bool __cdecl music_db_is_all_yellow();
 // bool __cdecl music_db_is_displayable_level_detail(void);
 static bool __cdecl music_db_is_exists_table(int id);
-static bool __cdecl music_db_is_exists_version_from_ver1(int id);
-static bool __cdecl music_db_is_exists_version_from_ver2(int id);
-static bool __cdecl music_db_is_exists_version_from_ver3(int id);
-static bool __cdecl music_db_is_exists_version_from_ver4(int id);
-static bool __cdecl music_db_is_exists_version_from_ver5(int id);
-static bool __cdecl music_db_is_exists_version_from_ver5_5(int id);
-static bool __cdecl music_db_is_exists_version_from_ver6(int id);
-static bool __cdecl music_db_is_exists_version_from_ver7(int id);
-static bool __cdecl music_db_is_exists_version_from_ver8(int id);
-static bool __cdecl music_db_is_exists_version_from_ver9(int id);
+// exported, we still hook these!
+// static bool __cdecl music_db_is_exists_version_from_ver1(int id);
+// static bool __cdecl music_db_is_exists_version_from_ver2(int id);
+// static bool __cdecl music_db_is_exists_version_from_ver3(int id);
+// static bool __cdecl music_db_is_exists_version_from_ver4(int id);
+// static bool __cdecl music_db_is_exists_version_from_ver5(int id);
+// static bool __cdecl music_db_is_exists_version_from_ver5_5(int id);
+// static bool __cdecl music_db_is_exists_version_from_ver6(int id);
+// static bool __cdecl music_db_is_exists_version_from_ver7(int id);
+// static bool __cdecl music_db_is_exists_version_from_ver8(int id);
+// static bool __cdecl music_db_is_exists_version_from_ver9(int id);
 static bool __cdecl music_db_is_hold_marker(int id);
 static bool __cdecl music_db_is_matched_select_type(uint8_t type, int id, uint8_t difficulty);
 // bool __cdecl music_db_is_matching_select();
@@ -937,16 +938,17 @@ static void debug_music_entry(music_db_entry_t *song)
     log_body_misc("ultimate", "is_offline_default = %d", song->is_offline_default);
     log_body_misc("ultimate", "is_hold = %d", song->is_hold);
     log_body_misc("ultimate", "step = %d", song->step);
-    log_body_misc("ultimate", "genre_list_pops = %d", song->genre_list[0]);
-    log_body_misc("ultimate", "genre_list_anime = %d", song->genre_list[1]);
-    log_body_misc("ultimate", "genre_list_socialmusic = %d", song->genre_list[2]);
-    log_body_misc("ultimate", "genre_list_game = %d", song->genre_list[3]);
-    log_body_misc("ultimate", "genre_list_classical = %d", song->genre_list[4]);
-    log_body_misc("ultimate", "genre_list_original = %d", song->genre_list[5]);
-    log_body_misc("ultimate", "genre_list_toho = %d", song->genre_list[6]);
+    log_body_misc("ultimate", "genre_pops = %d", song->genre_pops);
+    log_body_misc("ultimate", "genre_anime = %d", song->genre_anime);
+    log_body_misc("ultimate", "genre_socialmusic = %d", song->genre_socialmusic);
+    log_body_misc("ultimate", "genre_game = %d", song->genre_game);
+    log_body_misc("ultimate", "genre_classical = %d", song->genre_classical);
+    log_body_misc("ultimate", "genre_original = %d", song->genre_original);
+    log_body_misc("ultimate", "genre_toho = %d", song->genre_toho);
     log_body_misc(
         "ultimate", "grouping_category = %lX", static_cast<long int>(song->grouping_category));
     log_body_misc("ultimate", "pack_id = %d", song->pack_id);
+    log_body_misc("ultimate", "ultimate_list_vanilla = %d", song->ultimate_list_vanilla);
     log_body_misc("ultimate", "ultimate_list_omnimix = %d", song->ultimate_list_omnimix);
     log_body_misc("ultimate", "ultimate_list_jubeat_plus = %d", song->ultimate_list_jubeat_plus);
     log_body_misc("ultimate", "ultimate_list_jubeat_2020 = %d", song->ultimate_list_jubeat_2020);
@@ -1119,6 +1121,7 @@ static enum music_load_res music_load_individual(int index, void *node)
     song->pack_id = -1;
     song->step = -1;
     song->grouping_category = -1;
+    song->ultimate_list_vanilla = 1;
     song->ultimate_list_omnimix = 0;
     song->ultimate_list_jubeat_plus = 0;
     song->ultimate_list_jubeat_2020 = 0;
@@ -1144,15 +1147,16 @@ static enum music_load_res music_load_individual(int index, void *node)
     property_node_refer(nullptr, node, "/is_hold", PROP_TYPE_s32, &song->is_hold, 4);
     property_node_refer(nullptr, node, "/index_start", PROP_TYPE_s32, &song->index_start, 4);
     property_node_refer(nullptr, node, "/step", PROP_TYPE_s32, &song->step, 4);
-    property_node_refer(nullptr, node, "genre/pops", PROP_TYPE_u8, &song->genre_list[0], 1);
-    property_node_refer(nullptr, node, "genre/anime", PROP_TYPE_u8, &song->genre_list[1], 1);
-    property_node_refer(nullptr, node, "genre/socialmusic", PROP_TYPE_u8, &song->genre_list[2], 1);
-    property_node_refer(nullptr, node, "genre/game", PROP_TYPE_u8, &song->genre_list[3], 1);
-    property_node_refer(nullptr, node, "genre/classic", PROP_TYPE_u8, &song->genre_list[4], 1);
-    property_node_refer(nullptr, node, "genre/original", PROP_TYPE_u8, &song->genre_list[5], 1);
-    property_node_refer(nullptr, node, "genre/toho", PROP_TYPE_u8, &song->genre_list[6], 1);
+    property_node_refer(nullptr, node, "genre/pops", PROP_TYPE_u8, &song->genre_pops, 1);
+    property_node_refer(nullptr, node, "genre/anime", PROP_TYPE_u8, &song->genre_anime, 1);
+    property_node_refer(nullptr, node, "genre/socialmusic", PROP_TYPE_u8, &song->genre_socialmusic, 1);
+    property_node_refer(nullptr, node, "genre/game", PROP_TYPE_u8, &song->genre_game, 1);
+    property_node_refer(nullptr, node, "genre/classic", PROP_TYPE_u8, &song->genre_classical, 1);
+    property_node_refer(nullptr, node, "genre/original", PROP_TYPE_u8, &song->genre_original, 1);
+    property_node_refer(nullptr, node, "genre/toho", PROP_TYPE_u8, &song->genre_toho, 1);
     property_node_refer(nullptr, node, "/grouping_category", PROP_TYPE_str, tmp, sizeof(tmp));
     property_node_refer(nullptr, node, "/pack_id", PROP_TYPE_s32, &song->pack_id, 4);
+    property_node_refer(nullptr, node, "ultimate/vanilla", PROP_TYPE_u8, &song->ultimate_list_vanilla, 1);
     property_node_refer(nullptr, node, "ultimate/omnimix", PROP_TYPE_u8, &song->ultimate_list_omnimix, 1);
     property_node_refer( nullptr, node, "ultimate/jubeat_plus", PROP_TYPE_u8, &song->ultimate_list_jubeat_plus, 1);
     property_node_refer( nullptr, node, "ultimate/jubeat_2020", PROP_TYPE_u8, &song->ultimate_list_jubeat_2020, 1);
@@ -1325,7 +1329,7 @@ static float __cdecl music_db_get_bpm_min(int id)
 //     implemented"); return 0;
 // }
 
-static char *__cdecl music_db_get_genre_list(int id)
+static uint8_t *__cdecl music_db_get_genre_list(int id)
 {
     music_db_entry_t *song = music_from_id(id);
     GFAssert(song != nullptr); // this will crash if it's nullptr anyway, so may as well
@@ -1530,57 +1534,57 @@ static int version_bit_count(int id)
     return bits;
 }
 
-static bool __cdecl music_db_is_exists_version_from_ver1(int id)
+bool __cdecl music_db_is_exists_version_from_ver1(int id)
 {
     int bits = version_bit_count(id);
     return bits == 0 || bits == 1;
 }
 
-static bool __cdecl music_db_is_exists_version_from_ver2(int id)
+bool __cdecl music_db_is_exists_version_from_ver2(int id)
 {
     int bits = version_bit_count(id);
     return bits == 2 || bits == 3;
 }
 
-static bool __cdecl music_db_is_exists_version_from_ver3(int id)
+bool __cdecl music_db_is_exists_version_from_ver3(int id)
 {
     int bits = version_bit_count(id);
     return bits == 4 || bits == 5;
 }
 
-static bool __cdecl music_db_is_exists_version_from_ver4(int id)
+bool __cdecl music_db_is_exists_version_from_ver4(int id)
 {
     int bits = version_bit_count(id);
     return bits == 6 || bits == 7;
 }
 
-static bool __cdecl music_db_is_exists_version_from_ver5(int id)
+bool __cdecl music_db_is_exists_version_from_ver5(int id)
 {
     int bits = version_bit_count(id);
     return bits == 8 || bits == 9;
 }
 
-static bool __cdecl music_db_is_exists_version_from_ver5_5(int id)
+bool __cdecl music_db_is_exists_version_from_ver5_5(int id)
 {
     return version_bit_count(id) == 9;
 }
 
-static bool __cdecl music_db_is_exists_version_from_ver6(int id)
+bool __cdecl music_db_is_exists_version_from_ver6(int id)
 {
     return version_bit_count(id) == 10;
 }
 
-static bool __cdecl music_db_is_exists_version_from_ver7(int id)
+bool __cdecl music_db_is_exists_version_from_ver7(int id)
 {
     return version_bit_count(id) == 11;
 }
 
-static bool __cdecl music_db_is_exists_version_from_ver8(int id)
+bool __cdecl music_db_is_exists_version_from_ver8(int id)
 {
     return version_bit_count(id) == 12;
 }
 
-static bool __cdecl music_db_is_exists_version_from_ver9(int id)
+bool __cdecl music_db_is_exists_version_from_ver9(int id)
 {
     int bits = version_bit_count(id);
     return bits == 13 || bits == 14;
@@ -1666,7 +1670,10 @@ static bool __cdecl music_db_is_possession_for_contained_music_list(uint8_t flag
         auto section_count = nt_headers->FileHeader.NumberOfSections;
 
         // iterate sections
+        #pragma GCC diagnostic push
+        #pragma GCC diagnostic ignored "-Wold-style-cast"
         PIMAGE_SECTION_HEADER section_header = IMAGE_FIRST_SECTION(nt_headers);
+        #pragma GCC diagnostic pop
         for (size_t i = 0; i < section_count; section_header++, i++) {
             auto name = reinterpret_cast<const char *>(section_header->Name);
 

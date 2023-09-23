@@ -11,6 +11,7 @@
 #include <unordered_map>
 
 #include "category_hooks.h"
+#include "categories.h"
 
 #include "pattern/pattern.h"
 
@@ -32,6 +33,8 @@ enum env_lang {
     ENV_LANG_K = 3,
     ENV_LANG_J = 2
 };
+
+int (__cdecl *name_sorter)(const music_info_for_grouping_t *a, const music_info_for_grouping_t *b);
 
 static bool init_done;
 
@@ -281,6 +284,30 @@ void category_hooks_init(HANDLE process, const MODULEINFO &jubeat_info) {
     do_patch(process, jubeat_info, group_array_patch);
     do_patch(process, jubeat_info, group_array_patch_2);
     do_patch(process, jubeat_info, group_count_patch);
+
+    name_sorter = reinterpret_cast<decltype(name_sorter)>(find_pattern_checked(
+        "name_sorter", jubeat_info,
+        {0x55, 0x8B, 0xEC, 0x53, 0x57, 0x8B, 0x7D, 0x08, 0x85, 0xFF},
+        {}
+    ));
+
+    auto version_sorter_func = find_pattern_checked(
+        "version_sorter", jubeat_info,
+        {0x55, 0x8B, 0xEC, 0x53, 0x8B, 0x5D, 0x08, 0x57, 0x85, 0xDB},
+        {}
+    );
+    MH_CreateHook(version_sorter_func,
+        reinterpret_cast<void *>(version_sorter),
+        nullptr);
+
+    auto genre_sorter_func = find_pattern_checked(
+        "genre_sorter", jubeat_info,
+        {0x55, 0x8B, 0xEC, 0x53, 0x8B, 0x5D, 0x08, 0x85, 0xDB},
+        {}
+    );
+    MH_CreateHook(genre_sorter_func,
+        reinterpret_cast<void *>(genre_sorter),
+        nullptr);
 
     init_done = true;
 }

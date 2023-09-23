@@ -317,3 +317,6 @@ void category_hooks_init(HANDLE process, const MODULEINFO &jubeat_info);
 // must be called after category_hooks_init
 // useful to add your custom categories to the root folder
 category_listing_t *category_hooks_get_listing(uint32_t id);
+
+// used by the extended display grouper thing
+extern int (__cdecl *name_sorter)(const music_info_for_grouping_t *a, const music_info_for_grouping_t *b);

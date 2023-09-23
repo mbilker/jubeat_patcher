@@ -413,6 +413,8 @@ bool __cdecl ultimate_dll_entry_init(char *sid_code, void *app_config)
     category_hooks_add_category_layouts(extra_category_layout);
     category_hooks_add_group_textures(extra_group_textures);
     category_hooks_add_grouping_hook_fn(category_group_fn_alphabet);
+    category_hooks_add_grouping_hook_fn(category_group_fn_genre_custom);
+    category_hooks_add_grouping_hook_fn(category_group_fn_version_custom);
     category_hooks_init(process, jubeat_info);
 
     MH_EnableHook(MH_ALL_HOOKS);
