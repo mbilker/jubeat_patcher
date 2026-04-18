@@ -40,13 +40,14 @@
 #define DEBUG_CHECK_MUSIC_IFS_EXISTS
 
 struct avs_stat {
-    uint64_t st_atime;
-    uint64_t st_mtime;
     uint64_t st_ctime;
-    int32_t unk1;
+    uint64_t st_mtime;
+    uint64_t st_atime;
+    int32_t link_count;
     uint32_t filesize;
-    // not actually sure how big theirs is
-    struct stat padding;
+    uint32_t filesize_hi;
+    uint16_t mode;
+    uint16_t perm;
 };
 
 #ifdef DEBUG_CHECK_MUSIC_IFS_EXISTS
@@ -107,8 +108,8 @@ static bool __cdecl music_db_is_matched_select_type(uint8_t type, int id, uint8_
 // bool __cdecl music_db_is_new();
 // bool __cdecl music_db_is_no_gray();
 static bool __cdecl music_db_is_permitted(int id);
-static bool __cdecl music_db_is_possession_for_contained_music_list(
-    uint8_t flags[FLAG_LEN], int a2);
+static bool __cdecl
+music_db_is_possession_for_contained_music_list(uint8_t flags[FLAG_LEN], int a2);
 // bool __cdecl music_db_is_random_or_matching_select();
 // bool __cdecl music_db_is_random_select();
 // int __cdecl music_db_music_bar_to_dot_array();
@@ -1200,8 +1201,8 @@ static enum music_load_res music_load_individual(int index, void *node)
         path, sizeof(path), "/data/ifs_pack/d%d/%d_msc.ifs", song->music_id / 10, song->music_id);
     if ((lstat = avs_fs_lstat(path, &st)) <= 0) {
         log_warning("Missing song IFS file for ID %d (%s)", song->music_id, song->title_name);
-    } else if (st.filesize < 256)
-    { // deleted songs don't get deleted, but have their IFS file stubbed
+    } else if (
+        st.filesize < 256) { // deleted songs don't get deleted, but have their IFS file stubbed
         log_warning("Too-short song IFS file for ID %d (%s)", song->music_id, song->title_name);
     } else {
         // for extra extra debugging

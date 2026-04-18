@@ -26,7 +26,7 @@ add_project_arguments(
     language: [
         'c',
         'cpp',
-    ]
+    ],
 )
 
 if cc.get_argument_syntax() != 'msvc'
@@ -35,16 +35,18 @@ if cc.get_argument_syntax() != 'msvc'
         '-ffunction-sections',
         '-fdata-sections',
         '-fvisibility=hidden',
+        # Robin hood has some older standards
+        '-Wno-deprecated-builtins',
         language: [
             'c',
             'cpp',
-        ]
+        ],
     )
     add_project_arguments(
         '-Wold-style-cast',
         language: [
             'cpp',
-        ]
+        ],
     )
 
     add_project_link_arguments(
@@ -56,7 +58,7 @@ if cc.get_argument_syntax() != 'msvc'
         language: [
             'c',
             'cpp',
-        ]
+        ],
     )
 endif
 

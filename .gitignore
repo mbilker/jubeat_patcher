@@ -1,4 +1,5 @@
 .*.swp
+.cache
 
 # Build directories
 /_build32
