@@ -33,6 +33,11 @@
 #ifndef ROBIN_HOOD_H_INCLUDED
 #define ROBIN_HOOD_H_INCLUDED
 
+// jubeat_patcher EDIT: silence a deprecation warning
+#if defined(__clang__) || defined(__GNUC__)
+#pragma GCC system_header
+#endif
+
 // see https://semver.org/
 #define ROBIN_HOOD_VERSION_MAJOR 3 // for incompatible API changes
 #define ROBIN_HOOD_VERSION_MINOR 7 // for adding functionality in a backwards-compatible manner

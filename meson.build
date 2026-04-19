@@ -35,8 +35,6 @@ if cc.get_argument_syntax() != 'msvc'
         '-ffunction-sections',
         '-fdata-sections',
         '-fvisibility=hidden',
-        # Robin hood has some older standards
-        '-Wno-deprecated-builtins',
         language: [
             'c',
             'cpp',
@@ -65,10 +63,12 @@ endif
 psapi_lib = cc.find_library('psapi')
 
 inc = include_directories('.')
-capnhook = subproject('capnhook')
+capnhook = subproject('capnhook', default_options: ['warning_level=0'])
 
 cmake = import('cmake')
-minhook_sub = cmake.subproject('minhook')
+minhook_opts = cmake.subproject_options()
+minhook_opts.set_override_option('warning_level', '0')
+minhook_sub = cmake.subproject('minhook', options: minhook_opts)
 minhook = minhook_sub.dependency('minhook')
 
 subdir('imports')
