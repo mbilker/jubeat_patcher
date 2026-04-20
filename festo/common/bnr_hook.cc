@@ -1,5 +1,6 @@
 #define LOG_MODULE "bnr-hook"
 
+#include <cstdio>
 #include <vector>
 #include <unordered_map>
 
@@ -26,6 +27,15 @@ static int __fastcall hook_d3_package_load(const char *name)
 {
     // log_info("d3_package_load(\"%s\")", name);
 
+    // Sample the D3 pool caps before loading. If this package is the one
+    // that pushes us over, the "pre" snapshot tells us the name & prior
+    // state; the "post" snapshot tells us the delta this package cost.
+    {
+        char ctx[128];
+        snprintf(ctx, sizeof(ctx), "pre  d3_package_load(\"%s\")", name);
+        festo_d3_guard_check(ctx);
+    }
+
     // todo: custom hashing function for marginally faster lookup?
     for(auto &entry : extra_banners) {
         if(strcmp(name, entry.first) == 0) {
@@ -38,7 +48,15 @@ static int __fastcall hook_d3_package_load(const char *name)
         }
     }
 
-    return d3_package_load(name);
+    int ret = d3_package_load(name);
+
+    {
+        char ctx[128];
+        snprintf(ctx, sizeof(ctx), "post d3_package_load(\"%s\")", name);
+        festo_d3_guard_check(ctx);
+    }
+
+    return ret;
 }
 
 void bnr_hook_init(const MODULEINFO &jubeat_info)

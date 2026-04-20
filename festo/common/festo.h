@@ -15,3 +15,9 @@ void festo_apply_common_patches(
     HMODULE jubeat_handle,
     const MODULEINFO &jubeat_info,
     const MODULEINFO &music_db_info);
+
+#ifdef D3_GUARD_ENABLE
+void festo_d3_guard_check(const char *context);
+#else
+inline void festo_d3_guard_check(const char *) {}
+#endif
