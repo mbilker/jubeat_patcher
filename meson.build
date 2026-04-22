@@ -21,7 +21,7 @@ cc = meson.get_compiler('c')
 
 add_project_arguments(
     '-DWIN32_LEAN_AND_MEAN',
-    '-DOMNIMIX_VERSION="4.0.0_RC4"',
+    '-DOMNIMIX_VERSION="4.0.0_RC5"',
     #'-DVERBOSE',
     language: [
         'c',
