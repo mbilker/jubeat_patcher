@@ -291,16 +291,16 @@ const struct patch_t ui_state_iter_cap_2 {
 
 // omnimix and extend song textures
 static std::vector<const char *> BNR_TEXTURES {
-    "L44FO_BNR_J_OM_001",
-    "L44FO_BNR_J_OM_002",
-    "L44FO_BNR_J_EX_001",
-    "L44FO_BNR_J_EX_002",
-    "L44FO_BNR_J_EX_003",
+    "L44FO_BNR_J_UL_001",
+    "L44FO_BNR_J_UL_002",
+    "L44FO_BNR_J_UL_003",
+    "L44FO_BNR_J_UL_004",
+    "L44FO_BNR_J_UL_005",
 };
 
 // markers and backgrounds
 static std::vector<const char *> EXTRA_MARKERS {
-    "L44_TM_BANNER_OM",
+    "L44_TM_BANNER_UL",
 };
 
 // ultimate categories/folders
