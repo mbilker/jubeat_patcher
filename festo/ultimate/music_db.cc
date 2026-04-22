@@ -939,7 +939,6 @@ static void debug_music_entry(music_db_entry_t *song)
     log_body_misc("ultimate", "is_card_default = %d", song->is_card_default);
     log_body_misc("ultimate", "is_offline_default = %d", song->is_offline_default);
     log_body_misc("ultimate", "is_hold = %d", song->is_hold);
-    log_body_misc("ultimate", "step = %d", song->step);
     log_body_misc("ultimate", "genre_pops = %d", song->genre_pops);
     log_body_misc("ultimate", "genre_anime = %d", song->genre_anime);
     log_body_misc("ultimate", "genre_socialmusic = %d", song->genre_socialmusic);
@@ -949,7 +948,6 @@ static void debug_music_entry(music_db_entry_t *song)
     log_body_misc("ultimate", "genre_toho = %d", song->genre_toho);
     log_body_misc(
         "ultimate", "grouping_category = %lX", static_cast<long int>(song->grouping_category));
-    log_body_misc("ultimate", "pack_id = %d", song->pack_id);
     log_body_misc("ultimate", "ultimate_list_vanilla = %d", song->ultimate_list_vanilla);
     log_body_misc("ultimate", "ultimate_list_omnimix = %d", song->ultimate_list_omnimix);
     log_body_misc("ultimate", "ultimate_list_jubeat_plus = %d", song->ultimate_list_jubeat_plus);
@@ -982,7 +980,7 @@ static bool filter_func_all(music_db_entry_t *song)
 // this is thus a nice easy way to get the arcade tracks into jubility calcs
 static bool filter_func_not_extend(music_db_entry_t *song)
 {
-    return song->pack_id == -1;
+    return song->ultimate_list_vanilla || song->ultimate_list_omnimix;
 }
 
 static bool filter_func_is_default(music_db_entry_t *song)
@@ -1098,43 +1096,10 @@ static enum music_load_res music_load_individual(int index, void *node)
     }
 
     music_db_entry_t *song = &music_db[index];
+    memset(song, 0, sizeof(*song));
 
     property_node_refer(nullptr, node, "/version", PROP_TYPE_str, tmp, sizeof(tmp));
     song->version = strtoul(tmp, nullptr, 16);
-
-    // Extend songs use a version of 0, we've now patched anything that might
-    // need nonzero (allll the sorting and grouping functions, for example)
-
-    // if (!song->version) {
-    //     return MUSIC_LOAD_BAD_VER;
-    // }
-
-    // sane defaults
-    memset(song->genre_list, 0, sizeof(song->genre_list));
-    song->music_id = -1;
-    song->parent_id = -1;
-    song->name_sort_id_j = -1;
-    song->detail_level_bsc = 0;
-    song->detail_level_adv = 0;
-    song->detail_level_ext = 0;
-    song->bpm_max = 0;
-    song->bpm_min = 0;
-    song->music_type = -1;
-    song->pos_index = -1;
-    song->index_start = -1;
-    song->is_default = -1;
-    song->is_card_default = -1;
-    song->is_offline_default = -1;
-    song->is_hold = -1;
-    song->pack_id = -1;
-    song->step = -1;
-    song->grouping_category = -1;
-    song->ultimate_list_vanilla = 1;
-    song->ultimate_list_omnimix = 0;
-    song->ultimate_list_jubeat_plus = 0;
-    song->ultimate_list_jubeat_2020 = 0;
-    song->ultimate_list_jukebeat = 0;
-    song->ultimate_list_western = 0;
 
     property_node_refer(nullptr, node, "/music_id", PROP_TYPE_s32, &song->music_id, 4);
     property_node_refer(nullptr, node, "/parent_id", PROP_TYPE_s32, &song->parent_id, 4);
@@ -1158,7 +1123,6 @@ static enum music_load_res music_load_individual(int index, void *node)
         nullptr, node, "/is_offline_default", PROP_TYPE_s32, &song->is_offline_default, 4);
     property_node_refer(nullptr, node, "/is_hold", PROP_TYPE_s32, &song->is_hold, 4);
     property_node_refer(nullptr, node, "/index_start", PROP_TYPE_s32, &song->index_start, 4);
-    property_node_refer(nullptr, node, "/step", PROP_TYPE_s32, &song->step, 4);
     property_node_refer(nullptr, node, "genre/pops", PROP_TYPE_u8, &song->genre_pops, 1);
     property_node_refer(nullptr, node, "genre/anime", PROP_TYPE_u8, &song->genre_anime, 1);
     property_node_refer(
@@ -1168,7 +1132,6 @@ static enum music_load_res music_load_individual(int index, void *node)
     property_node_refer(nullptr, node, "genre/original", PROP_TYPE_u8, &song->genre_original, 1);
     property_node_refer(nullptr, node, "genre/toho", PROP_TYPE_u8, &song->genre_toho, 1);
     property_node_refer(nullptr, node, "/grouping_category", PROP_TYPE_str, tmp, sizeof(tmp));
-    property_node_refer(nullptr, node, "/pack_id", PROP_TYPE_s32, &song->pack_id, 4);
     property_node_refer(
         nullptr, node, "ultimate/vanilla", PROP_TYPE_u8, &song->ultimate_list_vanilla, 1);
     property_node_refer(

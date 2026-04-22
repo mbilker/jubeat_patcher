@@ -42,7 +42,6 @@ struct music_db_entry_t {
     int is_card_default;    // was: char
     int is_offline_default; // was: char
     int is_hold;            // was: char
-    int step;
     // must be contiguous as it's used as an array
     union {
         uint8_t genre_list[7];
@@ -64,8 +63,6 @@ struct music_db_entry_t {
     uint8_t ultimate_list_jubeat_2020;
     uint8_t ultimate_list_jukebeat;
     uint8_t ultimate_list_western;
-    // custom! Extend pack ID from Jubeat mobile versions
-    int32_t pack_id;
     // custom! real, human-readable name. Max seen was 64 bytes, 256 for massive
     // overkill in case of weird songs. Used to auto-generate sort IDs and sort
     // by name
