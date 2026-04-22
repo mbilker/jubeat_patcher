@@ -14,4 +14,6 @@ festo_common_lib = static_library(
         'bnr_hook.cc',
         'festo.cc',
     ],
+    # debugging
+    #cpp_args: ['-DD3_GUARD_ENABLE'],
 )
