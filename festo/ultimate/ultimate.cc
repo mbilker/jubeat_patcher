@@ -296,7 +296,6 @@ static std::vector<const char *> BNR_TEXTURES {
     "L44FO_BNR_J_EX_001",
     "L44FO_BNR_J_EX_002",
     "L44FO_BNR_J_EX_003",
-    "L44FO_BNR_J_EX_004",
 };
 
 // markers and backgrounds
