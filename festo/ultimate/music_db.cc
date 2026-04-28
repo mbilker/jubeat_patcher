@@ -1089,8 +1089,6 @@ static int __cdecl music_db_get_card_default_list(int limit, int *results)
 
 static enum music_load_res music_load_individual(int index, void *node)
 {
-    char tmp[256];
-
     if (index >= MAX_SONGS) {
         return MUSIC_LOAD_FULL;
     }
@@ -1098,9 +1096,7 @@ static enum music_load_res music_load_individual(int index, void *node)
     music_db_entry_t *song = &music_db[index];
     memset(song, 0, sizeof(*song));
 
-    property_node_refer(nullptr, node, "/version", PROP_TYPE_str, tmp, sizeof(tmp));
-    song->version = strtoul(tmp, nullptr, 16);
-
+    property_node_refer(nullptr, node, "/version", PROP_TYPE_u32, &song->version, 4);
     property_node_refer(nullptr, node, "/music_id", PROP_TYPE_s32, &song->music_id, 4);
     property_node_refer(nullptr, node, "/parent_id", PROP_TYPE_s32, &song->parent_id, 4);
     property_node_refer(nullptr, node, "/bpm_max", PROP_TYPE_float, &song->bpm_max, 4);
@@ -1131,7 +1127,8 @@ static enum music_load_res music_load_individual(int index, void *node)
     property_node_refer(nullptr, node, "genre/classic", PROP_TYPE_u8, &song->genre_classical, 1);
     property_node_refer(nullptr, node, "genre/original", PROP_TYPE_u8, &song->genre_original, 1);
     property_node_refer(nullptr, node, "genre/toho", PROP_TYPE_u8, &song->genre_toho, 1);
-    property_node_refer(nullptr, node, "/grouping_category", PROP_TYPE_str, tmp, sizeof(tmp));
+    property_node_refer(
+        nullptr, node, "/grouping_category", PROP_TYPE_u32, &song->grouping_category, 4);
     property_node_refer(
         nullptr, node, "ultimate/vanilla", PROP_TYPE_u8, &song->ultimate_list_vanilla, 1);
     property_node_refer(
@@ -1144,7 +1141,6 @@ static enum music_load_res music_load_individual(int index, void *node)
         nullptr, node, "ultimate/jukebeat", PROP_TYPE_u8, &song->ultimate_list_jukebeat, 1);
     property_node_refer(
         nullptr, node, "ultimate/western", PROP_TYPE_u8, &song->ultimate_list_western, 1);
-    song->grouping_category = strtoul(tmp, nullptr, 16);
     property_node_refer(
         nullptr, node, "/title_name", PROP_TYPE_str, song->title_name, sizeof(song->title_name));
     property_node_refer(

@@ -56,7 +56,7 @@ struct music_db_entry_t {
             enum genre_type genre_toho;
         };
     };
-    uint64_t grouping_category;
+    uint32_t grouping_category;
     uint8_t ultimate_list_vanilla;
     uint8_t ultimate_list_omnimix;
     uint8_t ultimate_list_jubeat_plus;
