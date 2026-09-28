@@ -687,7 +687,7 @@ BOOL WINAPI DllMain(HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpvReserved)
     log_to_external(log_body_misc, log_body_info, log_body_warning, log_body_fatal);
 
     log_info(
-        "jubeat ultimate hook by Felix, Cannu & mon v" OMNIMIX_VERSION " (Build " __DATE__
+        "jubeat ultimate hook by Felix, Cannu & mon. " OMNIMIX_VERSION " (Build " __DATE__
         " " __TIME__ ")");
 
     MH_Initialize();
